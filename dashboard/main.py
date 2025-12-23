@@ -1,4 +1,11 @@
 import streamlit as st
+
+st.set_page_config(
+    page_title="Marine Analytics Dashboard",
+    layout="wide",
+    initial_sidebar_state="expanded",
+    page_icon="🚢"
+)
 import asyncio
 import pandas as pd
 import plotly.express as px
@@ -34,15 +41,7 @@ ROLE_MARCOM = "Marcom"
 ROLE_ADMIN = "Admin"
 ROLE_FINANCE = "Finance"
 
-# Page Configuration
-if 'page_configured' not in st.session_state:
-    st.set_page_config(
-        page_title="Marine Analytics Dashboard",
-        layout="wide",
-        initial_sidebar_state="expanded",
-        page_icon="🚢"
-    )
-    st.session_state.page_configured = True
+
 
 # Load CSS
 def load_css():
