@@ -1,0 +1,228 @@
+/* Font Import */
+@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap');
+
+:root {
+    --bg-dark: #020617;
+    /* Slate 950 */
+    --bg-card: rgba(15, 23, 42, 0.6);
+    /* Slate 900 low op */
+    --border-color: rgba(148, 163, 184, 0.1);
+
+    /* Midnight Aurora Palette */
+    --primary: #38bdf8;
+    /* Sky 400 */
+    --secondary: #818cf8;
+    /* Indigo 400 */
+    --accent: #2dd4bf;
+    /* Teal 400 */
+    --danger: #f472b6;
+    /* Pink 400 */
+    --warning: #fbbf24;
+    /* Amber 400 */
+    --success: #4ade80;
+    /* Green 400 */
+
+    --text-primary: #f8fafc;
+    --text-secondary: #94a3b8;
+
+    --glass-shiny: rgba(255, 255, 255, 0.03);
+    --font-heading: 'Plus Jakarta Sans', sans-serif;
+    --font-mono: 'JetBrains Mono', monospace;
+}
+
+/* Global Reset & Base */
+.stApp {
+    background-color: var(--bg-dark);
+    background-image:
+        radial-gradient(circle at 0% 0%, rgba(56, 189, 248, 0.15) 0%, transparent 50%),
+        radial-gradient(circle at 100% 0%, rgba(129, 140, 248, 0.15) 0%, transparent 50%),
+        radial-gradient(circle at 100% 100%, rgba(45, 212, 191, 0.1) 0%, transparent 50%);
+    background-attachment: fixed;
+    font-family: var(--font-heading);
+}
+
+h1,
+h2,
+h3,
+h4,
+h5,
+h6 {
+    font-family: var(--font-heading) !important;
+    color: var(--text-primary) !important;
+    font-weight: 600 !important;
+    letter-spacing: -0.02em;
+}
+
+p,
+div,
+span,
+label {
+    color: var(--text-secondary);
+}
+
+/* --- Bento Grid Cards --- */
+.metric-card {
+    background: var(--bg-card);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+    border: 1px solid var(--border-color);
+    border-radius: 20px;
+    padding: 24px;
+    position: relative;
+    overflow: hidden;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+}
+
+.metric-card:hover {
+    transform: translateY(-2px);
+    border-color: rgba(56, 189, 248, 0.3);
+    box-shadow: 0 0 20px rgba(56, 189, 248, 0.1);
+}
+
+/* Shiny element overlay */
+.metric-card::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 1px;
+    background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+}
+
+/* Sidebar Styling */
+section[data-testid="stSidebar"] {
+    background-color: rgba(2, 6, 23, 0.8) !important;
+    border-right: 1px solid var(--border-color);
+    backdrop-filter: blur(20px);
+}
+
+/* Sidebar Buttons */
+section[data-testid="stSidebar"] button {
+    background-color: transparent !important;
+    color: var(--text-secondary) !important;
+    border: 1px solid transparent !important;
+    text-align: left !important;
+    border-radius: 12px !important;
+    transition: all 0.2s ease;
+    font-weight: 500 !important;
+}
+
+section[data-testid="stSidebar"] button:hover {
+    background-color: rgba(255, 255, 255, 0.05) !important;
+    color: var(--text-primary) !important;
+    padding-left: 20px !important;
+    /* Slide effect */
+}
+
+section[data-testid="stSidebar"] button[kind="primary"] {
+    background: linear-gradient(90deg, rgba(56, 189, 248, 0.1) 0%, transparent 100%) !important;
+    border-left: 3px solid var(--primary) !important;
+    color: var(--primary) !important;
+}
+
+/* Inputs & Widgets */
+div[data-baseweb="input"] {
+    background-color: rgba(255, 255, 255, 0.03) !important;
+    border: 1px solid var(--border-color) !important;
+    border-radius: 12px !important;
+    color: white !important;
+}
+
+div[data-baseweb="select"] {
+    background-color: rgba(255, 255, 255, 0.03) !important;
+    border-radius: 12px !important;
+}
+
+/* Checkboxes & Sliders */
+span[data-baseweb="checkbox"] div {
+    background-color: var(--bg-card) !important;
+}
+
+/* Dataframe Clean Tables */
+div[data-testid="stDataFrame"] {
+    border: 1px solid var(--border-color);
+    border-radius: 16px;
+    overflow: hidden;
+}
+
+div[data-testid="stDataFrame"] div[role="rowgroup"] div[role="row"] {
+    background-color: transparent !important;
+    color: var(--text-secondary);
+}
+
+div[data-testid="stDataFrame"] div[role="columnheader"] {
+    background-color: rgba(255, 255, 255, 0.02) !important;
+    color: var(--text-primary) !important;
+    font-weight: 600;
+}
+
+/* Custom Scrollbar */
+::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+}
+
+::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 3px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+    background: rgba(255, 255, 255, 0.2);
+}
+
+/* Animations */
+@keyframes float {
+    0% {
+        transform: translateY(0px);
+    }
+
+    50% {
+        transform: translateY(-5px);
+    }
+
+    100% {
+        transform: translateY(0px);
+    }
+}
+
+.floating {
+    animation: float 6s ease-in-out infinite;
+}
+
+/* Expander Styling */
+.streamlit-expanderHeader {
+    background-color: var(--bg-card) !important;
+    border-radius: 12px !important;
+    border: 1px solid var(--border-color) !important;
+    color: var(--text-primary) !important;
+}
+
+div[data-testid="stExpanderDetails"] {
+    border: 1px solid var(--border-color);
+    border-top: none;
+    border-bottom-left-radius: 12px;
+    border-bottom-right-radius: 12px;
+    background-color: rgba(0, 0, 0, 0.2);
+}
+
+/* Button Primary (Action) */
+button[kind="primary"]:not([data-testid="stSidebar"] button) {
+    background: linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%) !important;
+    border: none !important;
+    box-shadow: 0 4px 15px rgba(56, 189, 248, 0.3) !important;
+    color: white !important;
+    font-weight: 600 !important;
+    transition: transform 0.2s !important;
+}
+
+button[kind="primary"]:hover {
+    transform: scale(1.02) !important;
+    box-shadow: 0 6px 20px rgba(56, 189, 248, 0.4) !important;
+}

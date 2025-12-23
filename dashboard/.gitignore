@@ -1,0 +1,27 @@
+# General
+.DS_Store
+.env
+venv/
+.venv/
+__pycache__/
+*.py[cod]
+*$py.class
+dist/
+build/
+*.egg-info/
+
+# Streamlit
+.streamlit/secrets.toml
+
+# IDEs
+.vscode/
+.idea/
+
+# Data
+*.csv
+*.xlsx
+*.json
+!assets/**/*.json
+
+# Logs
+*.log

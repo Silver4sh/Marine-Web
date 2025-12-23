@@ -1,0 +1,23 @@
+[project]
+name = "marine-dashboard"
+version = "0.1.0"
+description = "Marine Analytics Dashboard"
+readme = "README.md"
+requires-python = ">=3.9"
+dependencies = [
+    "streamlit>=1.30.0",
+    "pandas>=2.1.0",
+    "numpy>=1.26.0",
+    "plotly>=5.18.0",
+    "altair>=5.2.0",
+    "folium>=0.15.0",
+    "streamlit-folium>=0.19.0",
+    "sqlalchemy>=2.0.0",
+    "psycopg2-binary>=2.9.0",
+    "python-dotenv>=1.0.0",
+    "watchdog>=3.0.0",
+]
+
+[build-system]
+requires = ["flit_core >=3.2,<4"]
+build-backend = "flit_core.buildapi"
