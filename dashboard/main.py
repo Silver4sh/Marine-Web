@@ -15,13 +15,14 @@ if current_dir not in sys.path:
     sys.path.append(current_dir)
 
 # Import Pages & Logic
-from back.conection.login import login_page
+from page.auth import render_login_page
 from back.src.map import page_map_vessel
 from back.src.graph_histories import page_history_graph
 
 # Import New Page Modules
 from page.home import dashboard_home_page
 from page.environmental import render_heatmap_page
+from page.analytics import render_analytics_page
 from page.clients import render_clients_page
 from page.settings import render_settings_page
 from constants import ROLE_ADMIN, ROLE_OPERATIONS, ROLE_MARCOM, ROLE_FINANCE
@@ -101,6 +102,9 @@ def main_app():
     elif page == "📈 Sensors History":
         st.markdown("## 📈 Historical Sensor Data")
         page_history_graph()
+    
+    elif page == "📈 Analytics":
+        render_analytics_page()
         
     elif page == "👥 Clients":
         render_clients_page()
@@ -110,7 +114,7 @@ def main_app():
 
 def main():
     if not st.session_state.logged_in:
-        login_page()
+        render_login_page()
     else:
         main_app()
 

@@ -1,70 +1,90 @@
-# Marine Analytics Dashboard 🚢
+# 🚢 Marine Analytics Dashboard
 
-A comprehensive marine fleet management and environmental monitoring dashboard built with [Streamlit](https://streamlit.io/). This application provides real-time insights into vessel operations, financial metrics, and environmental data analysis.
+Sistem dashboard analitik maritim berbasis **Streamlit** untuk pemantauan armada kapal, kualitas air, dan logistik operasional secara *real-time*.
 
-## ✨ Key Features
+## 🌟 Fitur Utama
 
-- **Interactive Dashboard**: Real-time KPIs for fleet status, orders, and financial performance.
-- **Role-Based Access Control**: Tailored views for Admin, Operations, Marcom, and Finance roles.
-- **Vessel Map**: Visualize vessel locations and status on an interactive map.
-- **Environmental Heatmap**: Monitor water quality (Salinity, Turbidity, Oxygen) and oceanographic data (Current, Tide, Density).
-- **Historical Data**: Analyze sensor data trends over time.
-- **Client Management**: Overview of client portfolio and active regions.
+### 1. 🏠 Dashboard Operasional
+- **KPI Real-time**: Memantau status armada (Operating, Maintenance, Idle).
+- **Statistik Order**: Melacak misi yang sedang berjalan, selesai, atau gagal.
+- **Tinjauan Pendapatan**: (Hanya untuk Role Admin/Finance/Marcom) Grafik tren pendapatan bulanan.
 
-## 🛠️ Technology Stack
+### 2. 🗺️ Peta Pantauan Kapal (Vessel Map)
+- **Pelacakan Posisi Terkini**: Menampilkan lokasi kapal secara *live* menggunakan peta interaktif.
+- **Simulasi Riwayat Perjalanan**: Memutar ulang rute perjalanan kapal dengan animasi pergerakan.
+- **Heatmap Status**: Visualisasi warna marker berdasarkan status kapal atau kecepatan.
 
-- **Frontend/Backend**: Python, Streamlit
-- **Data Manipulation**: Pandas, NumPy
-- **Visualization**: Plotly, Altair, Folium
-- **Database**: PostgreSQL (via SQLAlchemy & Psycopg2)
+### 3. 🔥 Peta Lingkungan (Environmental Heatmap)
+- **Monitoring Kualitas Air**: Heatmap interaktif untuk Salinitas, Kekeruhan (Turbidity), Oksigen, dll.
+- **Radar Chart**: Analisis kesehatan lingkungan di area tertentu.
 
-## 📂 Project Structure
+### 4. 📈 Riwayat Sensor (Sensor History)
+- **Grafik Telemetri**: Visualisasi data sensor dari *buoy* dalam rentang waktu tertentu.
+- **Multi-Parameter**: Membandingkan beberapa parameter (misal: Pasang Surut vs Arus) dalam satu grafik.
 
-```
+### 5. 👥 Manajemen Klien & Laporan
+- **Analisis Klien**: Ringkasan portfolio klien berdasarkan wilayah.
+- **Audit Log**: Mencatat setiap perubahan data sensitif di sistem.
+
+## 🛠️ Teknologi yang Digunakan
+
+- **Frontend/Backend**: [Streamlit](https://streamlit.io/) (Python)
+- **Visualisasi**: Plotly, Altair, Folium (Leaflet)
+- **Database**: PostgreSQL
+- **Optimasi**: `asyncio` untuk *data fetching* paralel & Caching agresif.
+
+## 📂 Struktur Proyek
+
+Proyek ini telah direfaktor menjadi struktur modular agar mudah dikembangkan:
+
+```bash
 Marine-Web/
 ├── dashboard/
-│   ├── main.py              # Application entry point
-│   ├── requirements.txt     # Python dependencies
-│   ├── back/                # Backend logic
-│   │   ├── conection/       # Database & Login connections
-│   │   ├── query/           # SQL queries
-│   │   └── src/             # Page logic (Map, Heatmap, History)
-│   └── front/               # Frontend assets (CSS, HTML)
-├── database/
-│   └── table.sql            # Database schema
-└── README.md
+│   ├── main.py              # Router Utama Aplikasi
+│   ├── constants.py         # Definisi Role User
+│   ├── page/                # Modul Halaman (UI)
+│   │   ├── home.py          # Halaman Dashboard Utama
+│   │   ├── analytics.py     # Halaman Analitik Performa
+│   │   ├── environmental.py # Halaman Heatmap
+│   │   ├── clients.py       # Halaman Daftar Klien
+│   │   ├── settings.py      # Pengaturan Akun
+│   │   ├── auth.py          # Halaman Login
+│   │   └── audit.py         # Modal Audit Log
+│   └── back/                # Logika Backend
+│       ├── src/
+│       │   ├── map.py       # Logika Peta Kapal
+│       │   ├── utils.py     # Fungsi Utilitas Umum
+│       │   └── ...
+│       └── query/           # Koneksi & Query Database
+└── database/                # Skema Database
 ```
 
-## 🚀 Getting Started
+## 🚀 Cara Menjalankan
 
-### Prerequisites
+1.  **Pastikan Python terinstall** (Disarankan Python 3.9+).
+2.  **Install dependencies**:
+    ```bash
+    pip install -r dashboard/requirements.txt
+    ```
+3.  **Setup Environment Variables** (Buat file `.env` di folder `dashboard/`):
+    ```env
+    DB_USER=username_db
+    DB_PASS=password_db
+    DB_HOST=localhost
+    DB_PORT=5432
+    DB_NAME=nama_db
+    ```
+4.  **Jalankan Aplikasi**:
+    ```bash
+    streamlit run dashboard/main.py
+    ```
 
-- Python 3.8+
-- PostgreSQL database
+## 🔐 Akun Demo
 
-### Installation
+Sistem menggunakan *Role-Based Access Control* (RBAC). Pastikan login menggunakan akun yang terdaftar di database:
+- **Admin**: Akses penuh.
+- **Operations**: Fokus pada Peta & Sensor.
+- **Marcom/Finance**: Fokus pada Analitik Pendapatan & Klien.
 
-1. **Clone the repository**
-   ```bash
-   git clone https://github.com/yourusername/Marine-Web.git
-   cd Marine-Web
-   ```
-
-2. **Install dependencies**
-   ```bash
-   pip install -r dashboard/requirements.txt
-   ```
-
-3. **Configure Environment**
-   - Ensure you have a `.env` file or environment variables set up for database connection.
-   
-4. **Run the Application**
-   ```bash
-   streamlit run dashboard/main.py
-   ```
-
-## 📝 Usage
-
-1. Open your browser and navigate to the URL provided by Streamlit (usually `http://localhost:8501`).
-2. Log in using your credentials.
-3. Navigate through the sidebar menu to access different modules.
+---
+*Dikembangkan oleh Tim Marine Analytics.*
