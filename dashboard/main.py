@@ -18,14 +18,14 @@ if current_dir not in sys.path:
 from page.auth import render_login_page
 from back.src.map import page_map_vessel
 from back.src.graph_histories import page_history_graph
+from back.src.constants import ROLE_ADMIN, ROLE_OPERATIONS, ROLE_MARCOM, ROLE_FINANCE
 
 # Import New Page Modules
 from page.home import dashboard_home_page
-from page.environmental import render_heatmap_page
-from page.analytics import render_analytics_page
 from page.clients import render_clients_page
 from page.settings import render_settings_page
-from constants import ROLE_ADMIN, ROLE_OPERATIONS, ROLE_MARCOM, ROLE_FINANCE
+from page.analytics import render_analytics_page
+from page.environmental import render_heatmap_page
 
 # Load Global CSS (Refactored to check availability)
 def load_css():
