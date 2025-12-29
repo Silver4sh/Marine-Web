@@ -152,9 +152,6 @@ def view_audit_logs():
         st.info("No audit logs found.")
 
 def dashboard_home():
-    st.markdown(f"## 👋 Welcome back, {st.session_state.username}")
-    st.markdown("---")
-    
     role = st.session_state.user_role
     
     with st.spinner("🚀 Syncing live data..."):
@@ -164,8 +161,15 @@ def dashboard_home():
     orders = data['orders']
     financial = data['financial']
     
+    render_dashboard_home(fleet, orders, financial, role)
+            }
+        )
+
+def render_dashboard_home(fleet, orders, financial, role):
+    st.markdown(f"## 👋 Welcome back, {st.session_state.username}")
+    st.markdown("---")
+    
     # --- Hero Section (KPIs) ---
-    # Using CSS Grid via Markdown for perfect alignment if needed, but columns work well with our new CSS
     c1, c2, c3, c4 = st.columns(4)
     
     with c1:
@@ -271,7 +275,6 @@ def dashboard_home():
             {"Status": "Maintenance", "Count": fleet.get('maintenance', 0), "Color": "#f472b6"},
         ])
         
-        # Custom Progress Bar visual using standard dataframe for now but could be improved
         st.dataframe(
             fleet_df[["Status", "Count"]], 
             hide_index=True, 
@@ -286,6 +289,80 @@ def dashboard_home():
                 )
             }
         )
+
+def render_heatmap_page():
+     st.markdown("## 🔥 Environmental Heatmap")
+        
+     # --- Data Loading ---
+     from back.query.queries import get_data_water
+     
+     # Load data (Cached)
+     df = get_data_water()
+     
+     # Layout Containers
+     c_overview = st.container()
+     st.divider()
+     c_map = st.container()
+     st.divider()
+     c_filter = st.container()
+
+     # --- Filter Logic (Bottom) ---
+     filtered_df = df # Default
+     if not df.empty and 'latest_timestamp' in df.columns:
+         valid_dates = pd.to_datetime(df['latest_timestamp'], errors='coerce').dropna()
+         if not valid_dates.empty:
+             df['latest_timestamp'] = pd.to_datetime(df['latest_timestamp'])
+             min_date = valid_dates.min().date()
+             max_date = valid_dates.max().date()
+             if min_date == max_date:
+                 min_date = min_date - pd.Timedelta(days=1)
+             
+             with c_filter:
+                 st.markdown("### 🗓️ Filter Tanggal")
+                 date_range = st.slider(
+                     "Geser untuk memfilter data:",
+                     min_value=min_date,
+                     max_value=max_date,
+                     value=(min_date, max_date),
+                     format="DD/MM/YY"
+                 )
+                 
+                 # Apply Filter
+                 mask = (df['latest_timestamp'].dt.date >= date_range[0]) & (df['latest_timestamp'].dt.date <= date_range[1])
+                 filtered_df = df[mask]
+     
+     # --- Area Overview (Top) ---
+     with c_overview:
+         st.markdown("### 🕸️ Area Overview")
+         radar_chart(filtered_df)
+
+     # --- Maps (Middle) ---
+     with c_map:
+         tab_main_sel = st.radio("Select Category", ["Water Quality", "Oceanographic"], horizontal=True)
+         
+         if tab_main_sel == "Water Quality":
+              col1, col2 = st.columns(2)
+              with col1: 
+                  st.write("**Salinity**")
+                  page_heatmap(filtered_df, "salinitas")
+              with col2:
+                  st.write("**Turbidity**")
+                  page_heatmap(filtered_df, "turbidity")
+              
+              st.markdown("**Oxygen**", help="Dissolved Oxygen levels")
+              page_heatmap(filtered_df, "oxygen")
+              
+         else:
+              col1, col2 = st.columns(2)
+              with col1:
+                  st.write("**Current**")
+                  page_heatmap(filtered_df, "current")
+              with col2:
+                  st.write("**Tide**")
+                  page_heatmap(filtered_df, "tide")
+             
+              st.markdown("**Density**", help="Seawater Density")
+              page_heatmap(filtered_df, "density")
 
 # --- Navigation & Routing ---
 
@@ -333,78 +410,7 @@ def main_app():
         page_map_vessel()
         
     elif page == "🔥 Heatmap":
-        st.markdown("## 🔥 Environmental Heatmap")
-        
-        # --- Data Loading ---
-        from back.query.queries import get_data_water
-        
-        # Load data (Cached)
-        df = get_data_water()
-        
-        # Layout Containers
-        c_overview = st.container()
-        st.divider()
-        c_map = st.container()
-        st.divider()
-        c_filter = st.container()
-
-        # --- Filter Logic (Bottom) ---
-        filtered_df = df # Default
-        if not df.empty and 'latest_timestamp' in df.columns:
-            valid_dates = pd.to_datetime(df['latest_timestamp'], errors='coerce').dropna()
-            if not valid_dates.empty:
-                df['latest_timestamp'] = pd.to_datetime(df['latest_timestamp'])
-                min_date = valid_dates.min().date()
-                max_date = valid_dates.max().date()
-                if min_date == max_date:
-                    min_date = min_date - pd.Timedelta(days=1)
-                
-                with c_filter:
-                    st.markdown("### 🗓️ Filter Tanggal")
-                    date_range = st.slider(
-                        "Geser untuk memfilter data:",
-                        min_value=min_date,
-                        max_value=max_date,
-                        value=(min_date, max_date),
-                        format="DD/MM/YY"
-                    )
-                    
-                    # Apply Filter
-                    mask = (df['latest_timestamp'].dt.date >= date_range[0]) & (df['latest_timestamp'].dt.date <= date_range[1])
-                    filtered_df = df[mask]
-        
-        # --- Area Overview (Top) ---
-        with c_overview:
-            st.markdown("### 🕸️ Area Overview")
-            radar_chart(filtered_df)
-
-        # --- Maps (Middle) ---
-        with c_map:
-            tab_main_sel = st.radio("Select Category", ["Water Quality", "Oceanographic"], horizontal=True)
-            
-            if tab_main_sel == "Water Quality":
-                 col1, col2 = st.columns(2)
-                 with col1: 
-                     st.write("**Salinity**")
-                     page_heatmap(filtered_df, "salinitas")
-                 with col2:
-                     st.write("**Turbidity**")
-                     page_heatmap(filtered_df, "turbidity")
-                 
-                 st.markdown("**Oxygen**", help="Dissolved Oxygen levels")
-                 page_heatmap(filtered_df, "oxygen")
-                 
-            else:
-                 col1, col2 = st.columns(2)
-                 with col1:
-                     st.write("**Current**")
-                     page_heatmap(filtered_df, "current")
-                 with col2:
-                     st.write("**Tide**")
-                     page_heatmap(filtered_df, "tide")
-                
-                 st.markdown("**Density**", help="Seawater Density")
-                 page_heatmap(filtered_df, "density")
+        render_heatmap_page()
 
     elif page == "📈 Sensors History":
         st.markdown("## 📈 Historical Sensor Data")

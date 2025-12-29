@@ -1,28 +1,40 @@
-import folium
-import pandas as pd
-import streamlit as st
+import os
+
+def load_html(filename):
+    """Loads an HTML template from front/asset/style/html."""
+    # Assuming standard project structure: dashboard/back/src/utils.py -> dashboard/front/asset/style/html
+    # Go up 3 levels: src -> back -> dashboard, then down to front/asset/style/html
+    base_dir = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+    path = os.path.join(base_dir, "front", "asset", "style", "html", filename)
+    
+    if os.path.exists(path):
+        with open(path, "r", encoding="utf-8") as f:
+            return f.read()
+    return ""
+
+def load_css(filename):
+    """Loads a CSS file from front/asset/style/css."""
+    base_dir = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+    path = os.path.join(base_dir, "front", "asset", "style", "css", filename)
+    
+    if os.path.exists(path):
+        with open(path, "r", encoding="utf-8") as f:
+            return f.read()
+    return ""
 
 def render_metric_card(label, value, delta=None, color="green"):
-    """Renders a metric card using minified HTML."""
-    card_html = f"""
-    <div class="metric-card">
-        <div style="display: flex; justify-content: space-between; align-items: start; margin-bottom: 8px;">
-            <span style="font-size: 0.85rem; color: #94a3b8; font-weight: 500; letter-spacing: 0.5px; text-transform: uppercase;">
-                {label}
-            </span>
-            <div style="width: 8px; height: 8px; border-radius: 50%; background-color: {color}; box-shadow: 0 0 10px {color};">
-            </div>
-        </div>
-        <div style="font-size: 2.2rem; font-weight: 700; color: #e2e8f0; font-family: 'Inter', sans-serif; margin-bottom: 4px;">
-            {value}
-        </div>
-        <div style="font-size: 0.85rem; display: flex; align-items: center; gap: 6px; color: #94a3b8;">
-            <span style="color: {color}; background: rgba(255,255,255,0.05); padding: 2px 8px; border-radius: 6px; font-weight: 600; font-family: monospace;">
-                {delta if delta else ""}
-            </span>
-        </div>
-    </div>
-    """
+    """Renders a metric card using external HTML template."""
+    html_template = load_html("metric_card_simple.html")
+    if not html_template:
+        st.error("Metric card template missing")
+        return
+
+    # Replace placeholders
+    card_html = html_template.replace("{label}", str(label)) \
+                             .replace("{value}", str(value)) \
+                             .replace("{delta}", str(delta) if delta else "") \
+                             .replace("{color}", color)
+    
     st.markdown(card_html.replace("\n", " ").strip(), unsafe_allow_html=True)
 
 def get_status_color(status):

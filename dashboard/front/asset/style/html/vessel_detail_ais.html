@@ -1,0 +1,39 @@
+<div
+    style="background: rgba(17, 24, 39, 0.8); padding: 20px; border-radius: 12px; box-shadow: 0 4px 6px rgba(0,0,0,0.3); color: #e2e8f0; border: 1px solid rgba(255,255,255,0.1); backdrop-filter: blur(10px);">
+    <h4 style="margin-top: 0; color: #f8fafc; border-bottom: 1px solid rgba(255,255,255,0.1); padding-bottom: 10px;">
+        Latest AIS information</h4>
+    <table style="width: 100%; font-size: 14px;">
+        <tr>
+            <td style="color: #94a3b8; padding: 8px 0;">Navigational status</td>
+            <td style="font-weight: 600; text-align: right; color: #f1f5f9;">{status}</td>
+        </tr>
+        <tr style="border-top: 1px solid rgba(255,255,255,0.1);">
+            <td style="color: #94a3b8; padding: 8px 0;">Position received</td>
+            <td style="font-weight: 600; text-align: right; color: #f1f5f9;">{mins_ago} mins ago</td>
+        </tr>
+        <tr style="border-top: 1px solid rgba(255,255,255,0.1);">
+            <td style="color: #94a3b8; padding: 8px 0;">Latitude/Longitude</td>
+            <td style="font-weight: 600; text-align: right; color: #f1f5f9;">{lat:.4f} / {lon:.4f}</td>
+        </tr>
+        <tr style="border-top: 1px solid rgba(255,255,255,0.1);">
+            <td style="color: #94a3b8; padding: 8px 0;">Speed</td>
+            <td style="font-weight: 600; text-align: right; color: #f1f5f9;">{speed} kn</td>
+        </tr>
+        <tr style="border-top: 1px solid rgba(255,255,255,0.1);">
+            <td style="color: #94a3b8; padding: 8px 0;">Course</td>
+            <td style="font-weight: 600; text-align: right; color: #f1f5f9;">{course} °</td>
+        </tr>
+        <tr style="border-top: 1px solid rgba(255,255,255,0.1);">
+            <td style="color: #94a3b8; padding: 8px 0;">Draught</td>
+            <td style="font-weight: 600; text-align: right; color: #f1f5f9;">{draught}</td>
+        </tr>
+        <tr style="border-top: 1px solid rgba(255,255,255,0.1);">
+            <td style="color: #94a3b8; padding: 8px 0;">Reported destination</td>
+            <td style="font-weight: 600; text-align: right; color: #f1f5f9;">{destination}</td>
+        </tr>
+        <tr style="border-top: 1px solid rgba(255,255,255,0.1);">
+            <td style="color: #94a3b8; padding: 8px 0;">Reported ETA</td>
+            <td style="font-weight: 600; text-align: right; color: #f1f5f9;">{eta}</td>
+        </tr>
+    </table>
+</div>

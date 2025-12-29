@@ -1,0 +1,76 @@
+/* Container Position & Style */
+.leaflet-control-timecontrol {
+    position: absolute !important;
+    bottom: 25px !important;
+    left: 20px !important;
+    right: 20px !important;
+    width: auto !important;
+    margin: 0 !important;
+    border: none !important;
+    background: rgba(15, 23, 42, 0.9) !important; /* Dark Slate 900 */
+    backdrop-filter: blur(8px);
+    border-radius: 12px !important;
+    padding: 8px 16px !important;
+    display: flex !important;
+    align-items: center !important;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3) !important;
+    z-index: 1000 !important;
+}
+
+/* Remove default borders and backgrounds from inner bars */
+.leaflet-bar-timecontrol {
+    border: none !important;
+    box-shadow: none !important;
+    background: transparent !important;
+    display: flex !important;
+    align-items: center !important;
+    gap: 10px !important;
+    width: 100% !important;
+}
+
+/* Play/Forward/Backward Buttons */
+.leaflet-bar-timecontrol a {
+    background-color: transparent !important;
+    border: none !important;
+    color: #f8fafc !important; /* White-ish */
+    font-size: 14px !important;
+    width: 30px !important;
+    height: 30px !important;
+    line-height: 30px !important;
+    border-radius: 50% !important;
+    transition: background 0.2s;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+}
+.leaflet-bar-timecontrol a:hover {
+    background-color: rgba(255, 255, 255, 0.1) !important;
+    color: #3b82f6 !important; /* Blue highlight */
+}
+
+/* Slider Styling */
+.timecontrol-slider {
+    flex-grow: 1 !important;
+    margin: 0 15px !important;
+    border: none !important;
+}
+.timecontrol-slider .slider {
+    width: 100% !important;
+    margin: 0 !important;
+}
+
+/* Date/Time Display */
+.timecontrol-date {
+    font-family: 'Inter', sans-serif !important;
+    font-size: 12px !important;
+    color: #cbd5e1 !important; /* Slate 300 */
+    min-width: 130px !important;
+    text-align: right !important;
+    margin-left: 10px !important;
+    font-variant-numeric: tabular-nums;
+}
+
+/* Hide Speed Control (optional, keeps it clean) */
+.timecontrol-speed {
+    display: none !important; 
+}
