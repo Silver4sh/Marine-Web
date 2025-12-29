@@ -209,11 +209,11 @@ def radar_chart(df):
                     y=-0.2,
                     xanchor="center",
                     x=0.5,
-                    font=dict(color="#f8fafc")
+                    font=dict(color="#f8fafc", family="Outfit")
                 ),
                 paper_bgcolor='rgba(0,0,0,0)',
                 plot_bgcolor='rgba(0,0,0,0)',
-                font=dict(color='#f8fafc', family="Plus Jakarta Sans"),
+                font=dict(color='#f8fafc', family="Outfit"),
                 margin=dict(l=40, r=40, t=20, b=20),
                 height=350,
                 showlegend=True

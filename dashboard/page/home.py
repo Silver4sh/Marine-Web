@@ -6,7 +6,7 @@ from concurrent.futures import ThreadPoolExecutor
 
 from constants import ROLE_ADMIN, ROLE_FINANCE, ROLE_MARCOM, ROLE_OPERATIONS
 from back.query.queries import get_fleet_status, get_order_stats, get_financial_metrics, get_revenue_analysis
-from back.src.utils import render_metric_card
+from back.src.utils import render_metric_card, apply_chart_style
 
 # --- Async Data Loading ---
 class AsyncDataManager:
@@ -125,14 +125,8 @@ def render_dashboard_home(fleet, orders, financial, role):
                      color='revenue',
                      color_continuous_scale=['#0f172a', '#38bdf8']
                  )
-                 fig.update_layout(
-                     paper_bgcolor='rgba(0,0,0,0)', 
-                     plot_bgcolor='rgba(0,0,0,0)',
-                     font=dict(family="Outfit", color="#8b9bb4"),
-                     title_font_color="#f8fafc",
-                     xaxis=dict(showgrid=False),
-                     yaxis=dict(showgrid=True, gridcolor="rgba(148, 163, 184, 0.1)")
-                 )
+                 apply_chart_style(fig)
+                 fig.update_layout(title_font_color="#f8fafc", title="Monthly Revenue Stream")
                  fig.update_traces(marker_line_width=0, opacity=0.8)
                  st.plotly_chart(fig, use_container_width=True)
              else:
@@ -150,12 +144,8 @@ def render_dashboard_home(fleet, orders, financial, role):
                      title="Order Distribution", template="plotly_dark",
                      color_discrete_sequence=['#2dd4bf', '#f472b6', '#fbbf24']
                  )
-                 fig.update_layout(
-                     paper_bgcolor='rgba(0,0,0,0)',
-                     font=dict(family="Plus Jakarta Sans", color="#94a3b8"),
-                     showlegend=True,
-                     legend=dict(orientation="h", y=-0.1)
-                 )
+                 apply_chart_style(fig)
+                 fig.update_layout(title="Order Distribution", legend=dict(orientation="h", y=-0.1))
                  fig.update_traces(textinfo='none', hoverinfo='label+percent+value')
                  st.plotly_chart(fig, use_container_width=True)
 
