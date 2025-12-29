@@ -2,21 +2,6 @@
 
 Sistem dashboard analitik maritim berbasis **Streamlit** untuk pemantauan armada kapal, kualitas air, dan logistik operasional secara *real-time*.
 
-## 🌟 Fitur Utama
-
-### 1. 🏠 Dashboard Operasional
-- **KPI Real-time**: Memantau status armada (Operating, Maintenance, Idle).
-- **Statistik Order**: Melacak misi yang sedang berjalan, selesai, atau gagal.
-- **Tinjauan Pendapatan**: (Hanya untuk Role Admin/Finance/Marcom) Grafik tren pendapatan bulanan.
-
-### 2. 🗺️ Peta Pantauan Kapal (Vessel Map)
-- **Pelacakan Posisi Terkini**: Menampilkan lokasi kapal secara *live* menggunakan peta interaktif.
-- **Simulasi Riwayat Perjalanan**: Memutar ulang rute perjalanan kapal dengan animasi pergerakan.
-- **Heatmap Status**: Visualisasi warna marker berdasarkan status kapal atau kecepatan.
-
-### 3. 🔥 Peta Lingkungan (Environmental Heatmap)
-- **Monitoring Kualitas Air**: Heatmap interaktif untuk Salinitas, Kekeruhan (Turbidity), Oksigen, dll.
-- **Radar Chart**: Analisis kesehatan lingkungan di area tertentu.
 
 ### 4. 📈 Riwayat Sensor (Sensor History)
 - **Grafik Telemetri**: Visualisasi data sensor dari *buoy* dalam rentang waktu tertentu.

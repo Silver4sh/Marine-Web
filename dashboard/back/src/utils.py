@@ -99,3 +99,38 @@ def create_circle_icon(fill_color, size=10):
         icon_size=(diameter, diameter),
         icon_anchor=(diameter/2, diameter/2)
     )
+
+def apply_chart_style(fig, title=None):
+    """
+    Applies a consistent premium style to Plotly charts.
+    """
+    fig.update_layout(
+        title=dict(text=title, font=dict(family="Outfit", size=18, color="#FFFFFF")) if title else None,
+        paper_bgcolor='rgba(0,0,0,0)',
+        plot_bgcolor='rgba(0,0,0,0)',
+        font=dict(family="Outfit", color="#94a3b8"),
+        xaxis=dict(
+            showgrid=False, 
+            showline=True, 
+            linecolor="rgba(148, 163, 184, 0.2)",
+            tickfont=dict(size=12)
+        ),
+        yaxis=dict(
+            showgrid=True, 
+            gridcolor="rgba(148, 163, 184, 0.05)",
+            showline=False,
+            zeroline=False,
+            tickfont=dict(size=12)
+        ),
+        legend=dict(
+            orientation="h", 
+            yanchor="bottom",
+            y=1.02,
+            xanchor="right",
+            x=1,
+            font=dict(size=10)
+        ),
+        margin=dict(t=50, l=10, r=10, b=10),
+        hovermode="x unified"
+    )
+    return fig

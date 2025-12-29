@@ -1,10 +1,10 @@
 /* Global Font & Theme */
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap');
 
 html,
 body,
 [class*="css"] {
-    font-family: 'Inter', sans-serif;
+    font-family: 'Outfit', sans-serif;
 }
 
 /* Remove default Streamlit padding */
@@ -13,16 +13,39 @@ body,
     padding-bottom: 3rem !important;
 }
 
-/* Premium Card Hover Effect */
-.vessel-card {
-    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+/* --- Premium UI Components --- */
+
+/* Glassmorphism Cards */
+div.stMetric,
+div[data-testid="stMetricValue"] {
+    background: rgba(255, 255, 255, 0.03);
+    border: 1px solid rgba(255, 255, 255, 0.05);
+    padding: 15px;
+    border-radius: 12px;
+    backdrop-filter: blur(10px);
+    transition: transform 0.2s ease;
 }
 
-.vessel-card:hover {
+div.stMetric:hover {
     transform: translateY(-2px);
+    border-color: rgba(56, 189, 248, 0.3);
+    /* Sky blue glow */
 }
 
-/* Scrollbar customization */
+/* Tabs Styling */
+button[data-baseweb="tab"] {
+    font-weight: 500;
+    font-size: 14px;
+}
+
+/* Dataframe Styling */
+div[data-testid="stDataFrame"] {
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 8px;
+    overflow: hidden;
+}
+
+/* Custom Scrollbar */
 ::-webkit-scrollbar {
     width: 6px;
     height: 6px;
@@ -33,10 +56,10 @@ body,
 }
 
 ::-webkit-scrollbar-thumb {
-    background: #555;
+    background: #475569;
     border-radius: 3px;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-    background: #777;
+    background: #64748b;
 }

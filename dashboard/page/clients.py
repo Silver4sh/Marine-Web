@@ -6,6 +6,7 @@ import folium
 from folium.plugins import MarkerCluster
 from streamlit_folium import st_folium
 from back.query.queries import get_clients_summary
+from back.src.utils import apply_chart_style
 
 # --- Data Enrichment ---
 def enrich_client_data(df):
@@ -47,13 +48,12 @@ def render_growth_matrix(df):
         size_max=40
     )
     fig.update_traces(textposition='top center')
+    fig.update_traces(textposition='top center')
+    apply_chart_style(fig)
     fig.update_layout(
-        paper_bgcolor='rgba(0,0,0,0)',
-        plot_bgcolor='rgba(0,0,0,0)',
-        font=dict(family="Outfit", color="#8b9bb4"),
-        showlegend=True,
         xaxis=dict(tickmode='linear', dtick=1),
-        yaxis=dict(showgrid=True, gridcolor="rgba(148, 163, 184, 0.1)")
+        xaxis_title="Active Projects",
+        yaxis_title="Lifetime Value (IDR)"
     )
     return fig
 

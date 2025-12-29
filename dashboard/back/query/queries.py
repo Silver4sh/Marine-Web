@@ -143,7 +143,6 @@ def get_revenue_analysis():
     WHERE status = 'Payed'
     GROUP BY 1
     ORDER BY 1 DESC
-    LIMIT 12
     """
     return run_query(query)
 

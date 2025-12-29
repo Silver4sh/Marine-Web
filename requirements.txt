@@ -1,0 +1,11 @@
+streamlit
+pandas
+numpy
+plotly
+folium
+streamlit-folium
+sqlalchemy
+mysql-connector-python
+python-dotenv
+scikit-learn
+altair

@@ -4,24 +4,10 @@ import numpy as np
 import plotly.express as px
 import plotly.graph_objects as go
 from back.query.queries import get_financial_metrics, get_revenue_analysis, get_order_stats
+from back.src.forecast import calculate_advanced_forecast
+from back.src.utils import apply_chart_style
 
-def calculate_forecast(df):
-    """Simple Moving Average Forecast for next 3 months"""
-    if df.empty or 'revenue' not in df.columns:
-        return pd.DataFrame()
-        
-    df = df.sort_values('month')
-    last_date = df['month'].iloc[-1]
-    # Explicit float conversion
-    last_val = float(df['revenue'].iloc[-1])
-    
-    growth_rate = 0.05 
-    
-    future_dates = [last_date + pd.DateOffset(months=i) for i in range(1, 4)]
-    # Ensure float list
-    future_vals = [float(last_val * ((1 + growth_rate) ** i)) for i in range(1, 4)]
-    
-    return pd.DataFrame({'month': future_dates, 'revenue': future_vals, 'type': 'Forecast'})
+
 
 def render_analytics_page():
     st.markdown("## 📈 Advanced Analytics Hub")
@@ -55,32 +41,68 @@ def render_analytics_page():
     tab1, tab2, tab3 = st.tabs(["📊 Financial Performance", "🚢 Fleet Utilization", "📑 Reports"])
     
     with tab1:
-        st.subheader("Revenue Forecast (Q1 2026)")
+        st.subheader("Revenue Forecast")
         
         if not rev_df.empty:
             rev_df['type'] = 'Actual'
+            rev_df['lower_bound'] = rev_df['revenue']
+            rev_df['upper_bound'] = rev_df['revenue']
             # Ensure native types in DF
             rev_df['revenue'] = rev_df['revenue'].astype(float)
             
-            forecast_df = calculate_forecast(rev_df)
-            combined_df = pd.concat([rev_df, forecast_df])
+            # Use new advanced forecast
+            forecast_df = calculate_advanced_forecast(rev_df, months=6)
             
-            fig = px.area(
-                combined_df, x='month', y='revenue', color='type',
-                template="plotly_dark",
-                color_discrete_map={'Actual': '#38bdf8', 'Forecast': '#a855f7'}
-            )
-            fig.update_layout(
-                paper_bgcolor='rgba(0,0,0,0)', 
-                plot_bgcolor='rgba(0,0,0,0)',
-                font=dict(family="Outfit", color="#8b9bb4"),
-                xaxis=dict(showgrid=False),
-                yaxis=dict(showgrid=True, gridcolor="rgba(148, 163, 184, 0.1)"),
-                legend=dict(orientation="h", y=1.1)
-            )
-            
-            st.plotly_chart(fig, use_container_width=True)
-            
+            if not forecast_df.empty:
+                combined_df = pd.concat([rev_df, forecast_df])
+                
+                # Main Line Chart
+                fig = go.Figure()
+                
+                # Actual Data
+                actual = combined_df[combined_df['type'] == 'Actual']
+                fig.add_trace(go.Scatter(
+                    x=actual['month'], y=actual['revenue'],
+                    mode='lines+markers', name='Actual Revenue',
+                    line=dict(color='#38bdf8', width=3)
+                ))
+                
+                # Forecast Data
+                forecast = combined_df[combined_df['type'] == 'Forecast']
+                fig.add_trace(go.Scatter(
+                    x=forecast['month'], y=forecast['revenue'],
+                    mode='lines+markers', name='Projected (Trend)',
+                    line=dict(color='#a855f7', width=3, dash='dash')
+                ))
+                
+                # Confidence Interval (Shaded Area)
+                # Concatenate X coordinates forward and backward for the closed shape
+                x_conf = pd.concat([forecast['month'], forecast['month'][::-1]])
+                y_conf = pd.concat([forecast['upper_bound'], forecast['lower_bound'][::-1]])
+                
+                fig.add_trace(go.Scatter(
+                    x=x_conf,
+                    y=y_conf,
+                    fill='toself',
+                    fillcolor='rgba(168, 85, 247, 0.2)',
+                    line=dict(color='rgba(255,255,255,0)'),
+                    name='95% Confidence Interval',
+                    showlegend=True
+                ))
+
+                # Standard Style
+                apply_chart_style(fig)
+                fig.update_layout(yaxis_title="Revenue (IDR)", xaxis_title="Month")
+                
+                # Vertical line for "Today"
+                last_actual_date = actual['month'].iloc[-1].timestamp() * 1000
+                fig.add_vline(x=last_actual_date, line_dash="dot", line_color="white", annotation_text="Today")
+                
+                st.plotly_chart(fig, use_container_width=True)
+                model_name = forecast_df['model_name'].iloc[0]
+                st.caption(f"ℹ️ **Methodology**: Automatically selected **{model_name} Model** based on lowest error rate (RMSE). Shaded area represents uncertainty.")
+            else:
+                st.warning("Not enough data points to generate a reliable regression forecast.")
         else:
             st.info("Insufficient data for forecasting.")
 
@@ -93,16 +115,35 @@ def render_analytics_page():
                 {'Service': 'Consulting', 'Value': 10.0},
             ])
             fig_pie = px.pie(comp_df, values='Value', names='Service', hole=0.6, color_discrete_sequence=px.colors.sequential.Teal)
-            fig_pie.update_layout(paper_bgcolor='rgba(0,0,0,0)', showlegend=True)
+            apply_chart_style(fig_pie)
             st.plotly_chart(fig_pie, use_container_width=True)
             
         with c_right:
-             st.markdown("#### 📉 Monthly Growth Rate")
+             st.markdown("#### 📉 Monthly Growth Rate (%)")
              if not rev_df.empty and len(rev_df) > 1:
+                # Calculate percentage growth
+                rev_df = rev_df.sort_values('month', ascending=True)
                 rev_df['growth'] = rev_df['revenue'].pct_change() * 100.0
-                fig_bar = px.bar(rev_df.dropna(), x='month', y='growth', color='growth', color_continuous_scale='RdBu')
-                fig_bar.update_layout(paper_bgcolor='rgba(0,0,0,0)', plot_bgcolor='rgba(0,0,0,0)')
-                st.plotly_chart(fig_bar, use_container_width=True)
+                
+                # Drop the first NaN
+                chart_data = rev_df.dropna(subset=['growth'])
+                
+                fig_line = go.Figure()
+                fig_line.add_trace(go.Scatter(
+                    x=chart_data['month'],
+                    y=chart_data['growth'],
+                    mode='lines+markers',
+                    name='Growth Rate',
+                    line=dict(color='#38bdf8', width=3),
+                    marker=dict(size=8, color='#38bdf8')
+                ))
+                
+                # Add a zero line reference
+                fig_line.add_hline(y=0, line_dash="dot", line_color="white", opacity=0.5)
+
+                apply_chart_style(fig_line)
+                fig_line.update_layout(yaxis_title="Growth (%)")
+                st.plotly_chart(fig_line, use_container_width=True)
 
 
     with tab2:
@@ -129,16 +170,13 @@ def render_analytics_page():
             z=z_data,
             x=days,
             y=vessels,
-            colorscale='Viridis'
+            colorscale='Viridis',
+            colorbar=dict(title='Hours Active')
         ))
-        fig.update_layout(
-             paper_bgcolor='rgba(0,0,0,0)',
-             plot_bgcolor='rgba(0,0,0,0)',
-             font=dict(color="#8b9bb4"),
-             height=500
-        )
+        apply_chart_style(fig)
+        fig.update_layout(height=500)
         st.plotly_chart(fig, use_container_width=True)
-
+        
     with tab3:
         st.subheader("Download Operational Reports")
         
