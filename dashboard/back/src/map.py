@@ -345,10 +345,6 @@ def page_map_vessel():
         
         cluster = MarkerCluster(options={'maxClusterRadius': 80, 'disableClusteringAtZoom': 15}).add_to(m)
         
-        # Add ONLY the selected vessel to the map (or all, but focus on one? User request implies "auto full" map. 
-        # Usually user still wants to see others around, but let's stick to showing the fleet but optimizing view for single if needed.
-        # For now, we render ALL vessels on the map, but the layout is full width.)
-        
         if not filtered_df.empty: 
             # Note: filtered_df already filtered to SINGLE vessel if selected! 
             

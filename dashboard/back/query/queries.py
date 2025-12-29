@@ -70,11 +70,10 @@ def get_path_vessel(vessel_id):
     Get historical path for a specific vessel.
     """
     query = """
-    SELECT latitude, longitude, heading, speed, created_at
+    SELECT latitude, longitude, 0 as heading, speed, created_at
     FROM alpha.vessel_positions
     WHERE id_vessel = :vessel_id
-    ORDER BY created_at DESC
-    LIMIT 200;
+    ORDER BY created_at DESC;
     """
     return run_query(query, params={"vessel_id": vessel_id})
 
