@@ -39,7 +39,7 @@ def get_fleet_status():
     df = run_query(query)
     if df.empty:
         return {"total_vessels": 0, "operating": 0, "maintenance": 0, "idle": 0}
-    return df.iloc[0].to_dict()
+    return df.astype(int).iloc[0].to_dict()
 
 # --- Posisi kapal terakhir ---
 @st.cache_data(ttl=30)
@@ -103,13 +103,15 @@ def get_financial_metrics():
             "delta_orders": 0.0
         }
     
-    # Get current (latest) month data
+    # Get current (latest) month data (explicit cast)
     current = df.iloc[0]
+    curr_rev = float(current["total_revenue"])
+    curr_orders = int(current["completed_orders"])
     
     # Initialize metrics with current month values
     metrics = {
-        "total_revenue": current["total_revenue"],
-        "completed_orders": current["completed_orders"],
+        "total_revenue": curr_rev,
+        "completed_orders": curr_orders,
         "delta_revenue": 0.0,
         "delta_orders": 0.0
     }
@@ -163,7 +165,7 @@ def get_order_stats():
     df = run_query(query)
     if df.empty:
         return {"total_orders": 0, "completed": 0, "in_completed": 0, "on_progress": 0, "failed": 0}
-    return df.iloc[0].to_dict()
+    return df.astype(int).iloc[0].to_dict()
 
 # --- Sensor Data ---
 @st.cache_data(ttl=60)

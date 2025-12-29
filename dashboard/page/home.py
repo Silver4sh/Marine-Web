@@ -40,8 +40,39 @@ class AsyncDataManager:
 
 data_manager = AsyncDataManager()
 
+def render_ai_insights(fleet, financial, role):
+    st.markdown("### 🧠 Intelligent Insights")
+    
+    insights = []
+    
+    # Financial Insight (Admin/Finance/Marcom)
+    if role in [ROLE_ADMIN, ROLE_FINANCE, ROLE_MARCOM]:
+        rev = financial.get('total_revenue', 0)
+        delta_rev = financial.get('delta_revenue', 0.0)
+        if delta_rev < -10:
+            insights.append(f"⚠️ **Revenue Alert**: Revenue dropped by {abs(delta_rev):.1f}% month-over-month. Investigate low order volume.")
+        elif delta_rev > 15:
+            insights.append(f"🚀 **Growth**: Strong revenue growth of {delta_rev:.1f}%! Maintain current acquisition strategy.")
+            
+    # Fleet Insight (Common)
+    maint_ratio = (fleet.get('maintenance', 0) / max(fleet.get('total_vessels', 1), 1)) * 100
+    if maint_ratio > 30:
+        insights.append(f"🛠️ **Fleet Efficiency**: High maintenance ratio ({maint_ratio:.0f}%). Operational capacity is impacted.")
+    elif fleet.get('operating', 0) > (fleet.get('total_vessels', 1) * 0.8):
+        insights.append(f"✅ **High Utilization**: Over 80% of fleet is active. Consider expanding capacity if trend continues.")
+        
+    if not insights:
+        insights.append("💡 System is running optimally. No critical anomalies detected.")
+        
+    for i in insights:
+        st.info(i, icon="🤖")
+
 def render_dashboard_home(fleet, orders, financial, role):
     st.markdown(f"## 👋 Welcome back, {st.session_state.username}")
+    
+    # --- AI Insights ---
+    render_ai_insights(fleet, financial, role)
+    
     st.markdown("---")
     
     # --- Hero Section (KPIs) ---
@@ -161,7 +192,7 @@ def render_dashboard_home(fleet, orders, financial, role):
                     "Count", 
                     format="%d", 
                     min_value=0, 
-                    max_value=max(fleet.get('total_vessels', 10), 1)
+                    max_value=int(max(fleet.get('total_vessels', 10), 1))
                 )
             }
         )
