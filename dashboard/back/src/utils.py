@@ -1,26 +1,25 @@
 import os
+import pandas as pd
+import folium
+import streamlit as st
+
+def _load_asset(subdir, filename):
+    """Helper to load asset files."""
+    base_dir = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+    path = os.path.join(base_dir, "front", "asset", "style", subdir, filename)
+    
+    if os.path.exists(path):
+        with open(path, "r", encoding="utf-8") as f:
+            return f.read()
+    return ""
 
 def load_html(filename):
     """Loads an HTML template from front/asset/style/html."""
-    # Assuming standard project structure: dashboard/back/src/utils.py -> dashboard/front/asset/style/html
-    # Go up 3 levels: src -> back -> dashboard, then down to front/asset/style/html
-    base_dir = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-    path = os.path.join(base_dir, "front", "asset", "style", "html", filename)
-    
-    if os.path.exists(path):
-        with open(path, "r", encoding="utf-8") as f:
-            return f.read()
-    return ""
+    return _load_asset("html", filename)
 
 def load_css(filename):
     """Loads a CSS file from front/asset/style/css."""
-    base_dir = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-    path = os.path.join(base_dir, "front", "asset", "style", "css", filename)
-    
-    if os.path.exists(path):
-        with open(path, "r", encoding="utf-8") as f:
-            return f.read()
-    return ""
+    return _load_asset("css", filename)
 
 def render_metric_card(label, value, delta=None, color="green"):
     """Renders a metric card using external HTML template."""

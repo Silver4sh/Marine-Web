@@ -8,6 +8,7 @@ from streamlit_folium import st_folium
 import numpy as np
 
 from back.query.queries import get_data_water
+from back.src.utils import load_html
 
 def page_heatmap(df, indikator):
     # Fallback to mock data if empty
@@ -139,18 +140,7 @@ def radar_chart(df):
 
         c1, c2 = st.columns([1, 2])
         with c1:
-            # Load HTML Template using cache or read once
-            @st.cache_data
-            def load_html_template():
-                import os
-                current_dir = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-                template_path = os.path.join(current_dir, "front/asset/style/html/health_score_card.html")
-                if os.path.exists(template_path):
-                    with open(template_path, 'r', encoding='utf-8') as f:
-                        return f.read()
-                return ""
-
-            html_content = load_html_template()
+            html_content = load_html("health_score_card.html")
             
             if html_content:
                 rendered_html = html_content.replace("{status_color}", status_color)\

@@ -5,8 +5,8 @@ from folium.plugins import MarkerCluster, MiniMap, Fullscreen
 from streamlit_folium import st_folium
 from streamlit_folium import st_folium
 from back.src.styles import inject_custom_css
-from back.query.queries import get_vessel_position, get_financial_metrics, get_order_stats, get_vessel_list, get_path_vessel
 from back.src.utils import get_status_color, create_google_arrow_icon, create_circle_icon, load_html, load_css
+from back.query.queries import get_vessel_position, get_financial_metrics, get_order_stats, get_vessel_list, get_path_vessel
 
 REFRESH_INTERVAL = 600
 
