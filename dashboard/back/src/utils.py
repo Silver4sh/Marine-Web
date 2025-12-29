@@ -3,6 +3,7 @@ import pandas as pd
 import folium
 import streamlit as st
 
+@st.cache_data(show_spinner=False)
 def _load_asset(subdir, filename):
     """Helper to load asset files."""
     base_dir = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))

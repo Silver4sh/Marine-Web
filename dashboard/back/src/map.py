@@ -423,6 +423,7 @@ def page_map_vessel():
             cluster = MarkerCluster(options={'maxClusterRadius': 80, 'disableClusteringAtZoom': 15}).add_to(m)
             
             if not filtered_df.empty:
+                popup_template = load_html("map_popup.html")
                 for _, row in filtered_df.iterrows():
                     try:
                         v_name = str(row.get('Vessel Name', 'Unknown'))
@@ -444,7 +445,6 @@ def page_map_vessel():
                             icon = create_google_arrow_icon(heading, fill_color, 15)
                             marker_icon = "➤"
 
-                        popup_template = load_html("map_popup.html")
                         if popup_template:
                             popup_html = popup_template.replace("{v_id_str}", v_id_str) \
                                                        .replace("{v_name}", v_name) \
