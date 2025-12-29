@@ -5,11 +5,15 @@ Sistem dashboard analitik maritim berbasis **Streamlit** untuk pemantauan armada
 
 ### 4. 📈 Riwayat Sensor (Sensor History)
 - **Grafik Telemetri**: Visualisasi data sensor dari *buoy* dalam rentang waktu tertentu.
-- **Multi-Parameter**: Membandingkan beberapa parameter (misal: Pasang Surut vs Arus) dalam satu grafik.
 
 ### 5. 👥 Manajemen Klien & Laporan
 - **Analisis Klien**: Ringkasan portfolio klien berdasarkan wilayah.
 - **Audit Log**: Mencatat setiap perubahan data sensitif di sistem.
+
+### 6. ✨ Fitur Baru (New)
+- **Timelapse Peta Kapal**: Animasi pergerakan kapal historis dengan tombol Playback.
+- **AI Forecasting**: Prediksi pendapatan otomatis menggunakan model Machine Learning adaptif.
+- **Premium Design**: Antarmuka 'Glassmorphism' yang konsisten di seluruh aplikasi.
 
 ## 🛠️ Teknologi yang Digunakan
 

@@ -154,7 +154,7 @@ def get_bearing(lat1, lon1, lat2, lon2):
     brng = math.atan2(y, x)
     return (math.degrees(brng) + 360) % 360
 
-def add_history_path_to_map(m, path_df, fill_color, v_id_str):
+def add_history_path_to_map(m, path_df, fill_color, v_id_str, show_timelapse=False):
     if path_df.empty: return
 
     # 1. Static PolyLine
@@ -180,80 +180,81 @@ def add_history_path_to_map(m, path_df, fill_color, v_id_str):
             tooltip=f"{p_row['created_at']}"
         ).add_to(m)
 
-    # 3. Simulation Playback
-    sim_df = path_df.sort_values(by='created_at', ascending=True).tail(300)
-    if len(sim_df) > 1:
-        features = []
-        recs = sim_df.to_dict('records')
-        
-        for i, row in enumerate(recs):
-            if i < len(recs) - 1:
-                next_row = recs[i+1]
-                calc_heading = get_bearing(row['latitude'], row['longitude'], next_row['latitude'], next_row['longitude'])
-            else:
-                calc_heading = row.get('heading', 0)
+    # 3. Simulation Playback (Timelapse)
+    if show_timelapse:
+        sim_df = path_df.sort_values(by='created_at', ascending=True).tail(300)
+        if len(sim_df) > 1:
+            features = []
+            recs = sim_df.to_dict('records')
+            
+            for i, row in enumerate(recs):
+                if i < len(recs) - 1:
+                    next_row = recs[i+1]
+                    calc_heading = get_bearing(row['latitude'], row['longitude'], next_row['latitude'], next_row['longitude'])
+                else:
+                    calc_heading = row.get('heading', 0)
 
+                features.append({
+                    "type": "Feature",
+                    "geometry": {
+                        "type": "Point",
+                        "coordinates": [row['longitude'], row['latitude']],
+                    },
+                    "properties": {
+                        "time": str(row['created_at']),
+                        "style": {"color": fill_color},
+                        "icon": "circle",
+                        "iconstyle": {
+                            "fillColor": fill_color,
+                            "fillOpacity": 0.9,
+                            "stroke": "true",
+                            "radius": 5, 
+                        },
+                        "popup": f"Time: {row['created_at']}<br>Speed: {row['speed']} kn"
+                    },
+                })
+
+            # LineString
+            coords_asc = [[r['longitude'], r['latitude']] for r in recs]
+            times_asc = [str(r['created_at']) for r in recs]
+            
             features.append({
                 "type": "Feature",
                 "geometry": {
-                    "type": "Point",
-                    "coordinates": [row['longitude'], row['latitude']],
+                    "type": "LineString",
+                    "coordinates": coords_asc,
                 },
                 "properties": {
-                    "time": str(row['created_at']),
-                    "style": {"color": fill_color},
-                    "icon": "circle",
-                    "iconstyle": {
-                        "fillColor": fill_color,
-                        "fillOpacity": 0.9,
-                        "stroke": "true",
-                        "radius": 5, 
-                    },
-                    "popup": f"Time: {row['created_at']}<br>Speed: {row['speed']} kn"
-                },
-            })
-
-        # LineString
-        coords_asc = [[r['longitude'], r['latitude']] for r in recs]
-        times_asc = [str(r['created_at']) for r in recs]
-        
-        features.append({
-            "type": "Feature",
-            "geometry": {
-                "type": "LineString",
-                "coordinates": coords_asc,
-            },
-            "properties": {
-                "times": times_asc,
-                "style": {
-                    "color": fill_color,
-                    "weight": 4,
-                    "opacity": 0.8,
-                    "dashArray": "3, 6"
+                    "times": times_asc,
+                    "style": {
+                        "color": fill_color,
+                        "weight": 4,
+                        "opacity": 0.8,
+                        "dashArray": "3, 6"
+                    }
                 }
-            }
-        })
-        
-        start_t = pd.to_datetime(recs[0]['created_at'])
-        end_t = pd.to_datetime(recs[-1]['created_at'])
-        total_seconds = (end_t - start_t).total_seconds()
-        step_seconds = max(1, int(total_seconds / 100))
-        
-        period = f"PT{step_seconds}S" if step_seconds < 60 else f"PT{int(step_seconds/60)}M"
+            })
+            
+            start_t = pd.to_datetime(recs[0]['created_at'])
+            end_t = pd.to_datetime(recs[-1]['created_at'])
+            total_seconds = (end_t - start_t).total_seconds()
+            step_seconds = max(1, int(total_seconds / 100))
+            
+            period = f"PT{step_seconds}S" if step_seconds < 60 else f"PT{int(step_seconds/60)}M"
 
-        from folium.plugins import TimestampedGeoJson
-        TimestampedGeoJson(
-            { "type": "FeatureCollection", "features": features },
-            period=period,
-            add_last_point=True,
-            auto_play=False,
-            loop=False,
-            max_speed=50,
-            loop_button=True,
-            date_options='YYYY/MM/DD HH:mm:ss',
-            time_slider_drag_update=True,
-            duration=None
-        ).add_to(m)
+            from folium.plugins import TimestampedGeoJson
+            TimestampedGeoJson(
+                { "type": "FeatureCollection", "features": features },
+                period=period,
+                add_last_point=True,
+                auto_play=False,
+                loop=False,
+                max_speed=50,
+                loop_button=True,
+                date_options='YYYY/MM/DD HH:mm:ss',
+                time_slider_drag_update=True,
+                duration=None
+            ).add_to(m)
 
 def render_vessel_list_column(title, df, icon="⚓", height=650):
     st.markdown(f"<h4 style='text-align: center; margin-bottom: 10px;'>{icon} {title}</h4>", unsafe_allow_html=True)
@@ -356,7 +357,12 @@ def page_map_vessel():
     # --- LAYOUT LOGIC ---
     if selected_vessel and selected_vessel != "All Vessels":
         # === SINGLE VESSEL VIEW ===
-        st.markdown("<h4 style='text-align: center; margin-bottom: 10px;'>🗺️ Vessel Location</h4>", unsafe_allow_html=True)
+        c_title, c_tog = st.columns([3, 1])
+        with c_title:
+             st.markdown("<h4 style='text-align: center; margin-bottom: 10px;'>🗺️ Vessel Location</h4>", unsafe_allow_html=True)
+        with c_tog:
+             show_timelapse = st.toggle("⏱️ Timelapse", value=False, help="Play movement history")
+             
         m = folium.Map(location=[-1.2, 108.5], zoom_start=7.4, min_zoom=2, max_bounds=True, tiles="CartoDB Dark Matter", control_scale=True)
         m.add_child(MiniMap())
         Fullscreen().add_to(m)
@@ -388,8 +394,9 @@ def page_map_vessel():
                         icon = create_google_arrow_icon(heading, fill_color, 15)
                         marker_icon = "➤"
 
-                    # Draw History Path using Helper
-                    add_history_path_to_map(m, get_path_vessel(v_id_str), fill_color, v_id_str)
+                    # Draw History Path
+                    # 1. Always show static path
+                    add_history_path_to_map(m, get_path_vessel(v_id_str), fill_color, v_id_str, show_timelapse=show_timelapse)
 
                     folium.Marker(
                         [lat, lon], icon=icon, popup=v_name, tooltip=f"{marker_icon} {v_id_str}"

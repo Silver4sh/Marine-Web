@@ -208,7 +208,6 @@ def get_sensor_trends(buoy_id=None):
     FROM alpha.buoy_sensor_histories bsh
     {where_clause}
     ORDER BY created_at ASC
-    LIMIT 1000
     """
     return run_query(query, params)
 
