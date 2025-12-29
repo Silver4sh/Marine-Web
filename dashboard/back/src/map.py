@@ -396,69 +396,119 @@ def page_map_vessel():
                             ).add_to(m)
 
                         # 3. Simulation Playback (TimestampedGeoJson)
-                        features = []
+                        # Optimize data for playback
+                        sim_df = path_df.sort_values(by='created_at', ascending=True).tail(300) # Limit to last 300 points for performance
                         
-                        # A. Moving Marker (Point)
-                        for _, p_row in path_df.iterrows():
+                        if len(sim_df) > 1:
+                            features = []
+                            
+                            # Helper to calculate bearing
+                            import math
+                            def get_bearing(lat1, lon1, lat2, lon2):
+                                dLon = (lon2 - lon1)
+                                y = math.sin(math.radians(dLon)) * math.cos(math.radians(lat2))
+                                x = math.cos(math.radians(lat1)) * math.sin(math.radians(lat2)) - \
+                                    math.sin(math.radians(lat1)) * math.cos(math.radians(lat2)) * math.cos(math.radians(dLon))
+                                brng = math.atan2(y, x)
+                                return (math.degrees(brng) + 360) % 360
+
+                            # Convert to list for easier indexing
+                            recs = sim_df.to_dict('records')
+                            
+                            # A. Moving Marker (Point)
+                            for i, row in enumerate(recs):
+                                # Determine Heading
+                                # If we have a next point, calculate bearing to it. Otherwise use last known.
+                                if i < len(recs) - 1:
+                                    next_row = recs[i+1]
+                                    calc_heading = get_bearing(row['latitude'], row['longitude'], next_row['latitude'], next_row['longitude'])
+                                else:
+                                    calc_heading = row.get('heading', 0)
+
+                                features.append({
+                                    "type": "Feature",
+                                    "geometry": {
+                                        "type": "Point",
+                                        "coordinates": [row['longitude'], row['latitude']],
+                                    },
+                                    "properties": {
+                                        "time": str(row['created_at']),
+                                        "style": {"color": fill_color},
+                                        "icon": "circle",
+                                        "iconstyle": {
+                                            "fillColor": fill_color,
+                                            "fillOpacity": 0.9,
+                                            "stroke": "true",
+                                            "radius": 5, 
+                                            # Note: rotation is not standard in generic circle markers in Leaflet/Folium plugins without custom JS
+                                            # But we ensure smooth position updates here.
+                                        },
+                                        "popup": f"Time: {row['created_at']}<br>Speed: {row['speed']} kn"
+                                    },
+                                })
+
+                            # B. Animated Path (LineString)
+                            coords_asc = [[r['longitude'], r['latitude']] for r in recs]
+                            times_asc = [str(r['created_at']) for r in recs]
+                            
                             features.append({
                                 "type": "Feature",
                                 "geometry": {
-                                    "type": "Point",
-                                    "coordinates": [p_row['longitude'], p_row['latitude']],
+                                    "type": "LineString",
+                                    "coordinates": coords_asc,
                                 },
                                 "properties": {
-                                    "time": str(p_row['created_at']),
-                                    "style": {"color": fill_color},
-                                    "icon": "circle",
-                                    "iconstyle": {
-                                        "fillColor": fill_color,
-                                        "fillOpacity": 0.9,
-                                        "stroke": "true",
-                                        "radius": 6,
-                                    },
-                                },
+                                    "times": times_asc,
+                                    "style": {
+                                        "color": fill_color,
+                                        "weight": 4,
+                                        "opacity": 0.8,
+                                        "dashArray": "3, 6" # Matches the static path style but thicker
+                                    }
+                                }
                             })
 
-                        # B. Animated Path (LineString)
-                        # Create a single LineString feature that grows over time
-                        # We need coordinates ordered by time (created_at ASC) for the line to draw correctly
-                        path_df_asc = path_df.sort_values(by='created_at', ascending=True)
-                        coords_asc = path_df_asc[['longitude', 'latitude']].values.tolist()
-                        times_asc = [str(t) for t in path_df_asc['created_at']]
-                        
-                        features.append({
-                            "type": "Feature",
-                            "geometry": {
-                                "type": "LineString",
-                                "coordinates": coords_asc,
-                            },
-                            "properties": {
-                                "times": times_asc, # Array of timestamps for each coordinate
-                                "style": {
-                                    "color": fill_color,
-                                    "weight": 4,
-                                    "opacity": 0.8
-                                }
-                            }
-                        })
+                            # Calculate efficient period based on total duration
+                            # Goal: Playback takes roughly 10-20 seconds regardless of history length
+                            start_t = pd.to_datetime(recs[0]['created_at'])
+                            end_t = pd.to_datetime(recs[-1]['created_at'])
+                            total_seconds = (end_t - start_t).total_seconds()
+                            
+                            # If tracking 24h (86400s), step 10m (600s) -> 144 steps.
+                            # If tracking 1h (3600s), step 1m (60s) -> 60 steps.
+                            # Let's try to target ~100 frames.
+                            step_seconds = max(1, int(total_seconds / 100))
+                            
+                            # Convert to ISO Duration format roughly
+                            if step_seconds < 60:
+                                period = f"PT{step_seconds}S"
+                            else:
+                                period = f"PT{int(step_seconds/60)}M"
 
-                        from folium.plugins import TimestampedGeoJson
-                        
-                        TimestampedGeoJson(
-                            {
-                                "type": "FeatureCollection",
-                                "features": features,
-                            },
-                            period="PT1M", 
-                            add_last_point=True,
-                            auto_play=False,
-                            loop=False,
-                            max_speed=10,
-                            loop_button=True,
-                            date_options='YYYY/MM/DD HH:mm:ss',
-                            time_slider_drag_update=True,
-                            duration="PT1H" 
-                        ).add_to(m)
+                            from folium.plugins import TimestampedGeoJson
+                            
+                            TimestampedGeoJson(
+                                {
+                                    "type": "FeatureCollection",
+                                    "features": features,
+                                },
+                                period=period,
+                                add_last_point=True,
+                                auto_play=False,
+                                loop=False,
+                                max_speed=50,
+                                loop_button=True,
+                                date_options='YYYY/MM/DD HH:mm:ss',
+                                time_slider_drag_update=True,
+                                duration=None # Show all accumulated points (trail) or None for instant? 
+                                # If we want the TRAIL to stay, duration should be large or None.
+                                # If we want just the head, duration should be small.
+                                # User asked for "show journey line", so we likely want the line to PERSIST.
+                                # Setting duration=None in TimestampedGeoJson usually implies points persist? 
+                                # Actually, for LineString with 'times', it draws progressively. 
+                                # For Points, let's allow them to disappear so we just track the head, 
+                                # but the LineString stays to show history.
+                            ).add_to(m)
 
                     folium.Marker(
                         [lat, lon], icon=icon, popup=v_name, tooltip=f"{marker_icon} {v_id_str}"
