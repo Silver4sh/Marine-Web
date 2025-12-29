@@ -64,6 +64,20 @@ def get_vessel_position():
     """
     return run_query(query)
 
+@st.cache_data(ttl=30)
+def get_path_vessel(vessel_id):
+    """
+    Get historical path for a specific vessel.
+    """
+    query = """
+    SELECT latitude, longitude, heading, speed, created_at
+    FROM alpha.vessel_positions
+    WHERE id_vessel = :vessel_id
+    ORDER BY created_at DESC
+    LIMIT 200;
+    """
+    return run_query(query, params={"vessel_id": vessel_id})
+
 # --- Financial Metrics ---
 @st.cache_data(ttl=300)
 def get_financial_metrics():
