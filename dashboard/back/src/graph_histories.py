@@ -1,6 +1,6 @@
-import streamlit as st
 import pandas as pd
 import altair as alt
+import streamlit as st
 from back.query.queries import (
     get_buoy_history, 
     get_buoy_list, 
@@ -23,7 +23,7 @@ def page_history_graph():
     buoy_df = load_buoy_list()
     
     if buoy_df.empty:
-        st.warning("⚠️ Database connection lost or no buoys found.")
+        st.warning("⚠️ Koneksi database terputus atau tidak ada buoy yang ditemukan.")
         return
         
     buoy_list = ["All"] + buoy_df["id_buoy"].tolist()
@@ -31,31 +31,30 @@ def page_history_graph():
     col1, col2 = st.columns([1, 8])
     
     with col1:
-        st.subheader("🛠️ Configuration")
+        st.subheader("🛠️ Konfigurasi")
         
-        selected_buoy = st.selectbox("Select Buoy Node", buoy_list)
+        selected_buoy = st.selectbox("Pilih Node Buoy", buoy_list)
         
         range_df = load_date_ranges(selected_buoy)
         
         if range_df.empty or pd.isna(range_df.iloc[0]['min_date']):
-            st.info("No data available for this buoy.")
+            st.info("Tidak ada data tersedia untuk buoy ini.")
             return
 
         min_date_db = pd.to_datetime(range_df.iloc[0]['min_date']).date()
         max_date_db = pd.to_datetime(range_df.iloc[0]['max_date']).date()
         
-        # Guard against single-day ranges where min==max
         if min_date_db == max_date_db:
             min_date_db = min_date_db - pd.Timedelta(days=1)
 
         st.markdown("---")
-        st.write("**Parameters**")
-        salinitas = st.checkbox("Salinity", value=True)
-        turbidity = st.checkbox("Turbidity")
-        current = st.checkbox("Current")
-        oxygen = st.checkbox("Oxygen")
-        tide = st.checkbox("Tide")
-        density = st.checkbox("Density")
+        st.write("**Parameter**")
+        salinitas = st.checkbox("Salinitas", value=True)
+        turbidity = st.checkbox("Kekeruhan (Turbidity)")
+        current = st.checkbox("Arus (Current)")
+        oxygen = st.checkbox("Oksigen (Oxygen)")
+        tide = st.checkbox("Pasang Surut (Tide)")
+        density = st.checkbox("Densitas")
         
         indikator = []
         if salinitas: indikator.append("salinitas")
@@ -67,10 +66,10 @@ def page_history_graph():
     
     with col2:
         if not indikator:
-            st.warning("Select at least one parameter to visualize.")
+            st.warning("Pilih setidaknya satu parameter untuk divisualisasikan.")
             return
 
-        st.write("#### 📅 Time Window")
+        st.write("#### 📅 Rentang Waktu")
         date_range = st.slider(
             "",
             min_value=min_date_db,
@@ -79,35 +78,36 @@ def page_history_graph():
             format="DD/MM/YY"
         )
         
-        with st.spinner(f"Fetching data for {selected_buoy}..."):
+        with st.spinner(f"Mengambil data untuk {selected_buoy}..."):
             if selected_buoy == "All":
                 df = get_aggregated_buoy_history(date_range[0], date_range[1])
             else:
                 df = get_buoy_history(selected_buoy, date_range[0], date_range[1])
         
         if df.empty:
-            st.warning("No records found in selected range.")
+            st.warning("Tidak ada data ditemukan dalam rentang waktu yang dipilih.")
             return
             
         df["created_at"] = pd.to_datetime(df["created_at"])
         
-        # Capitalize metrics for display
+        # Capitalize metrics for display (Translate keys if needed or map to ID Labels)
+        # Using Indonesian labels for chart
         rename_map = {
-            "salinitas": "Salinity",
-            "turbidity": "Turbidity",
-            "current": "Current",
-            "oxygen": "Oxygen",
-            "tide": "Tide",
-            "density": "Density"
+            "salinitas": "Salinitas",
+            "turbidity": "Kekeruhan",
+            "current": "Arus",
+            "oxygen": "Oksigen",
+            "tide": "Pasang Surut",
+            "density": "Densitas"
         }
         df = df.rename(columns=rename_map)
         indikator = [rename_map.get(x, x) for x in indikator]
 
-        left_indicators = [ind for ind in indikator if ind != 'Density']
-        right_indicators = [ind for ind in indikator if ind == 'Density']
+        left_indicators = [ind for ind in indikator if ind != 'Densitas']
+        right_indicators = [ind for ind in indikator if ind == 'Densitas']
         
         base = alt.Chart(df).encode(
-            x=alt.X("created_at:T", title="Timeline", 
+            x=alt.X("created_at:T", title="Waktu", 
                     axis=alt.Axis(format="%b %d %H:%M", labelAngle=-45))
         )
         
@@ -121,9 +121,9 @@ def page_history_graph():
                 strokeWidth=2.5,
                 opacity=0.9
             ).encode(
-                y=alt.Y("value:Q", title="Sensor Value", 
+                y=alt.Y("value:Q", title="Nilai Sensor", 
                         axis=alt.Axis(titleColor='#38bdf8')),
-                color=alt.Color("parameter:N", title="Metric",
+                color=alt.Color("parameter:N", title="Metrik",
                                scale=alt.Scale(range=['#38bdf8', '#2dd4bf', '#818cf8', '#f472b6', '#fbbf24'])),         
                 tooltip=["created_at:T", "parameter:N", "value:Q"]
             )
@@ -138,7 +138,7 @@ def page_history_graph():
                 strokeDash=[5, 5],
                 color='#f472b6'
             ).encode(
-                y=alt.Y("value:Q", title="Density",
+                y=alt.Y("value:Q", title="Densitas",
                         axis=alt.Axis(titleColor='#f472b6', orient='right')),
                 tooltip=["created_at:T", "parameter:N", "value:Q"]
             )
@@ -149,7 +149,7 @@ def page_history_graph():
             final_chart = alt.layer(*layers).resolve_scale(
                 y='independent'
             ).properties(
-                title=f"Telemetry: {selected_buoy}",
+                title=f"Telemetri: {selected_buoy}",
                 height=450
             )
 
@@ -183,9 +183,9 @@ def page_history_graph():
             
             st.altair_chart(final_chart, use_container_width=True)
             
-            with st.expander("📊 Statistical Summary", expanded=True):
+            with st.expander("📊 Ringkasan Statistik", expanded=True):
                 stats = df[indikator].describe().T[['mean', 'min', 'max', 'std']]
-                stats.columns = ['Mean', 'Min', 'Max', 'Std']
+                stats.columns = ['Rata-rata', 'Min', 'Max', 'Std']
                 stats.index = [x.title() for x in stats.index]
                 st.dataframe(stats, use_container_width=True)
 
