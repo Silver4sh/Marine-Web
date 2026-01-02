@@ -1,7 +1,7 @@
 import pandas as pd
 import altair as alt
 import streamlit as st
-from back.query.queries import (
+from back.query.sensor_queries import (
     get_buoy_history, 
     get_buoy_list, 
     get_buoy_date_range,
@@ -21,10 +21,6 @@ def load_date_ranges(buoy_id):
 
 def render_history_config(buoy_list, selected_buoy):
     st.subheader("🛠️ Konfigurasi")
-    
-    # We can't easily return the new selected_buoy if we render it inside here 
-    # unless we use session state or return values. 
-    # For now, let's keep the selectbox outside or just render the checkboxes.
     
     st.markdown("---")
     st.write("**Parameter**")

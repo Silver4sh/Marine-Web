@@ -1,7 +1,8 @@
 import streamlit as st
 import pandas as pd
 from back.src.heatmap import page_heatmap, radar_chart
-from back.query.queries import get_data_water
+from back.src.heatmap import page_heatmap, radar_chart
+from back.query.sensor_queries import get_data_water
 
 def render_heatmap_page():
      st.markdown("## 🔥 Environmental Heatmap")

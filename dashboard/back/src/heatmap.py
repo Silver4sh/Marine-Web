@@ -5,7 +5,7 @@ from folium.plugins import HeatMap
 from streamlit_folium import st_folium
 import numpy as np
 
-from back.query.queries import get_data_water
+from back.query.sensor_queries import get_data_water
 from back.src.utils import load_html
 
 def page_heatmap(df, indikator):

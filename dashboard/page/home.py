@@ -6,7 +6,10 @@ from concurrent.futures import ThreadPoolExecutor
 
 from back.src.constants import ROLE_ADMIN, ROLE_FINANCE, ROLE_MARCOM, ROLE_OPERATIONS
 from back.src.utils import render_metric_card, apply_chart_style
-from back.query.queries import get_fleet_status, get_order_stats, get_financial_metrics, get_revenue_analysis
+from back.src.constants import ROLE_ADMIN, ROLE_FINANCE, ROLE_MARCOM, ROLE_OPERATIONS
+from back.src.utils import render_metric_card, apply_chart_style
+from back.query.queries import get_fleet_status, get_order_stats, get_financial_metrics, get_revenue_analysis, get_clients_summary
+from back.query.config_queries import get_system_settings
 
 # --- Async Data Loading ---
 class AsyncDataManager:
@@ -31,47 +34,70 @@ class AsyncDataManager:
         else:
              tasks.append(loop.run_in_executor(self.executor, lambda: {}))
 
+        # Task 3: Settings (Common for insights)
+        tasks.append(loop.run_in_executor(self.executor, get_system_settings))
+        
+        # Task 4: Clients (For Churn Risk)
+        tasks.append(loop.run_in_executor(self.executor, get_clients_summary))
+
         results = await asyncio.gather(*tasks)
         return {
             "fleet": results[0],
             "orders": results[1],
-            "financial": results[2]
+            "financial": results[2],
+            "settings": results[3],
+            "clients": results[4]
         }
 
 data_manager = AsyncDataManager()
 
-def render_ai_insights(fleet, financial, role):
+data_manager = AsyncDataManager()
+
+from back.src.n_logic import generate_insights, get_notification_id
+
+def render_ai_insights(fleet, financial, role, settings, clients_df):
     st.markdown("### 🧠 Intelligent Insights")
     
-    insights = []
+    insights = generate_insights(fleet, financial, role, settings, clients_df)
     
-    # Financial Insight (Admin/Finance/Marcom)
-    if role in [ROLE_ADMIN, ROLE_FINANCE, ROLE_MARCOM]:
-        rev = financial.get('total_revenue', 0)
-        delta_rev = financial.get('delta_revenue', 0.0)
-        if delta_rev < -10:
-            insights.append(f"⚠️ **Revenue Alert**: Revenue dropped by {abs(delta_rev):.1f}% month-over-month. Investigate low order volume.")
-        elif delta_rev > 15:
-            insights.append(f"🚀 **Growth**: Strong revenue growth of {delta_rev:.1f}%! Maintain current acquisition strategy.")
-            
-    # Fleet Insight (Common)
-    maint_ratio = (fleet.get('maintenance', 0) / max(fleet.get('total_vessels', 1), 1)) * 100
-    if maint_ratio > 30:
-        insights.append(f"🛠️ **Fleet Efficiency**: High maintenance ratio ({maint_ratio:.0f}%). Operational capacity is impacted.")
-    elif fleet.get('operating', 0) > (fleet.get('total_vessels', 1) * 0.8):
-        insights.append(f"✅ **High Utilization**: Over 80% of fleet is active. Consider expanding capacity if trend continues.")
-        
-    if not insights:
-        insights.append("💡 System is running optimally. No critical anomalies detected.")
-        
-    for i in insights:
-        st.info(i, icon="🤖")
+    # Initialize state if needed (though notifications page usually does this, home might be first visit)
+    if 'notification_states' not in st.session_state:
+        st.session_state.notification_states = {}
 
-def render_dashboard_home(fleet, orders, financial, role):
+    visible_insights = []
+    for i in insights:
+        # Generate ID consistent with notifications.py
+        category = i.get('category', 'Alert')
+        nid = get_notification_id(category, i['message'], "insight_dynamic")
+        
+        # Check State
+        state = st.session_state.notification_states.get(nid, 'inbox')
+        if state == 'inbox':
+            visible_insights.append(i)
+
+    if not visible_insights:
+        st.info("💡 System is running optimally. No critical anomalies detected.")
+        return
+
+    for i in visible_insights:
+        msg = i['message']
+        level = i['level']
+        
+        if level == 'error':
+            st.error(msg, icon="🚨")
+        elif level == 'warning':
+            st.warning(msg, icon="⚠️")
+        elif level == 'success':
+            st.success(msg, icon="✅")
+        else:
+            st.info(msg, icon="🤖")
+        
+
+def render_dashboard_home(fleet, orders, financial, role, settings, clients):
     st.markdown(f"## 👋 Welcome back, {st.session_state.username}")
     
     # --- AI Insights ---
-    render_ai_insights(fleet, financial, role)
+    render_ai_insights(fleet, financial, role, settings, clients)
     
     st.markdown("---")
     
@@ -158,7 +184,9 @@ def render_dashboard_home(fleet, orders, financial, role):
                  if st.button("👨‍💼 User Management", use_container_width=True): 
                      st.session_state.current_page = "👨‍💼 User Management"
                      st.rerun()
-                 if st.button("🔧 System Config", use_container_width=True): pass
+                 if st.button("🔧 System Config", use_container_width=True): 
+                     st.session_state.current_page = "🔧 System Config"
+                     st.rerun()
                  from page.audit import view_audit_logs
                  if st.button("📋 Audit Logs", use_container_width=True): view_audit_logs()
             elif role == ROLE_OPERATIONS:
@@ -199,4 +227,11 @@ def dashboard_home_page():
     orders = data['orders']
     financial = data['financial']
     
-    render_dashboard_home(fleet, orders, financial, role)
+    render_dashboard_home(
+        data['fleet'], 
+        data['orders'], 
+        data['financial'],
+        role,
+        data['settings'],
+        data['clients']
+    )

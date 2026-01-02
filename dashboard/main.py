@@ -29,6 +29,8 @@ from page.analytics import render_analytics_page
 from page.analytics import render_analytics_page
 from page.environmental import render_heatmap_page
 from page.user_management import render_user_management_page
+from page.system_config import render_system_config_page
+from page.notifications import render_notification_page
 
 # Load Global CSS (Refactored to check availability)
 def load_css():
@@ -73,7 +75,7 @@ def sidebar_nav():
         if role in [ROLE_ADMIN, ROLE_MARCOM, ROLE_FINANCE]:
              menu.extend(["👥 Clients", "📈 Analytics"])
              
-        menu.append("⚙️ Settings")
+        menu.extend(["🔔 Notifications", "⚙️ Settings"])
         
         # Render Buttons
         for item in menu:
@@ -117,6 +119,12 @@ def main_app():
 
     elif page == "👨‍💼 User Management":
         render_user_management_page()
+
+    elif page == "🔧 System Config":
+        render_system_config_page()
+
+    elif page == "🔔 Notifications":
+        render_notification_page()
 
 def main():
     if not st.session_state.logged_in:
