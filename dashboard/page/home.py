@@ -4,9 +4,9 @@ import pandas as pd
 import plotly.express as px
 from concurrent.futures import ThreadPoolExecutor
 
-from constants import ROLE_ADMIN, ROLE_FINANCE, ROLE_MARCOM, ROLE_OPERATIONS
-from back.query.queries import get_fleet_status, get_order_stats, get_financial_metrics, get_revenue_analysis
+from back.src.constants import ROLE_ADMIN, ROLE_FINANCE, ROLE_MARCOM, ROLE_OPERATIONS
 from back.src.utils import render_metric_card, apply_chart_style
+from back.query.queries import get_fleet_status, get_order_stats, get_financial_metrics, get_revenue_analysis
 
 # --- Async Data Loading ---
 class AsyncDataManager:

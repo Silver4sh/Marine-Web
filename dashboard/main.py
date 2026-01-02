@@ -19,6 +19,7 @@ from page.auth import render_login_page
 from back.src.map import page_map_vessel
 from back.src.graph_histories import page_history_graph
 from back.src.constants import ROLE_ADMIN, ROLE_OPERATIONS, ROLE_MARCOM, ROLE_FINANCE
+from back.src.utils import apply_chart_style
 
 # Import New Page Modules
 from page.home import dashboard_home_page

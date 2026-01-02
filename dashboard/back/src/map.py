@@ -1,5 +1,6 @@
 import folium
 import pandas as pd
+import time
 import streamlit as st
 from folium.plugins import MarkerCluster, MiniMap, Fullscreen
 from streamlit_folium import st_folium
@@ -10,7 +11,7 @@ from back.query.queries import get_vessel_position, get_financial_metrics, get_o
 
 REFRESH_INTERVAL = 600
 
-@st.cache_data(ttl=REFRESH_INTERVAL)
+@st.cache_data(ttl=REFRESH_INTERVAL, show_spinner=False)
 def load_vessel_data():
     df = get_vessel_position()
     return pd.DataFrame() if df.empty else df
@@ -270,8 +271,11 @@ def page_map_vessel():
     inject_custom_css()
     
     map_css = load_css("map_style.css")
+    loader_css = load_css("loader.css")
     if map_css:
         st.markdown(f"<style>{map_css}</style>", unsafe_allow_html=True)
+    if loader_css:
+        st.markdown(f"<style>{loader_css}</style>", unsafe_allow_html=True)
 
     st.title("🗺️ Peta Posisi Kapal")
 
@@ -283,8 +287,23 @@ def page_map_vessel():
         if color_mode == "Kecepatan":
             st.info("🟢 ≤5 Knot | 🟠 5-15 Knot | 🔴 >15 Knot")
     
-    with st.spinner("Memuat data..."):
-        df = load_vessel_data()
+    
+    # Custom Loader
+    loader_placeholder = st.empty()
+    loader_html = load_html("loader.html")
+    
+    # Check if data is already cached to avoid showing loader unnecessarily (optional, but good for UX)
+    # For now, we always show it briefly to meet the user's "animation" requirement or just rely on the fetch time.
+    # Since load_vessel_data is cached, we can just display the loader if it takes time.
+    # But st.cache_data blocks. So we render loader -> run cached func -> clear loader.
+    
+    with loader_placeholder.container():
+        st.markdown(loader_html, unsafe_allow_html=True)
+        # Small sleep to ensure animation is visible if data loads too fast (optional, remove for prod performance)
+        # time.sleep(1.5) 
+
+    df = load_vessel_data()
+    loader_placeholder.empty()
 
     if df.empty:
         st.warning("Data database kosong. Menampilkan data dummy untuk visualisasi.")
@@ -484,8 +503,8 @@ def page_map_vessel():
             st.markdown("### 💤 Idle / Inactive")
             with st.container(height=200):
                 cols = st.columns(4)
-                for idx, row in idle_df.iterrows():
-                    with cols[idx % 4]:
+                for i, (_, row) in enumerate(idle_df.iterrows()):
+                    with cols[i % 4]:
                         render_vessel_card(row, get_status_color(row.get('Status')), highlighted=False)
 
 if __name__ == "__main__":
