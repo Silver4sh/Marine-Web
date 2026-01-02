@@ -166,6 +166,45 @@ def get_order_stats():
         return {"total_orders": 0, "completed": 0, "in_completed": 0, "on_progress": 0, "failed": 0}
     return df.astype(int).iloc[0].to_dict()
 
+@st.cache_data(ttl=300)
+def get_revenue_by_service():
+    """
+    Get revenue breakdown by Client Industry (as proxy for Service).
+    """
+    query = """
+    SELECT 
+        c.industry as "Service",
+        SUM(p.total_amount) as "Value"
+    FROM alpha.payments p
+    JOIN alpha.orders o ON p.id_order = o.id
+    JOIN alpha.clients c ON o.id_client = c.code_client
+    WHERE p.status = 'Payed'
+    GROUP BY c.industry
+    ORDER BY "Value" DESC
+    """
+    return run_query(query)
+
+@st.cache_data(ttl=300)
+def get_fleet_daily_activity():
+    """
+    Calculate fleet activity hours per day for the last 7 days.
+    (Mock logic: count 'active' signals per day/vessel).
+    """
+    query = """
+    SELECT 
+        v.code_vessel,
+        TO_CHAR(vp.created_at, 'Dy') as day_name,
+        EXTRACT(ISODOW FROM vp.created_at) as day_num,
+        COUNT(DISTINCT DATE_TRUNC('hour', vp.created_at)) as active_hours
+    FROM alpha.vessel_positions vp
+    JOIN alpha.vessels v ON vp.id_vessel = v.code_vessel
+    WHERE vp.created_at >= NOW() - INTERVAL '7 days'
+      AND vp.speed > 0.5
+    GROUP BY 1, 2, 3
+    ORDER BY day_num
+    """
+    return run_query(query)
+
 # --- Sensor Data ---
 @st.cache_data(ttl=60)
 def get_data_water():
@@ -221,11 +260,13 @@ def get_clients_summary():
         c.industry,
         c.region,
         c.status,
-        COUNT(o.id) as total_orders
+        COUNT(DISTINCT o.id) as total_orders,
+        COALESCE(SUM(p.total_amount), 0) as ltv
     FROM alpha.clients c
     LEFT JOIN alpha.orders o ON c.code_client = o.id_client
+    LEFT JOIN alpha.payments p ON o.id = p.id_order AND p.status = 'Payed'
     GROUP BY c.code_client, c.name, c.industry, c.region, c.status
-    ORDER BY total_orders DESC
+    ORDER BY ltv DESC
     """
     return run_query(query)
 

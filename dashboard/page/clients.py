@@ -16,8 +16,15 @@ def enrich_client_data(df):
     if df.empty: return df
     
     # Deterministic randomness based on client name
-    df['ltv'] = df['name'].apply(lambda x: hash(x) % 5000 * 1000 + 500000) # IDR 500M - 5.5B
-    df['projects_active'] = df['name'].apply(lambda x: hash(x) % 5 + 1)
+    # Deterministic randomness based on client name for active projects (if not available in DB, but DB count is best)
+    # LTV is now real from 'get_clients_summary' query.
+    
+    # Keeping mock projects count if DB returns 0 for "total_orders" to avoid empty charts?
+    # Actually the query joins order, so real count is used.
+    # We might want to keep the churn risk logic.
+    
+    df['projects_active'] = df['total_orders'] # Use real order count as proxy for projects
+    df['ltv'] = df['ltv'].astype(float) # Ensure float
     
     # Categorize Churn Risk based on 'projects_active' instead of score
     # Fewer projects = Higher risk (assumption)

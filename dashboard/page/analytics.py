@@ -109,14 +109,18 @@ def render_analytics_page():
         c_left, c_right = st.columns([1, 1])
         with c_left:
             st.markdown("#### 💰 Revenue Composition")
-            comp_df = pd.DataFrame([
-                {'Service': 'Vessel Charter', 'Value': 65.0},
-                {'Service': 'Logistics', 'Value': 25.0},
-                {'Service': 'Consulting', 'Value': 10.0},
-            ])
-            fig_pie = px.pie(comp_df, values='Value', names='Service', hole=0.6, color_discrete_sequence=px.colors.sequential.Teal)
-            apply_chart_style(fig_pie)
-            st.plotly_chart(fig_pie, use_container_width=True)
+            # --- REAL DATA: Revenue by Service (Industry) ---
+            from back.query.queries import get_revenue_by_service, get_fleet_daily_activity
+            
+            comp_df = get_revenue_by_service()
+            if not comp_df.empty:
+                fig_pie = px.pie(comp_df, values='Value', names='Service', hole=0.6, 
+                                 title="Revenue by Industry",
+                                 color_discrete_sequence=px.colors.sequential.Teal)
+                apply_chart_style(fig_pie)
+                st.plotly_chart(fig_pie, use_container_width=True)
+            else:
+                st.info("No revenue data to display.")
             
         with c_right:
              st.markdown("#### 📉 Monthly Growth Rate (%)")
@@ -148,34 +152,35 @@ def render_analytics_page():
 
     with tab2:
         st.subheader("Fleet Activity Heatmap")
-        st.caption("Operational Hours per Day (Mock Data)")
+        st.caption("Active Operational Hours (Last 7 Days)")
         
-        days = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']
-        vessels = [f"Vessel-{i}" for i in range(1, 11)]
-        # Use lists directly instead of numpy
-        z_data = [
-            [12, 14, 10, 8, 20, 22, 5],
-            [10, 12, 11, 9, 18, 20, 4],
-            [5, 5, 20, 22, 24, 0, 0],
-            [18, 18, 18, 18, 18, 10, 2],
-            [8, 8, 8, 8, 8, 5, 5],
-            [22, 24, 20, 15, 10, 5, 0],
-            [0, 0, 5, 10, 15, 20, 22],
-            [12, 12, 12, 12, 12, 12, 12],
-            [14, 16, 18, 20, 22, 24, 2],
-            [9, 9, 9, 9, 9, 2, 2]
-        ]
+        # --- REAL DATA: Fleet Activity ---
+        activity_df = get_fleet_daily_activity()
         
-        fig = go.Figure(data=go.Heatmap(
-            z=z_data,
-            x=days,
-            y=vessels,
-            colorscale='Viridis',
-            colorbar=dict(title='Hours Active')
-        ))
-        apply_chart_style(fig)
-        fig.update_layout(height=500)
-        st.plotly_chart(fig, use_container_width=True)
+        if not activity_df.empty:
+            # Pivot data for heatmap: Index=Vessel, Columns=DayName, Values=Hours
+            # We want day order Mon->Sun. The query returns day_num.
+            
+            heatmap_data = activity_df.pivot(index="code_vessel", columns="day_name", values="active_hours").fillna(0)
+            
+            # Sort columns loosely by weekday order if possible (naive sort might be alphabetical)
+            # A better way is to rely on simple sorting or just display as is.
+            days_order = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']
+            existing_days = [d for d in days_order if d in heatmap_data.columns]
+            heatmap_data = heatmap_data[existing_days]
+            
+            fig = go.Figure(data=go.Heatmap(
+                z=heatmap_data.values,
+                x=heatmap_data.columns,
+                y=heatmap_data.index,
+                colorscale='Viridis',
+                colorbar=dict(title='Hours Active')
+            ))
+            apply_chart_style(fig)
+            fig.update_layout(height=500)
+            st.plotly_chart(fig, use_container_width=True)
+        else:
+            st.info("No vessel activity data found for the last 7 days.")
         
     with tab3:
         st.subheader("Download Operational Reports")
