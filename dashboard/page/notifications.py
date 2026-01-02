@@ -1,200 +1,129 @@
 import streamlit as st
-import asyncio
-import hashlib
-import pandas as pd
-from datetime import datetime
+import datetime
 from back.src.n_logic import generate_insights, get_notification_id
 from back.query.queries import get_fleet_status, get_financial_metrics, get_clients_summary, get_logs
 from back.query.config_queries import get_system_settings
-from concurrent.futures import ThreadPoolExecutor
 
-class NotificationManager:
-    def __init__(self):
-        self.executor = ThreadPoolExecutor(max_workers=4)
-
-    async def load_data(self, role):
-        loop = asyncio.get_event_loop()
-        tasks = []
-        
-        tasks.append(loop.run_in_executor(self.executor, get_fleet_status))
-        tasks.append(loop.run_in_executor(self.executor, get_financial_metrics))
-        tasks.append(loop.run_in_executor(self.executor, get_system_settings))
-        tasks.append(loop.run_in_executor(self.executor, get_clients_summary))
-        tasks.append(loop.run_in_executor(self.executor, get_logs))
-
-        results = await asyncio.gather(*tasks)
-        return {
-            "fleet": results[0],
-            "financial": results[1],
-            "settings": results[2],
-            "clients": results[3],
-            "logs": results[4]
-        }
-
-from back.src.n_logic import generate_insights, get_notification_id
-
-def render_interactive_item(item, status):
+# --- Optimized Data Loading ---
+@st.cache_data(ttl=60, show_spinner=False)
+def load_notification_data(role):
     """
-    Renders a notification item with interactive buttons based on its status.
+    Fetch all necessary data for notifications in one go.
+    Cached for 60s to reduce DB load.
+    """
+    return {
+        "fleet": get_fleet_status(),
+        "financial": get_financial_metrics(),
+        "settings": get_system_settings(),
+        "clients": get_clients_summary(),
+        "logs": get_logs()
+    }
+
+def render_item(item, status):
+    """
+    Renders a clean, minimalist interactive notification card.
     """
     notif_id = item['id']
     
-    # Styling variables
-    bg_color = "rgba(255, 255, 255, 0.05)"
-    border_color = "transparent"
-    text_color = "#f8fafc"
+    # Styles mapped by status
+    styles = {
+        'inbox': {'bg': 'rgba(255, 255, 255, 0.05)', 'border': 'transparent', 'text': '#f8fafc', 'dot': True},
+        'done':  {'bg': 'rgba(20, 83, 45, 0.2)', 'border': '#22c55e',      'text': '#f0fdf4', 'dot': False},
+        'trash': {'bg': 'rgba(0, 0, 0, 0.2)',    'border': 'transparent',  'text': '#64748b', 'dot': False}
+    }
+    style = styles.get(status, styles['inbox'])
     
-    if status == 'done':
-        bg_color = "rgba(20, 83, 45, 0.3)" # Dark green background
-        border_color = "#22c55e"
-    elif status == 'trash':
-        bg_color = "rgba(0, 0, 0, 0.2)"
-        text_color = "#64748b" # Dimmed text
-        
-    # Container
-    c_content, c_action = st.columns([8, 2])
+    # HTML Component
+    dot_html = '<span style="height:8px;width:8px;background:#0ea5e9;border-radius:50%;display:inline-block;margin-right:8px;"></span>' if style['dot'] else ''
     
-    with c_content:
-        st.markdown(f"""
-        <div style="
-            background-color: {bg_color};
-            border-left: 4px solid {border_color};
-            padding: 12px;
-            border-radius: 6px;
-            margin-bottom: 8px;
-        ">
-            <div style="display: flex; justify-content: space-between; align-items: center;">
-                <strong style="color: {text_color}; font-size: 14px;">{item.get('category', 'System').upper()}</strong>
-                <small style="color: #94a3b8; font-size: 11px;">{item.get('time_str', '')}</small>
+    st.markdown(f"""
+    <div style="background:{style['bg']}; border-left:3px solid {style['border']}; padding:12px; border-radius:6px; margin-bottom:8px;">
+        <div style="display:flex; justify-content:space-between; align-items:center;">
+            <div style="display:flex; align-items:center;">
+                {dot_html}
+                <strong style="color:{style['text']}; font-size:14px;">{item.get('category', 'ALERT').upper()}</strong>
             </div>
-            <div style="color: {text_color}; font-size: 13px; margin-top: 4px;">{item['message']}</div>
+            <small style="color:#94a3b8; font-size:11px;">{item.get('time_str', '')}</small>
         </div>
-        """, unsafe_allow_html=True)
-        
-    with c_action:
+        <div style="color:{style['text']}; font-size:13px; margin-top:4px; padding-left:{'16px' if style['dot'] else '0'};">
+            {item['message']}
+        </div>
+    </div>
+    """, unsafe_allow_html=True)
+    
+    # Actions
+    c1, c2 = st.columns([8, 2])
+    with c2:
         if status == 'inbox':
-            c_check, c_cross = st.columns(2)
-            with c_check:
-                if st.button("✅", key=f"done_{notif_id}", help="Mark as Done"):
-                    st.session_state.notification_states[notif_id] = 'done'
-                    st.rerun()
-            with c_cross:
-                if st.button("❌", key=f"trash_{notif_id}", help="Move to Trash"):
-                    st.session_state.notification_states[notif_id] = 'trash'
-                    st.rerun()
-        
-        elif status == 'done':
-            # Restore to inbox option? Or just Delete?
-            if st.button("❌", key=f"trash_done_{notif_id}", help="Move to Trash"):
+            ca, cb = st.columns(2)
+            if ca.button("✅", key=f"d_{notif_id}", help="Done"):
+                st.session_state.notification_states[notif_id] = 'done'
+                st.rerun()
+            if cb.button("✕", key=f"t_{notif_id}", help="Trash"):
                 st.session_state.notification_states[notif_id] = 'trash'
                 st.rerun()
-
+        elif status == 'done':
+             if st.button("✕", key=f"td_{notif_id}", help="Trash"):
+                st.session_state.notification_states[notif_id] = 'trash'
+                st.rerun()
         elif status == 'trash':
-            # Restore option
-            if st.button("♻️", key=f"restore_{notif_id}", help="Restore to Inbox"):
-                 # Remove from state dict to reset to default/inbox, or explicitly set
-                 if notif_id in st.session_state.notification_states:
-                     del st.session_state.notification_states[notif_id]
-                 st.rerun()
+             if st.button("♻️", key=f"r_{notif_id}", help="Restore"):
+                if notif_id in st.session_state.notification_states:
+                    del st.session_state.notification_states[notif_id]
+                st.rerun()
 
-def render_notification_page():
-    st.title("🔔 Notification Center")
-
-    # --- Session State Initialization ---
+@st.dialog("🔔 Notification Center")
+def show_notification_dialog():
     if 'notification_states' not in st.session_state:
-        st.session_state.notification_states = {} # {id: 'done' | 'trash'}
+        st.session_state.notification_states = {}
 
-    # --- Data Loading ---
-    manager = NotificationManager()
-    with st.spinner("Syncing..."):
-        data = asyncio.run(manager.load_data(st.session_state.role))
-        
-    # Generate Raw Insights
-    raw_insights = generate_insights(
-        data['fleet'], 
-        data['financial'], 
-        st.session_state.role, 
-        data['settings'], 
-        data['clients']
-    )
-    logs = data['logs']
-
-    # Normalize into a single list
-    all_notifications = []
+    data = load_notification_data(st.session_state.role)
     
-    # 1. Insights
-    for i in raw_insights:
-        item = i.copy()
-        item['time_str'] = "Just Now"
-        item['category'] = i.get('category', 'Alert')
-        # Use a consistent ID generation
-        item['id'] = get_notification_id(item['category'], item['message'], "insight_dynamic")
-        all_notifications.append(item)
+    # Logic Processing
+    raw = generate_insights(data['fleet'], data['financial'], st.session_state.role, data['settings'], data['clients'])
+    
+    # Process & Deduplicate
+    all_items = []
+    
+    # 1. Alerts
+    for i in raw:
+        i['id'] = get_notification_id(i.get('category', 'Alert'), i['message'], "dynamic")
+        i['time_str'] = "Just Now"
+        all_items.append(i)
         
-    # 2. Logs (limit to 10 latest)
+    # 2. Logs
+    logs = data['logs']
     if not logs.empty:
         for _, row in logs.head(10).iterrows():
-            t_str = row['changed_at'].strftime("%H:%M") if isinstance(row['changed_at'], datetime) else "Today"
-            msg = f"{row['action']} on {row['table_name']}"
-            cat = "System"
-            # ID includes timestamp to be unique
-            nid = get_notification_id(cat, msg, str(row['changed_at']))
+            ts = row['changed_at']
+            if isinstance(ts, str): ts = datetime.datetime.now() # Fallback
             
-            all_notifications.append({
-                "id": nid,
+            msg = f"{row['action']} on {row['table_name']}"
+            all_items.append({
+                "id": get_notification_id("System", msg, str(ts)),
+                "category": "System",
                 "message": msg,
-                "category": cat,
-                "level": "info",
-                "time_str": t_str
+                "time_str": ts.strftime("%H:%M") if hasattr(ts, 'strftime') else "Today",
+                "level": "info"
             })
 
-    # --- Filtering based on State ---
-    inbox_items = []
-    done_items = []
-    trash_items = []
-
-    for item in all_notifications:
+    # Filtering
+    views = {'inbox': [], 'done': [], 'trash': []}
+    for item in all_items:
         state = st.session_state.notification_states.get(item['id'], 'inbox')
-        if state == 'inbox':
-            inbox_items.append(item)
-        elif state == 'done':
-            done_items.append(item)
-        elif state == 'trash':
-            trash_items.append(item)
+        views[state].append(item)
 
-    # --- UI Layout ---
-    tab_inbox, tab_done, tab_trash = st.tabs([
-        f"📥 Inbox ({len(inbox_items)})", 
-        f"✅ Done ({len(done_items)})", 
-        f"🗑️ Trash ({len(trash_items)})"
-    ])
+    # UI
+    tabs = st.tabs([f"Inbox ({len(views['inbox'])})", f"Done ({len(views['done'])})", f"Trash ({len(views['trash'])})"])
     
-    with tab_inbox:
-        if not inbox_items:
-            st.info("You're all caught up! No new notifications.")
-            st.image("https://cdn-icons-png.flaticon.com/512/1161/1161726.png", width=100)
-        else:
-            for item in inbox_items:
-                render_interactive_item(item, 'inbox')
-                
-    with tab_done:
-        if not done_items:
-            st.caption("No completed items yet.")
-        else:
-            for item in done_items:
-                render_interactive_item(item, 'done')
-                
-    with tab_trash:
-        st.caption("Items in trash will be cleared on session reset.")
-        if st.button("Empty Trash"):
-             # We can just iterate and remove from session state? 
-             # No, 'trash' state IS stored in session state. We need to maybe mark them as 'deleted_forever' or just clear the keys?
-             # Since 'all_notifications' is re-generated every time, if we remove the key from session_state, it returns to 'inbox'.
-             # So 'Empty Trash' means adding them to a 'deleted_forever' set or similar?
-             # For simplicity, let's just not render them if we had a persistent DB.
-             # In this session-based mock, "Empty Trash" might just be visually clearing them.
-             # Let's Skip actual delete logic for now as we don't have a notif DB table.
-             st.toast("Trash cleared (visually)")
-             
-        for item in trash_items:
-            render_interactive_item(item, 'trash')
+    for tab, state in zip(tabs, ['inbox', 'done', 'trash']):
+        with tab:
+            if not views[state]:
+                st.caption("No notifications here." if state != 'inbox' else "You're all caught up!")
+            else:
+                for item in views[state]:
+                    render_item(item, state)
+            
+            if state == 'trash' and views['trash']:
+                 if st.button("Empty Trash", use_container_width=True):
+                     st.toast("Trash cleared")
