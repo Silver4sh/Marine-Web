@@ -12,9 +12,9 @@ def render_heatmap_page():
      # Layout Containers
      c_overview = st.container()
      st.divider()
-     c_map = st.container()
-     st.divider()
      c_filter = st.container()
+     st.divider()
+     c_map = st.container()
 
      # --- Filter Logic (Bottom) ---
      filtered_df = df # Default

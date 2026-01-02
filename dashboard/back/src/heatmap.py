@@ -1,7 +1,5 @@
 import streamlit as st
-import pandas as pd
 import folium
-import plotly.express as px
 import plotly.graph_objects as go
 from folium.plugins import HeatMap
 from streamlit_folium import st_folium
@@ -20,9 +18,7 @@ def page_heatmap(df, indikator):
     if indikator not in df.columns:
         st.error(f"❌ Indikator '{indikator}' tidak ditemukan dalam data.")
         return
-
-    # Aggregate data by location (Average over selected time range)
-    # This prevents heatmap intensity from exploding when selecting large date ranges
+        
     df_agg = df.groupby(['latitude', 'longitude'], as_index=False)[indikator].mean()
     
     # Prepare heatmap data
@@ -39,9 +35,11 @@ def page_heatmap(df, indikator):
     # Base Map
     m = folium.Map(
         location=[avg_lat, avg_lon], 
-        zoom_start=13, 
+        zoom_start=5, 
         tiles="CartoDB Dark Matter",
-        control_scale=True
+        control_scale=True,
+        min_zoom=5,
+        max_zoom=15
     )
 
     HeatMap(
@@ -49,7 +47,7 @@ def page_heatmap(df, indikator):
         radius=25, 
         blur=20, 
         max_zoom=1,
-        gradient={0.4: '#1e3a8a', 0.65: '#2dd4bf', 1: '#38bdf8'} # Aurora gradient (Deep Blue -> Teal -> Sky)
+        gradient={0.4: '#1e3a8a', 0.65: '#2dd4bf', 1: '#38bdf8'}
     ).add_to(m)
     
     # Render
@@ -81,7 +79,7 @@ def radar_chart(df):
             'salinitas': {'min': 0, 'max': 40, 'limit': 35},
             'turbidity': {'min': 0, 'max': 60, 'limit': 40},
             'current': {'min': 0, 'max': 3.0, 'limit': 2.0},
-            'oxygen': {'min': 0, 'max': 10, 'limit': 4}, # Oxygen low is bad usually, but simplest viz for now
+            'oxygen': {'min': 0, 'max': 10, 'limit': 4}, 
             'tide': {'min': 0, 'max': 3.0, 'limit': 2.5},
             'density': {'min': 1010, 'max': 1030, 'limit': 1027}
         }
@@ -111,7 +109,6 @@ def radar_chart(df):
             limit_data_norm.append(limit_pct)
             
             # Check Alert (Simple logic: if > limit)
-            # Note: For Oxygen, lower is usually worse, but for this demo we assume "Headroom" logic
             if val > conf['limit'] and m != 'oxygen':
                  alerts.append(f"{m.title()} High ({val:.1f})")
         
