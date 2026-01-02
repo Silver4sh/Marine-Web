@@ -155,7 +155,9 @@ def render_dashboard_home(fleet, orders, financial, role):
         # Action Buttons Container
         with st.container():
             if role == ROLE_ADMIN:
-                 if st.button("👨‍💼 User Management", use_container_width=True): pass
+                 if st.button("👨‍💼 User Management", use_container_width=True): 
+                     st.session_state.current_page = "👨‍💼 User Management"
+                     st.rerun()
                  if st.button("🔧 System Config", use_container_width=True): pass
                  from page.audit import view_audit_logs
                  if st.button("📋 Audit Logs", use_container_width=True): view_audit_logs()

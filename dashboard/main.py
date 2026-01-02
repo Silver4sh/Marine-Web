@@ -26,7 +26,9 @@ from page.home import dashboard_home_page
 from page.clients import render_clients_page
 from page.settings import render_settings_page
 from page.analytics import render_analytics_page
+from page.analytics import render_analytics_page
 from page.environmental import render_heatmap_page
+from page.user_management import render_user_management_page
 
 # Load Global CSS (Refactored to check availability)
 def load_css():
@@ -112,6 +114,9 @@ def main_app():
 
     elif page == "⚙️ Settings":
         render_settings_page()
+
+    elif page == "👨‍💼 User Management":
+        render_user_management_page()
 
 def main():
     if not st.session_state.logged_in:
