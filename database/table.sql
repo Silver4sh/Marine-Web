@@ -8,10 +8,10 @@ CREATE SCHEMA rockworks 	AUTHORIZATION postgres;
 CREATE TABLE operational.contacts (
 	id 				serial4 	NOT NULL,
 	code_contact 	varchar(20) NOT NULL,
-	phone 			varchar(20),
-	email 			varchar(20) NOT NULL,
-	mobile 			varchar(20),
-	fax 			varchar(20),
+	phone 			varchar(18),
+	email 			varchar(255) NOT NULL,
+	mobile 			varchar(18),
+	fax 			varchar(18),
 	created_at 		timestamp 	DEFAULT NOW(),
 	updated_at 		timestamp,
 	deleted_at 		timestamp,
@@ -22,8 +22,8 @@ CREATE TABLE operational.contacts (
 CREATE TABLE operational.method_payments (
 	id 					serial4 	NOT NULL,
 	code_methodpay 		varchar(20) NOT NULL,
-	transaction_name 	varchar(20) NOT NULL,
-	bank_name 			varchar(20) NOT NULL,
+	transaction_name 	varchar(100) NOT NULL,
+	bank_name 			varchar(100) NOT NULL,
 	created_at 			timestamp 	DEFAULT NOW(),
 	CONSTRAINT method_payments_pkey PRIMARY KEY (id),
 	CONSTRAINT site_id_payments_key UNIQUE (code_methodpay)
@@ -33,7 +33,7 @@ CREATE TABLE operational.parameters (
 	id 				serial4 	NOT NULL,
 	parent_desc 	varchar(20),
 	kode_desc 		varchar(20),
-	description 	varchar(20),
+	description 	text,
 	created_at 		timestamp 	DEFAULT NOW(),
 	updated_at 		timestamp,
 	CONSTRAINT parameter_pkey PRIMARY KEY (id)
@@ -46,7 +46,7 @@ CREATE TABLE operational.sites (
 	location	 	text 					NOT NULL,
 	city 			varchar(20) 			NOT NULL,
 	state			varchar(20) 			NOT NULL,
-	zip 			varchar(20),
+	zip 			varchar(10),
 	country 		varchar(20) 			NOT NULL,
 	port 			varchar(20) 			NOT NULL,
 	latitude 		double precision 		NOT NULL,
@@ -94,7 +94,7 @@ CREATE TABLE operational.buoy_mtc_histories (
 	id_buoy			varchar(20)	NOT NULL,
 	start_date		timestamp	NOT NULL,
 	end_date		timestamp	NOT NULL,
-	note			varchar(20),
+	note			text,
 	created_at		timestamp	NOT NULL,
 	updated_at		timestamp,
 	deleted_at		timestamp,
@@ -106,7 +106,7 @@ CREATE TABLE operational.users (
 	id 			serial4 	NOT NULL,
 	id_contact 	varchar(20) NOT NULL,
 	code_user 	varchar(20) NOT NULL,
-	name		varchar(20)	NOT NULL,
+	name		varchar(100)	NOT NULL,
 	citizen 	varchar(20) NOT NULL,
 	role 		varchar(20) NOT NULL,
 	status		varchar(20)	NOT NULL, -- Active, Inactive
@@ -122,7 +122,7 @@ CREATE TABLE operational.users (
 CREATE TABLE operational.clients (
 	id 			serial4				NOT NULL,
 	code_client varchar(20) 		NOT NULL,
-	name 		varchar(20) 		NOT NULL,
+	name 		varchar(100) 		NOT NULL,
 	industry 	varchar(20) 		NOT NULL,
 	region 		varchar(20) 		NOT NULL,
 	deposit 	numeric(12,2) 		NOT NULL,
@@ -140,7 +140,7 @@ CREATE TABLE operational.partners (
 	id 				serial4 	NOT NULL,
 	id_contact 		varchar(20) NOT NULL,
 	code_partner	varchar(20),
-	name		 	varchar(20) NOT NULL,
+	name		 	varchar(100) NOT NULL,
 	industry 		varchar(20),
 	status			varchar(20) NOT NULL, -- Active, Inactive
 	created_at 		timestamp 	DEFAULT NOW(),
@@ -224,7 +224,7 @@ CREATE TABLE operational.vessels (
 	id_partner 			varchar(20) NOT NULL,
 	code_vessel 		varchar(20) NOT NULL,
 	flag				varchar(20) NOT NULL,
-	name				varchar(20) NOT NULL,
+	name				varchar(100) NOT NULL,
 	status 				varchar(20) NOT NULL, --Active Inactive
 	created_at 			timestamp 	DEFAULT NOW(),
 	updated_at 			timestamp,
@@ -245,7 +245,7 @@ CREATE TABLE operational.vessel_details (
 	beam 				int4,
 	draft 				int4,
 	depth_details 		int4,
-	special_features 	varchar(20),
+	special_features 	text,
 	created_at 			timestamp 	DEFAULT NOW(),
 	updated_at 			timestamp,
 	deleted_at 			timestamp,
@@ -312,7 +312,7 @@ CREATE TABLE operational.vessel_positions (
 	latitude		double precision 	NOT NULL,
 	speed 			int4,
 	heading			int4, 
-	note 			varchar(20) 		NOT NULL,
+	note 			text 		NOT NULL,
 	created_at 		timestamp 			DEFAULT NOW(),
 	CONSTRAINT vessel_positions_pkey 				PRIMARY KEY (id),
 	CONSTRAINT vessel_positions_id_vessel_fkey 		FOREIGN KEY (id_vessel) REFERENCES operational.vessels(code_vessel) ON UPDATE CASCADE ON DELETE CASCADE,
@@ -329,8 +329,10 @@ CREATE TABLE audit.audit_logs (
 	new_data	varchar(20),
   	changed_by 	varchar(20),
   	changed_at 	timestamp 		DEFAULT now(),
-	CONSTRAINT audit_logs_pkey PRIMARY KEY (id)
-);
+	CONSTRAINT audit_logs_pkey PRIMARY KEY (id, changed_at)
+) PARTITION BY RANGE (changed_at);
+
+CREATE TABLE audit.audit_logs_default PARTITION OF audit.audit_logs DEFAULT; -- Default partition for unmatched dates
 
 CREATE TABLE operational.user_managements (
 	id			serial4			NOT NULL,
@@ -406,7 +408,7 @@ CREATE TABLE log.vibrocore_log_details (
 	code_lithology		varchar(20)	NOT NULL,
 	sample_depth_start	int4		NOT NULL,
 	sample_depth_end	int4		NOT NULL,
-	description			varchar(20),	
+	description			text,	
 	torvane				int4,			
 	penetrometer		int4,			
 	penetration			int4		NOT NULL,
@@ -449,7 +451,7 @@ CREATE TABLE log.sample_log_details (
 	doc_no				varchar(20)	NOT NULL, 
 	sample_depth_start	int4		NOT NULL,
 	sample_depth_end	int4		NOT NULL,
-	description			varchar(20),	
+	description			text,	
 	torvane				int4,			
 	penetrometer		int4,			
 	penetration			int4		NOT NULL,
@@ -1311,8 +1313,8 @@ CREATE INDEX idx_partner_search 						ON operational.partners 					USING btree (
 CREATE INDEX idx_clients_region_search 					ON operational.clients 						USING btree (region, status);
 CREATE INDEX idx_users_search 							ON operational.users 						USING btree (organs, role);
 CREATE INDEX idx_buoy_sensor_histories_search 			ON operational.buoy_sensor_histories 		USING btree (created_at);
-CREATE INDEX idx_site_search 							ON operational.sites 						USING btree (city, country);
-CREATE INDEX idx_contacts_search 						ON operational.contacts 					USING btree (code_contact);
+
+
 
 -- Audit
 CREATE INDEX idx_audit_logs_search 						ON audit.audit_logs 						USING btree (table_name);
@@ -1422,3 +1424,103 @@ CREATE UNIQUE INDEX rockworks_sys_idx_projecttables_typename_ix_11671 ON rockwor
 CREATE UNIQUE INDEX rockworks_sys_idx_hydrostrattype_name_ix_11471 ON rockworks.hydrostrattype USING btree (name);
 CREATE UNIQUE INDEX rockworks_sys_idx_intervaltype_name_ix_11494 ON rockworks.intervaltype USING btree (name);
 CREATE UNIQUE INDEX rockworks_sys_idx_aquifertype_name_ix_11406 ON rockworks.aquifertype USING btree (name);
+
+-- Optimization Indexes for Foreign Keys (Fast Joins)
+CREATE INDEX idx_buoys_site 					ON operational.buoys (id_site);
+CREATE INDEX idx_clients_contact 				ON operational.clients (id_contact);
+CREATE INDEX idx_partners_contact 				ON operational.partners (id_contact);
+CREATE INDEX idx_vessels_partner 				ON operational.vessels (id_partner);
+CREATE INDEX idx_order_details_order 			ON operational.order_details (id_order);
+CREATE INDEX idx_order_details_vessel 			ON operational.order_details (id_vessel);
+CREATE INDEX idx_vessel_crews_vessel 			ON operational.vessel_crews (id_vessel);
+CREATE INDEX idx_vessel_crews_user 				ON operational.vessel_crews (id_user);
+
+-- Auto-generation Sequences
+CREATE SEQUENCE operational.seq_contact_code;
+CREATE SEQUENCE operational.seq_methodpay_code;
+CREATE SEQUENCE operational.seq_site_code;
+CREATE SEQUENCE operational.seq_buoy_code;
+CREATE SEQUENCE operational.seq_user_code;
+CREATE SEQUENCE operational.seq_client_code;
+CREATE SEQUENCE operational.seq_partner_code;
+CREATE SEQUENCE operational.seq_order_code;
+CREATE SEQUENCE operational.seq_payment_code;
+CREATE SEQUENCE operational.seq_vessel_code;
+CREATE SEQUENCE operational.seq_task_code;
+CREATE SEQUENCE log.seq_term_code;
+CREATE SEQUENCE log.seq_lithology_code;
+CREATE SEQUENCE log.seq_survey_code;
+
+-- Auto-generation Function
+
+
+-- Refined Function to handle specific columns directly
+CREATE OR REPLACE FUNCTION generate_code_auto()
+RETURNS TRIGGER AS $$
+DECLARE
+    next_val BIGINT;
+    code_len INT;
+    prefix TEXT;
+    seq_name TEXT;
+BEGIN
+    -- 1. Identify Prefix & Sequence
+    IF TG_TABLE_NAME = 'contacts' THEN prefix := 'CT'; seq_name := 'operational.seq_contact_code';
+    ELSIF TG_TABLE_NAME = 'method_payments' THEN prefix := 'MP'; seq_name := 'operational.seq_methodpay_code';
+    ELSIF TG_TABLE_NAME = 'sites' THEN prefix := 'ST'; seq_name := 'operational.seq_site_code';
+    ELSIF TG_TABLE_NAME = 'buoys' THEN prefix := 'BY'; seq_name := 'operational.seq_buoy_code';
+    ELSIF TG_TABLE_NAME = 'users' THEN prefix := 'USR'; seq_name := 'operational.seq_user_code';
+    ELSIF TG_TABLE_NAME = 'clients' THEN prefix := 'CL'; seq_name := 'operational.seq_client_code';
+    ELSIF TG_TABLE_NAME = 'partners' THEN prefix := 'PT'; seq_name := 'operational.seq_partner_code';
+    ELSIF TG_TABLE_NAME = 'orders' THEN prefix := 'ORD'; seq_name := 'operational.seq_order_code';
+    ELSIF TG_TABLE_NAME = 'payments' THEN prefix := 'PAY'; seq_name := 'operational.seq_payment_code';
+    ELSIF TG_TABLE_NAME = 'vessels' THEN prefix := 'VSL'; seq_name := 'operational.seq_vessel_code';
+    ELSIF TG_TABLE_NAME = 'order_details' THEN prefix := 'TSK'; seq_name := 'operational.seq_task_code';
+    ELSIF TG_TABLE_NAME = 'term_desc' THEN prefix := 'TRM'; seq_name := 'log.seq_term_code';
+    ELSIF TG_TABLE_NAME = 'soil_desc' THEN prefix := 'SL'; seq_name := 'log.seq_lithology_code';
+    ELSIF TG_TABLE_NAME = 'surveis' THEN prefix := 'SRV'; seq_name := 'log.seq_survey_code';
+    END IF;
+
+    -- 2. fetch next value
+    EXECUTE format('SELECT nextval(''%s'')', seq_name) INTO next_val;
+
+    -- 3. Calculate dynamic padding (at least 3 digits, grow if larger)
+    -- If next_val is 5 -> '005'
+    -- If next_val is 1000 -> '1000' (no overflow crash)
+    code_len := GREATEST(3, length(next_val::text));
+
+    -- 4. Assign to the correct column
+    IF TG_TABLE_NAME = 'contacts' THEN NEW.code_contact := prefix || LPAD(next_val::text, code_len, '0');
+    ELSIF TG_TABLE_NAME = 'method_payments' THEN NEW.code_methodpay := prefix || LPAD(next_val::text, code_len, '0');
+    ELSIF TG_TABLE_NAME = 'sites' THEN NEW.code_site := prefix || LPAD(next_val::text, code_len, '0');
+    ELSIF TG_TABLE_NAME = 'buoys' THEN NEW.code_buoy := prefix || LPAD(next_val::text, code_len, '0');
+    ELSIF TG_TABLE_NAME = 'users' THEN NEW.code_user := prefix || LPAD(next_val::text, code_len, '0');
+    ELSIF TG_TABLE_NAME = 'clients' THEN NEW.code_client := prefix || LPAD(next_val::text, code_len, '0');
+    ELSIF TG_TABLE_NAME = 'partners' THEN NEW.code_partner := prefix || LPAD(next_val::text, code_len, '0');
+    ELSIF TG_TABLE_NAME = 'orders' THEN NEW.code_order := prefix || LPAD(next_val::text, code_len, '0');
+    ELSIF TG_TABLE_NAME = 'payments' THEN NEW.code_payment := prefix || LPAD(next_val::text, code_len, '0');
+    ELSIF TG_TABLE_NAME = 'vessels' THEN NEW.code_vessel := prefix || LPAD(next_val::text, code_len, '0');
+    ELSIF TG_TABLE_NAME = 'order_details' THEN NEW.code_task := prefix || LPAD(next_val::text, code_len, '0');
+    ELSIF TG_TABLE_NAME = 'term_desc' THEN NEW.code_term := prefix || LPAD(next_val::text, code_len, '0');
+    ELSIF TG_TABLE_NAME = 'soil_desc' THEN NEW.code_lithology := prefix || LPAD(next_val::text, code_len, '0');
+    ELSIF TG_TABLE_NAME = 'surveis' THEN NEW.code_survey := prefix || LPAD(next_val::text, code_len, '0');
+    END IF;
+
+    RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+-- Triggers (Execute BEFORE INSERT)
+CREATE TRIGGER trg_generate_code_contacts BEFORE INSERT ON operational.contacts FOR EACH ROW WHEN (NEW.code_contact IS NULL) EXECUTE FUNCTION generate_code_auto();
+CREATE TRIGGER trg_generate_code_methodpay BEFORE INSERT ON operational.method_payments FOR EACH ROW WHEN (NEW.code_methodpay IS NULL) EXECUTE FUNCTION generate_code_auto();
+CREATE TRIGGER trg_generate_code_sites BEFORE INSERT ON operational.sites FOR EACH ROW WHEN (NEW.code_site IS NULL) EXECUTE FUNCTION generate_code_auto();
+CREATE TRIGGER trg_generate_code_buoys BEFORE INSERT ON operational.buoys FOR EACH ROW WHEN (NEW.code_buoy IS NULL) EXECUTE FUNCTION generate_code_auto();
+CREATE TRIGGER trg_generate_code_users BEFORE INSERT ON operational.users FOR EACH ROW WHEN (NEW.code_user IS NULL) EXECUTE FUNCTION generate_code_auto();
+CREATE TRIGGER trg_generate_code_clients BEFORE INSERT ON operational.clients FOR EACH ROW WHEN (NEW.code_client IS NULL) EXECUTE FUNCTION generate_code_auto();
+CREATE TRIGGER trg_generate_code_partners BEFORE INSERT ON operational.partners FOR EACH ROW WHEN (NEW.code_partner IS NULL) EXECUTE FUNCTION generate_code_auto();
+CREATE TRIGGER trg_generate_code_orders BEFORE INSERT ON operational.orders FOR EACH ROW WHEN (NEW.code_order IS NULL) EXECUTE FUNCTION generate_code_auto();
+CREATE TRIGGER trg_generate_code_payments BEFORE INSERT ON operational.payments FOR EACH ROW WHEN (NEW.code_payment IS NULL) EXECUTE FUNCTION generate_code_auto();
+CREATE TRIGGER trg_generate_code_vessels BEFORE INSERT ON operational.vessels FOR EACH ROW WHEN (NEW.code_vessel IS NULL) EXECUTE FUNCTION generate_code_auto();
+CREATE TRIGGER trg_generate_code_order_details BEFORE INSERT ON operational.order_details FOR EACH ROW WHEN (NEW.code_task IS NULL) EXECUTE FUNCTION generate_code_auto();
+CREATE TRIGGER trg_generate_code_term BEFORE INSERT ON log.term_desc FOR EACH ROW WHEN (NEW.code_term IS NULL) EXECUTE FUNCTION generate_code_auto();
+CREATE TRIGGER trg_generate_code_soil BEFORE INSERT ON log.soil_desc FOR EACH ROW WHEN (NEW.code_lithology IS NULL) EXECUTE FUNCTION generate_code_auto();
+CREATE TRIGGER trg_generate_code_survey BEFORE INSERT ON log.surveis FOR EACH ROW WHEN (NEW.code_survey IS NULL) EXECUTE FUNCTION generate_code_auto();
