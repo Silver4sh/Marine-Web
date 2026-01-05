@@ -53,51 +53,15 @@ data_manager = AsyncDataManager()
 
 data_manager = AsyncDataManager()
 
-from back.src.n_logic import generate_insights, get_notification_id
 
-def render_ai_insights(fleet, financial, role, settings, clients_df):
-    st.markdown("### 🧠 Intelligent Insights")
-    
-    insights = generate_insights(fleet, financial, role, settings, clients_df)
-    
-    # Initialize state if needed (though notifications page usually does this, home might be first visit)
-    if 'notification_states' not in st.session_state:
-        st.session_state.notification_states = {}
 
-    visible_insights = []
-    for i in insights:
-        # Generate ID consistent with notifications.py
-        category = i.get('category', 'Alert')
-        nid = get_notification_id(category, i['message'], "insight_dynamic")
-        
-        # Check State
-        state = st.session_state.notification_states.get(nid, 'inbox')
-        if state == 'inbox':
-            visible_insights.append(i)
 
-    if not visible_insights:
-        st.info("💡 System is running optimally. No critical anomalies detected.")
-        return
-
-    for i in visible_insights:
-        msg = i['message']
-        level = i['level']
-        
-        if level == 'error':
-            st.error(msg, icon="🚨")
-        elif level == 'warning':
-            st.warning(msg, icon="⚠️")
-        elif level == 'success':
-            st.success(msg, icon="✅")
-        else:
-            st.info(msg, icon="🤖")
         
 
 def render_dashboard_home(fleet, orders, financial, role, settings, clients):
     st.markdown(f"## 👋 Welcome back, {st.session_state.username}")
     
-    # --- AI Insights ---
-    render_ai_insights(fleet, financial, role, settings, clients)
+
     
     st.markdown("---")
     
