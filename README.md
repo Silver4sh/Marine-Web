@@ -1,79 +1,31 @@
 # 🚢 Marine Analytics Dashboard
 
-Sistem dashboard analitik maritim berbasis **Streamlit** untuk pemantauan armada kapal, kualitas air, dan logistik operasional secara *real-time*.
+![Python](https://img.shields.io/badge/Python-3.9%2B-blue?style=flat-square&logo=python)
+![Streamlit](https://img.shields.io/badge/Streamlit-App-FF4B4B?style=flat-square&logo=streamlit)
+![PostgreSQL](https://img.shields.io/badge/PostgreSQL-Database-336791?style=flat-square&logo=postgresql)
 
+**Real-time maritime intelligence** platform combining fleet tracking, environmental monitoring, and AI-driven forecasting in a unified Glassmorphism interface.
 
-### 4. 📈 Riwayat Sensor (Sensor History)
-- **Grafik Telemetri**: Visualisasi data sensor dari *buoy* dalam rentang waktu tertentu.
+## � Key Features
 
-### 5. 👥 Manajemen Klien & Laporan
-- **Analisis Klien**: Ringkasan portfolio klien berdasarkan wilayah.
-- **Audit Log**: Mencatat setiap perubahan data sensitif di sistem.
+| Module | Functionality |
+| :--- | :--- |
+| **Fleet Ops** | Live Vessel Map (Timelapse), Telemetry Charts, Progress Tables |
+| **Analytics** | AI Revenue Forecasting, Client Performance, Sensor History |
+| **Admin** | RBAC, Audit Logs, Multi-tenant Client Management |
 
-### 6. ✨ Fitur Baru (New)
-- **Timelapse Peta Kapal**: Animasi pergerakan kapal historis dengan tombol Playback.
-- **AI Forecasting**: Prediksi pendapatan otomatis menggunakan model Machine Learning adaptif.
-- **Premium Design**: Antarmuka 'Glassmorphism' yang konsisten di seluruh aplikasi.
-
-## 🛠️ Teknologi yang Digunakan
-
-- **Frontend/Backend**: [Streamlit](https://streamlit.io/) (Python)
-- **Visualisasi**: Plotly, Altair, Folium (Leaflet)
-- **Database**: PostgreSQL
-- **Optimasi**: `asyncio` untuk *data fetching* paralel & Caching agresif.
-
-## 📂 Struktur Proyek
-
-Proyek ini telah direfaktor menjadi struktur modular agar mudah dikembangkan:
+## 🚀 Quick Start
 
 ```bash
-Marine-Web/
-├── dashboard/
-│   ├── main.py              # Router Utama Aplikasi
-│   ├── constants.py         # Definisi Role User
-│   ├── page/                # Modul Halaman (UI)
-│   │   ├── home.py          # Halaman Dashboard Utama
-│   │   ├── analytics.py     # Halaman Analitik Performa
-│   │   ├── environmental.py # Halaman Heatmap
-│   │   ├── clients.py       # Halaman Daftar Klien
-│   │   ├── settings.py      # Pengaturan Akun
-│   │   ├── auth.py          # Halaman Login
-│   │   └── audit.py         # Modal Audit Log
-│   └── back/                # Logika Backend
-│       ├── src/
-│       │   ├── map.py       # Logika Peta Kapal
-│       │   ├── utils.py     # Fungsi Utilitas Umum
-│       │   └── ...
-│       └── query/           # Koneksi & Query Database
-└── database/                # Skema Database
+# 1. Install Dependencies
+pip install -r requirements/requirements.txt
+
+# 2. Configure .env (in dashboard/)
+# DB_USER=... DB_PASS=... DB_NAME=...
+
+# 3. Launch App
+streamlit run dashboard/main.py
 ```
 
-## 🚀 Cara Menjalankan
-
-1.  **Pastikan Python terinstall** (Disarankan Python 3.9+).
-2.  **Install dependencies**:
-    ```bash
-    pip install -r requirements/requirements.txt
-    ```
-3.  **Setup Environment Variables** (Buat file `.env` di folder `dashboard/`):
-    ```env
-    DB_USER=username_db
-    DB_PASS=password_db
-    DB_HOST=localhost
-    DB_PORT=5432
-    DB_NAME=nama_db
-    ```
-4.  **Jalankan Aplikasi**:
-    ```bash
-    streamlit run dashboard/main.py
-    ```
-
-## 🔐 Akun Demo
-
-Sistem menggunakan *Role-Based Access Control* (RBAC). Pastikan login menggunakan akun yang terdaftar di database:
-- **Admin**: Akses penuh.
-- **Operations**: Fokus pada Peta & Sensor.
-- **Marcom/Finance**: Fokus pada Analitik Pendapatan & Klien.
-
 ---
-*Dikembangkan oleh Tim Marine Analytics.*
+*Next-Gen Maritime Analytics • Built by Operations Team*
