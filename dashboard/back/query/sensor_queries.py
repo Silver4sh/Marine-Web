@@ -18,9 +18,9 @@ def get_data_water():
         bsh.tide as tide,
         bsh.density as density,
         bsh.created_at as latest_timestamp
-    FROM alpha.buoy_sensor_histories bsh
-    JOIN alpha.buoys b ON b.code_buoy = bsh.id_buoy
-    JOIN alpha.sites s ON s.code_site = b.id_site
+    FROM operational.buoy_sensor_histories bsh
+    JOIN operational.buoys b ON b.code_buoy = bsh.id_buoy
+    JOIN operational.sites s ON s.code_site = b.id_site
     ORDER BY bsh.created_at DESC
     """
     return run_query(query)
@@ -41,7 +41,7 @@ def get_sensor_trends(buoy_id=None):
         turbidity,
         current,
         oxygen
-    FROM alpha.buoy_sensor_histories bsh
+    FROM operational.buoy_sensor_histories bsh
     {where_clause}
     ORDER BY created_at ASC
     """
@@ -50,7 +50,7 @@ def get_sensor_trends(buoy_id=None):
 @st.cache_data(ttl=3600)
 def get_buoy_list():
     """Get unique list of buoys"""
-    query = "SELECT DISTINCT id_buoy FROM alpha.buoy_sensor_histories ORDER BY id_buoy"
+    query = "SELECT DISTINCT id_buoy FROM operational.buoy_sensor_histories ORDER BY id_buoy"
     return run_query(query)
 
 @st.cache_data(ttl=600)
@@ -58,7 +58,7 @@ def get_buoy_date_range(buoy_id):
     """Get efficient min/max dates for slider"""
     query = """
     SELECT MIN(created_at) as min_date, MAX(created_at) as max_date
-    FROM alpha.buoy_sensor_histories
+    FROM operational.buoy_sensor_histories
     WHERE id_buoy = :buoy_id
     """
     return run_query(query, params={"buoy_id": buoy_id})
@@ -80,9 +80,9 @@ def get_buoy_history(buoy_id, start_date, end_date):
         s.latitude,
         s.longitude,
         bsh.created_at
-    FROM alpha.buoy_sensor_histories bsh
-    JOIN alpha.buoys b ON bsh.id_buoy = b.code_buoy 
-    JOIN alpha.sites s ON b.id_site = s.code_site 
+    FROM operational.buoy_sensor_histories bsh
+    JOIN operational.buoys b ON bsh.id_buoy = b.code_buoy 
+    JOIN operational.sites s ON b.id_site = s.code_site 
     WHERE bsh.id_buoy = :buoy_id
       AND bsh.created_at >= :start_date
       AND bsh.created_at <= :end_date
@@ -99,7 +99,7 @@ def get_global_date_range():
     """Get min/max dates for all buoys"""
     query = """
     SELECT MIN(created_at) as min_date, MAX(created_at) as max_date
-    FROM alpha.buoy_sensor_histories
+    FROM operational.buoy_sensor_histories
     """
     return run_query(query)
 
@@ -117,7 +117,7 @@ def get_aggregated_buoy_history(start_date, end_date):
         AVG(oxygen) as oxygen,
         AVG(tide) as tide,
         AVG(density) as density
-    FROM alpha.buoy_sensor_histories
+    FROM operational.buoy_sensor_histories
     WHERE created_at >= :start_date AND created_at <= :end_date
     GROUP BY 1
     ORDER BY 1 ASC

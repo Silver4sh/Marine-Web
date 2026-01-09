@@ -17,8 +17,8 @@ def check_login_working(username: str, password: str):
                 u.role,
                 u.status as user_status,
                 um.status as account_status
-            FROM alpha.user_managements um
-            JOIN alpha.users u ON um.id_user = u.code_user
+            FROM operational.user_managements um
+            JOIN operational.users u ON um.id_user = u.code_user
             WHERE um.id_user = :username
                 AND trim(um.password) = trim(:password)
                 AND um.status = 'Active'

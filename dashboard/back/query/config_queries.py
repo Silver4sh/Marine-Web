@@ -15,7 +15,7 @@ def init_settings_table():
             # Create table if not exists
             # Using a simple Key-Value pair structure
             conn.execute(text("""
-                CREATE TABLE IF NOT EXISTS alpha.system_settings (
+                CREATE TABLE IF NOT EXISTS operational.system_settings (
                     key VARCHAR(50) PRIMARY KEY,
                     value TEXT,
                     description TEXT,
@@ -24,7 +24,7 @@ def init_settings_table():
             """))
             
             # Seed default values if empty
-            res = conn.execute(text("SELECT count(*) FROM alpha.system_settings")).scalar()
+            res = conn.execute(text("SELECT count(*) FROM operational.system_settings")).scalar()
             if res == 0:
                 defaults = [
                     ("app_name", "MarineOS Dashboard", "Application Name displayed in header"),
@@ -35,7 +35,7 @@ def init_settings_table():
                 ]
                 for k, v, d in defaults:
                     conn.execute(
-                        text("INSERT INTO alpha.system_settings (key, value, description) VALUES (:k, :v, :d)"),
+                        text("INSERT INTO operational.system_settings (key, value, description) VALUES (:k, :v, :d)"),
                         {"k": k, "v": v, "d": d}
                     )
     except Exception as e:
@@ -46,7 +46,7 @@ def init_settings_table():
 def get_system_settings():
     """Fetch all settings as a dictionary."""
     init_settings_table() # Ensure table exists first
-    query = "SELECT key, value, description FROM alpha.system_settings"
+    query = "SELECT key, value, description FROM operational.system_settings"
     df = run_query(query)
     if df.empty: return {}
     return pd.Series(df.value.values, index=df.key).to_dict()
@@ -59,7 +59,7 @@ def update_system_setting(key, value):
     
     try:
         with engine.begin() as conn:
-            query = text("UPDATE alpha.system_settings SET value = :value, updated_at = NOW() WHERE key = :key")
+            query = text("UPDATE operational.system_settings SET value = :value, updated_at = NOW() WHERE key = :key")
             conn.execute(query, {"value": str(value), "key": key})
             st.cache_data.clear() # Clear cache globally if possible, or at least for this func
             return True

@@ -8,7 +8,7 @@ def update_last_login_optimized(username, password):
     try:
         with conn.begin():
             update_query = text("""
-                UPDATE alpha.user_managements
+                UPDATE operational.user_managements
                 SET last_login = CURRENT_TIMESTAMP
                 WHERE id_user = :user_id AND password = :pwd
             """)
@@ -39,8 +39,8 @@ def update_password(username, old_pass, new_pass):
                 u.role,
                 u.status as user_status,
                 um.status as account_status
-            FROM alpha.user_managements um
-            JOIN alpha.users u ON um.id_user = u.code_user
+            FROM operational.user_managements um
+            JOIN operational.users u ON um.id_user = u.code_user
             WHERE um.id_user = :username
                 AND um.password = :password
                 AND um.status = 'Active'
@@ -57,7 +57,7 @@ def update_password(username, old_pass, new_pass):
             return False, "Username atau password lama salah"
         
         update_query = text("""
-            UPDATE alpha.user_managements
+            UPDATE operational.user_managements
             SET password = :new_password,
             updated_at = CURRENT_TIMESTAMP
             WHERE id_user = :user_id 

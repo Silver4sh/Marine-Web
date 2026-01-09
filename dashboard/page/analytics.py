@@ -1,23 +1,22 @@
 import streamlit as st
 import pandas as pd
-import numpy as np
 import plotly.express as px
 import plotly.graph_objects as go
-from back.query.queries import get_financial_metrics, get_revenue_analysis, get_order_stats
+from back.query.queries import (
+    get_financial_metrics, get_revenue_analysis, get_order_stats,
+    get_vessel_utilization_stats, get_revenue_cycle_metrics,
+    get_environmental_anomalies, get_logistics_performance
+)
 from back.src.forecast import calculate_advanced_forecast
 from back.src.utils import apply_chart_style
-
-
 
 def render_analytics_page():
     st.markdown("## 📈 Advanced Analytics Hub")
     
-    # --- Load Data ---
     fin = get_financial_metrics()
     rev_df = get_revenue_analysis() 
     orders = get_order_stats()
     
-    # --- Top KPIs (Explicit Casting) ---
     c1, c2, c3, c4 = st.columns(4)
     
     total_revenue = float(fin.get('total_revenue', 0))
@@ -38,7 +37,7 @@ def render_analytics_page():
 
     st.markdown("<br>", unsafe_allow_html=True)
     
-    tab1, tab2, tab3 = st.tabs(["📊 Financial Performance", "🚢 Fleet Utilization", "📑 Reports"])
+    tab1, tab2, tab3, tab4 = st.tabs(["📊 Financial Performance", "🚢 Fleet Intelligence", "🌱 Environmental", "📑 Reports"])
     
     with tab1:
         st.subheader("Revenue Forecast")
@@ -47,19 +46,15 @@ def render_analytics_page():
             rev_df['type'] = 'Actual'
             rev_df['lower_bound'] = rev_df['revenue']
             rev_df['upper_bound'] = rev_df['revenue']
-            # Ensure native types in DF
             rev_df['revenue'] = rev_df['revenue'].astype(float)
             
-            # Use new advanced forecast
             forecast_df = calculate_advanced_forecast(rev_df, months=6)
             
             if not forecast_df.empty:
                 combined_df = pd.concat([rev_df, forecast_df])
                 
-                # Main Line Chart
                 fig = go.Figure()
                 
-                # Actual Data
                 actual = combined_df[combined_df['type'] == 'Actual']
                 fig.add_trace(go.Scatter(
                     x=actual['month'], y=actual['revenue'],
@@ -67,7 +62,6 @@ def render_analytics_page():
                     line=dict(color='#38bdf8', width=3)
                 ))
                 
-                # Forecast Data
                 forecast = combined_df[combined_df['type'] == 'Forecast']
                 fig.add_trace(go.Scatter(
                     x=forecast['month'], y=forecast['revenue'],
@@ -75,8 +69,6 @@ def render_analytics_page():
                     line=dict(color='#a855f7', width=3, dash='dash')
                 ))
                 
-                # Confidence Interval (Shaded Area)
-                # Concatenate X coordinates forward and backward for the closed shape
                 x_conf = pd.concat([forecast['month'], forecast['month'][::-1]])
                 y_conf = pd.concat([forecast['upper_bound'], forecast['lower_bound'][::-1]])
                 
@@ -90,11 +82,9 @@ def render_analytics_page():
                     showlegend=True
                 ))
 
-                # Standard Style
                 apply_chart_style(fig)
                 fig.update_layout(yaxis_title="Revenue (IDR)", xaxis_title="Month")
                 
-                # Vertical line for "Today"
                 last_actual_date = actual['month'].iloc[-1].timestamp() * 1000
                 fig.add_vline(x=last_actual_date, line_dash="dot", line_color="white", annotation_text="Today")
                 
@@ -106,10 +96,11 @@ def render_analytics_page():
         else:
             st.info("Insufficient data for forecasting.")
 
-        c_left, c_right = st.columns([1, 1])
-        with c_left:
+        st.markdown("---")
+        
+        col_rev1, col_rev2 = st.columns(2)
+        with col_rev1:
             st.markdown("#### 💰 Revenue Composition")
-            # --- REAL DATA: Revenue by Service (Industry) ---
             from back.query.queries import get_revenue_by_service, get_fleet_daily_activity
             
             comp_df = get_revenue_by_service()
@@ -121,50 +112,32 @@ def render_analytics_page():
                 st.plotly_chart(fig_pie, use_container_width=True)
             else:
                 st.info("No revenue data to display.")
-            
-        with c_right:
-             st.markdown("#### 📉 Monthly Growth Rate (%)")
-             if not rev_df.empty and len(rev_df) > 1:
-                # Calculate percentage growth
-                rev_df = rev_df.sort_values('month', ascending=True)
-                rev_df['growth'] = rev_df['revenue'].pct_change() * 100.0
                 
-                # Drop the first NaN
-                chart_data = rev_df.dropna(subset=['growth'])
-                
-                fig_line = go.Figure()
-                fig_line.add_trace(go.Scatter(
-                    x=chart_data['month'],
-                    y=chart_data['growth'],
-                    mode='lines+markers',
-                    name='Growth Rate',
-                    line=dict(color='#38bdf8', width=3),
-                    marker=dict(size=8, color='#38bdf8')
+        with col_rev2:
+            st.markdown("#### ⏳ Order-to-Cash Cycle")
+            cycle_df = get_revenue_cycle_metrics()
+            if not cycle_df.empty:
+                fig_cycle = go.Figure()
+                fig_cycle.add_trace(go.Bar(
+                    x=cycle_df['month'], y=cycle_df['avg_days_to_cash'],
+                    name='Avg Days to Cash', marker_color='#f59e0b'
                 ))
-                
-                # Add a zero line reference
-                fig_line.add_hline(y=0, line_dash="dot", line_color="white", opacity=0.5)
-
-                apply_chart_style(fig_line)
-                fig_line.update_layout(yaxis_title="Growth (%)")
-                st.plotly_chart(fig_line, use_container_width=True)
-
+                fig_cycle.update_layout(yaxis_title="Days")
+                apply_chart_style(fig_cycle)
+                st.plotly_chart(fig_cycle, use_container_width=True)
+                st.caption("Average time from Order Date to Payment Date. Lower is better.")
+            else:
+                st.info("No cycle data available.")
 
     with tab2:
         st.subheader("Fleet Activity Heatmap")
         st.caption("Active Operational Hours (Last 7 Days)")
         
-        # --- REAL DATA: Fleet Activity ---
         activity_df = get_fleet_daily_activity()
         
         if not activity_df.empty:
-            # Pivot data for heatmap: Index=Vessel, Columns=DayName, Values=Hours
-            # We want day order Mon->Sun. The query returns day_num.
-            
             heatmap_data = activity_df.pivot(index="code_vessel", columns="day_name", values="active_hours").fillna(0)
             
-            # Sort columns loosely by weekday order if possible (naive sort might be alphabetical)
-            # A better way is to rely on simple sorting or just display as is.
             days_order = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']
             existing_days = [d for d in days_order if d in heatmap_data.columns]
             heatmap_data = heatmap_data[existing_days]
@@ -177,12 +150,79 @@ def render_analytics_page():
                 colorbar=dict(title='Hours Active')
             ))
             apply_chart_style(fig)
-            fig.update_layout(height=500)
+            fig.update_layout(height=400)
             st.plotly_chart(fig, use_container_width=True)
         else:
             st.info("No vessel activity data found for the last 7 days.")
+            
+        st.markdown("---")
         
+        c_fleet1, c_fleet2 = st.columns(2)
+        
+        with c_fleet1:
+            st.subheader("🚜 Asset Utilization")
+            util_df = get_vessel_utilization_stats()
+            if not util_df.empty:
+                avg_util = util_df['utilization_rate'].mean()
+                fig_util = go.Figure(go.Indicator(
+                    mode = "gauge+number",
+                    value = avg_util,
+                    title = {'text': "Avg Fleet Utilization"},
+                    gauge = {'axis': {'range': [0, 100]},
+                             'bar': {'color': "#10b981"},
+                             'steps' : [
+                                 {'range': [0, 50], 'color': "#374151"},
+                                 {'range': [50, 80], 'color': "#4b5563"}],
+                             'threshold' : {'line': {'color': "red", 'width': 4}, 'thickness': 0.75, 'value': 90}}
+                ))
+                apply_chart_style(fig_util)
+                fig_util.update_layout(height=300)
+                st.plotly_chart(fig_util, use_container_width=True)
+                
+                with st.expander("Usage Details by Vessel"):
+                    st.dataframe(util_df[['vessel_name', 'total_hours', 'productive_hours', 'utilization_rate']], use_container_width=True)
+            else:
+                st.info("No utilization data available.")
+                
+        with c_fleet2:
+            st.subheader("🚚 Logistics Performance")
+            log_df = get_logistics_performance()
+            if not log_df.empty:
+               try:
+                   st.dataframe(
+                       log_df.style.background_gradient(subset=['avg_delay_hours'], cmap='RdYlGn_r'),
+                       use_container_width=True
+                   )
+               except ImportError:
+                   st.dataframe(log_df, use_container_width=True)
+               except Exception as e:
+                   st.dataframe(log_df, use_container_width=True)
+               
+               st.caption("Negative delay means early delivery.")
+            else:
+                st.info("No delivery data available.")
+
     with tab3:
+        st.subheader("🌊 Environmental Anomalies Detection")
+        st.markdown("**AI-Driven Insight**: Detecting deviations in water quality parameters (Salinity & Turbidity) > 2 Standard Deviations.")
+        
+        anom_df = get_environmental_anomalies()
+        
+        if not anom_df.empty:
+            st.error(f"⚠️ Detected {len(anom_df)} anomalous readings in the last 7 days.")
+            
+            fig_anom = px.scatter(anom_df, x='created_at', y='salinitas', color='sal_z_score',
+                                  size='tur_z_score', hover_data=['id_buoy', 'turbidity'],
+                                  title="Anomaly Severity (Color=Salinity Z, Size=Turbidity Z)",
+                                  color_continuous_scale='Reds')
+            apply_chart_style(fig_anom)
+            st.plotly_chart(fig_anom, use_container_width=True)
+            
+            st.dataframe(anom_df, use_container_width=True)
+        else:
+            st.success("✅ No significant environmental anomalies detected in the last 7 days.")
+
+    with tab4:
         st.subheader("Download Operational Reports")
         
         c1, c2 = st.columns(2)

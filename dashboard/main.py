@@ -26,7 +26,7 @@ from page.home import dashboard_home_page
 from page.clients import render_clients_page
 from page.settings import render_settings_page
 from page.analytics import render_analytics_page
-from page.analytics import render_analytics_page
+
 from page.environmental import render_heatmap_page
 from page.user_management import render_user_management_page
 from page.system_config import render_system_config_page

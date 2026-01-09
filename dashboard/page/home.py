@@ -6,8 +6,6 @@ from concurrent.futures import ThreadPoolExecutor
 
 from back.src.constants import ROLE_ADMIN, ROLE_FINANCE, ROLE_MARCOM, ROLE_OPERATIONS
 from back.src.utils import render_metric_card, apply_chart_style
-from back.src.constants import ROLE_ADMIN, ROLE_FINANCE, ROLE_MARCOM, ROLE_OPERATIONS
-from back.src.utils import render_metric_card, apply_chart_style
 from back.query.queries import get_fleet_status, get_order_stats, get_financial_metrics, get_revenue_analysis, get_clients_summary
 from back.query.config_queries import get_system_settings
 
@@ -51,17 +49,8 @@ class AsyncDataManager:
 
 data_manager = AsyncDataManager()
 
-data_manager = AsyncDataManager()
-
-
-
-
-        
-
 def render_dashboard_home(fleet, orders, financial, role, settings, clients):
     st.markdown(f"## 👋 Welcome back, {st.session_state.username}")
-    
-
     
     st.markdown("---")
     

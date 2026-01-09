@@ -15,8 +15,8 @@ def get_all_users():
         u.status as user_status,
         um.status as account_status,
         um.last_login
-    FROM alpha.users u
-    JOIN alpha.user_managements um ON u.code_user = um.id_user
+    FROM operational.users u
+    JOIN operational.user_managements um ON u.code_user = um.id_user
     ORDER BY u.code_user ASC
     """
     return run_query(query)
@@ -34,21 +34,21 @@ def create_new_user(username, password, role):
     try:
         with engine.begin() as conn:
             # 1. Check if user exists
-            check_q = text("SELECT 1 FROM alpha.users WHERE code_user = :username")
+            check_q = text("SELECT 1 FROM operational.users WHERE code_user = :username")
             res = conn.execute(check_q, {"username": username}).fetchone()
             if res:
                 return False, f"User '{username}' already exists."
 
-            # 2. Insert into alpha.users
+            # 2. Insert into operational.users
             insert_user = text("""
-                INSERT INTO alpha.users (code_user, role, status)
+                INSERT INTO operational.users (code_user, role, status)
                 VALUES (:username, :role, 'Active')
             """)
             conn.execute(insert_user, {"username": username, "role": role})
 
-            # 3. Insert into alpha.user_managements
+            # 3. Insert into operational.user_managements
             insert_auth = text("""
-                INSERT INTO alpha.user_managements (id_user, password, status)
+                INSERT INTO operational.user_managements (id_user, password, status)
                 VALUES (:username, :password, 'Active')
             """)
             conn.execute(insert_auth, {"username": username, "password": password})
@@ -65,10 +65,10 @@ def update_user_status(username, new_status):
     
     try:
         with engine.begin() as conn:
-            q1 = text("UPDATE alpha.users SET status = :status WHERE code_user = :username")
+            q1 = text("UPDATE operational.users SET status = :status WHERE code_user = :username")
             conn.execute(q1, {"status": new_status, "username": username})
             
-            q2 = text("UPDATE alpha.user_managements SET status = :status WHERE id_user = :username")
+            q2 = text("UPDATE operational.user_managements SET status = :status WHERE id_user = :username")
             conn.execute(q2, {"status": new_status, "username": username})
             return True
     except Exception as e:
@@ -82,7 +82,7 @@ def update_user_role(username, new_role):
     
     try:
         with engine.begin() as conn:
-            q = text("UPDATE alpha.users SET role = :role WHERE code_user = :username")
+            q = text("UPDATE operational.users SET role = :role WHERE code_user = :username")
             conn.execute(q, {"role": new_role, "username": username})
             return True
     except Exception as e:
@@ -97,10 +97,10 @@ def delete_user(username):
     
     try:
         with engine.begin() as conn:
-            q1 = text("DELETE FROM alpha.user_managements WHERE id_user = :username")
+            q1 = text("DELETE FROM operational.user_managements WHERE id_user = :username")
             conn.execute(q1, {"username": username})
             
-            q2 = text("DELETE FROM alpha.users WHERE code_user = :username")
+            q2 = text("DELETE FROM operational.users WHERE code_user = :username")
             conn.execute(q2, {"username": username})
             return True
     except Exception as e:
