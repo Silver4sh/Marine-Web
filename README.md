@@ -53,7 +53,7 @@ Marine-Web/
 1.  **Pastikan Python terinstall** (Disarankan Python 3.9+).
 2.  **Install dependencies**:
     ```bash
-    pip install -r dashboard/requirements.txt
+    pip install -r requirements/requirements.txt
     ```
 3.  **Setup Environment Variables** (Buat file `.env` di folder `dashboard/`):
     ```env

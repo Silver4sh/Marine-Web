@@ -1,5 +1,5 @@
 from sqlalchemy import text
-from back.conection.conection import get_engine, get_connection
+from back.connection.conection import get_engine, get_connection
 import pandas as pd
 import streamlit as st
 from back.query.queries import run_query

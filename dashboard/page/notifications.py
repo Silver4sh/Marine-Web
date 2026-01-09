@@ -1,5 +1,6 @@
 import streamlit as st
 import datetime
+import textwrap
 from back.src.n_logic import generate_insights, get_notification_id
 from back.query.queries import get_fleet_status, get_financial_metrics, get_clients_summary, get_logs
 from back.query.config_queries import get_system_settings
@@ -19,12 +20,30 @@ def load_notification_data(role):
         "logs": get_logs()
     }
 
+def update_notification_status(notif_id, new_status):
+    st.session_state.notification_states[notif_id] = new_status
+
+def restore_notification(notif_id):
+    if notif_id in st.session_state.notification_states:
+        del st.session_state.notification_states[notif_id]
+
 def render_item(item, status):
     """
     Renders a clean, minimalist interactive notification card.
     """
     notif_id = item['id']
     
+    # Category Icons
+    icons = {
+        "FLEET": "🚢",
+        "FINANCIAL": "💰",
+        "SYSTEM": "🖥️",
+        "CLIENTS": "👥",
+        "ALERT": "⚠️"
+    }
+    category = item.get('category', 'ALERT').upper()
+    icon = icons.get(category, "🔔")
+
     # Styles mapped by status
     styles = {
         'inbox': {'bg': 'rgba(255, 255, 255, 0.05)', 'border': 'transparent', 'text': '#f8fafc', 'dot': True},
@@ -36,51 +55,56 @@ def render_item(item, status):
     # HTML Component
     dot_html = '<span style="height:8px;width:8px;background:#0ea5e9;border-radius:50%;display:inline-block;margin-right:8px;"></span>' if style['dot'] else ''
     
-    st.markdown(f"""
-    <div style="background:{style['bg']}; border-left:3px solid {style['border']}; padding:12px; border-radius:6px; margin-bottom:8px;">
-        <div style="display:flex; justify-content:space-between; align-items:center;">
-            <div style="display:flex; align-items:center;">
-                {dot_html}
-                <strong style="color:{style['text']}; font-size:14px;">{item.get('category', 'ALERT').upper()}</strong>
-            </div>
-            <small style="color:#94a3b8; font-size:11px;">{item.get('time_str', '')}</small>
-        </div>
-        <div style="color:{style['text']}; font-size:13px; margin-top:4px; padding-left:{'16px' if style['dot'] else '0'};">
-            {item['message']}
-        </div>
-    </div>
-    """, unsafe_allow_html=True)
+    # HTML Component (Flattened to ensure no Markdown Code Block issues)
+    bg = style['bg']
+    border = style['border']
+    text_color = style['text']
+    dot_margin = '26px' if style['dot'] else '6px'
+    
+    html_content = (
+        f'<div style="background:{bg}; border-left:3px solid {border}; padding:12px; border-radius:6px; margin-bottom:8px; transition: all 0.2s;">'
+        f'    <div style="display:flex; justify-content:space-between; align-items:center;">'
+        f'        <div style="display:flex; align-items:center;">'
+        f'            {dot_html}'
+        f'            <span style="font-size:16px; margin-right:6px;">{icon}</span>'
+        f'            <strong style="color:{text_color}; font-size:14px; letter-spacing: 0.5px;">{category}</strong>'
+        f'        </div>'
+        f'        <small style="color:#94a3b8; font-size:11px; font-family:monospace;">{item.get("time_str", "")}</small>'
+        f'    </div>'
+        f'    <div style="color:{text_color}; font-size:13px; margin-top:6px; padding-left:{dot_margin}; line-height: 1.4; opacity: 0.9;">'
+        f'        {item["message"]}'
+        f'    </div>'
+        f'</div>'
+    )
+    st.markdown(html_content, unsafe_allow_html=True)
     
     # Actions
-    c1, c2 = st.columns([8, 2])
+    c1, c2 = st.columns([0.8, 0.2])
     with c2:
         if status == 'inbox':
             ca, cb = st.columns(2)
-            if ca.button("✅", key=f"d_{notif_id}", help="Done"):
-                st.session_state.notification_states[notif_id] = 'done'
-                st.rerun()
-            if cb.button("✕", key=f"t_{notif_id}", help="Trash"):
-                st.session_state.notification_states[notif_id] = 'trash'
-                st.rerun()
+            ca.button("✅", key=f"d_{notif_id}", help="Mark as Done", 
+                      on_click=update_notification_status, args=(notif_id, 'done'), use_container_width=True)
+            cb.button("🗑️", key=f"t_{notif_id}", help="Move to Trash", 
+                      on_click=update_notification_status, args=(notif_id, 'trash'), use_container_width=True)
+            
         elif status == 'done':
-             if st.button("✕", key=f"td_{notif_id}", help="Trash"):
-                st.session_state.notification_states[notif_id] = 'trash'
-                st.rerun()
+             st.button("🗑️", key=f"td_{notif_id}", help="Move to Trash", 
+                       on_click=update_notification_status, args=(notif_id, 'trash'), use_container_width=True)
+
         elif status == 'trash':
-             if st.button("♻️", key=f"r_{notif_id}", help="Restore"):
-                if notif_id in st.session_state.notification_states:
-                    del st.session_state.notification_states[notif_id]
-                st.rerun()
+             st.button("♻️", key=f"r_{notif_id}", help="Restore", 
+                       on_click=restore_notification, args=(notif_id,), use_container_width=True)
 
 @st.dialog("🔔 Notification Center")
 def show_notification_dialog():
     if 'notification_states' not in st.session_state:
         st.session_state.notification_states = {}
 
-    data = load_notification_data(st.session_state.role)
+    data = load_notification_data(st.session_state.user_role)
     
     # Logic Processing
-    raw = generate_insights(data['fleet'], data['financial'], st.session_state.role, data['settings'], data['clients'])
+    raw = generate_insights(data['fleet'], data['financial'], st.session_state.user_role, data['settings'], data['clients'])
     
     # Process & Deduplicate
     all_items = []

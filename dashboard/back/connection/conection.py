@@ -14,13 +14,7 @@ DB_HOST = os.getenv("DB_HOST")
 DB_PORT = os.getenv("DB_PORT")
 DB_NAME = os.getenv("DB_NAME")
 
-# Validate environment variables
-if not all([DB_USER, DB_PASS, DB_HOST, DB_PORT, DB_NAME]):
-    missing = [v for v in ["DB_USER", "DB_PASS", "DB_HOST", "DB_PORT", "DB_NAME"] if not os.getenv(v)]
-    st.error(f"Missing environment variables: {', '.join(missing)}. Please check your .env file.")
-    DB_URL = None
-else:
-    DB_URL = f"postgresql+psycopg2://{DB_USER}:{DB_PASS}@{DB_HOST}:{DB_PORT}/{DB_NAME}"
+DB_URL = f"postgresql+psycopg2://{DB_USER}:{DB_PASS}@{DB_HOST}:{DB_PORT}/{DB_NAME}"
 
 @st.cache_resource
 def get_engine() -> Engine:
@@ -28,8 +22,6 @@ def get_engine() -> Engine:
     Create and cache the database engine with connection pooling optimization.
     Pool size and recycle time are tuned for Streamlit performance.
     """
-    if DB_URL is None:
-        return None
     try:
         return create_engine(
             DB_URL, 

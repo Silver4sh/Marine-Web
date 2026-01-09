@@ -1,7 +1,7 @@
 import pandas as pd
 import streamlit as st
 from sqlalchemy import text
-from back.conection.conection import get_connection
+from back.connection.conection import get_connection
 
 def update_last_login_optimized(username, password):
     conn = get_connection()

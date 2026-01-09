@@ -1,7 +1,7 @@
 import pandas as pd
 import streamlit as st
 from sqlalchemy import text
-from back.conection.conection import get_engine
+from back.connection.conection import get_engine
 
 # -- Running Query
 def run_query(query, params=None):
@@ -22,8 +22,6 @@ def run_query(query, params=None):
         # Log error in console but don't break the UI
         print(f"Query error: {e}") 
         return pd.DataFrame()
-
-# #################################
 
 # --- Fleet Metrics ---
 @st.cache_data(ttl=60)

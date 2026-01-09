@@ -1,6 +1,6 @@
 import streamlit as st
 from sqlalchemy import text
-from back.conection.conection import get_engine, get_connection
+from back.connection.conection import get_engine, get_connection
 from back.query.queries import run_query
 import pandas as pd
 

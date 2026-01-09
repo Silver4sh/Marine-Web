@@ -181,15 +181,17 @@ def render_dashboard_home(fleet, orders, financial, role, settings, clients):
             }
         )
 
-def dashboard_home_page():
-    role = st.session_state.user_role
+
+@st.fragment(run_every=10)
+def dashboard_content(role):
+    # Data refreshing logic
+    # Note: st.cache_data might prevent actual refresh if we don't clear it or if parameters don't change. 
+    # But here get_dashboard_data calls underlying queries. 
+    # To Ensure real freshness, the underlying queries should be cached with short TTL or we rely on this fragment 
+    # rerunning and fetching new data.
     
     with st.spinner("🚀 Syncing live data..."):
         data = asyncio.run(data_manager.get_dashboard_data(role))
-    
-    fleet = data['fleet']
-    orders = data['orders']
-    financial = data['financial']
     
     render_dashboard_home(
         data['fleet'], 
@@ -199,3 +201,7 @@ def dashboard_home_page():
         data['settings'],
         data['clients']
     )
+
+def dashboard_home_page():
+    role = st.session_state.user_role
+    dashboard_content(role)

@@ -1,7 +1,7 @@
 import streamlit as st
 import pandas as pd
 from sqlalchemy import text
-from back.connection.conection import get_connection
+from back.conection.conection import get_connection
 from back.query.update import update_last_login_optimized
 
 def check_login_working(username: str, password: str):
@@ -25,6 +25,7 @@ def check_login_working(username: str, password: str):
                 AND u.status = 'Active'
         """)
 
+
         df = pd.read_sql(query, conn, params={"username": username, "password": password})
 
         if not df.empty:
@@ -46,13 +47,8 @@ def check_login_working(username: str, password: str):
             conn.close()
 
 
-def render_login_page():
-    # Note: st.set_page_config can only be called once per app run, and it's already in main.py.
-    # We should NOT call it here again if main() calls this.
-    # However, if this is run standalone, it might be needed.
-    # But since main.py calls this inside `if not logged_in`, main.py has already run.
-    # So we remove st.set_page_config from here.
-
+def login_page():
+    st.set_page_config(page_title="Login - Dashboard", layout="centered")
     st.title("Dashboard")
     st.markdown("---")
 
@@ -72,6 +68,6 @@ def render_login_page():
                     st.session_state.username = username
                     st.session_state.user_role = user_role
                     st.success(f"Welcome {username}!")
-                    st.rerun()
+                    st.rerun()  # pakai st.rerun() bukan experimental_rerun
             else:
                 st.warning("Please enter both username and password")
