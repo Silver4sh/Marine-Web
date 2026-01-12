@@ -2,7 +2,7 @@ import streamlit as st
 import pandas as pd
 from sqlalchemy import text
 from back.connection.conection import get_connection
-from back.query.update import update_last_login_optimized
+from back.query.queries import update_last_login_optimized
 
 def check_login_working(username: str, password: str):
     try:

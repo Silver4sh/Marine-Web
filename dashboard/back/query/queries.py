@@ -3,27 +3,22 @@ import streamlit as st
 from sqlalchemy import text
 from back.connection.conection import get_engine
 
-# -- Running Query
 def run_query(query, params=None):
     engine = get_engine()
     if engine is None:
         return pd.DataFrame()
 
     try:
-        # Use a context manager to ensure the connection is closed/returned to pool
         with engine.connect() as conn:
-            # If params is provided, use safely
             if params:
                 df = pd.read_sql(text(query), conn, params=params)
             else:
                 df = pd.read_sql(text(query), conn)
             return df
     except Exception as e:
-        # Log error in console but don't break the UI
         print(f"Query error: {e}") 
         return pd.DataFrame()
 
-# --- Fleet Metrics ---
 @st.cache_data(ttl=60)
 def get_fleet_status():
     query = """
@@ -39,7 +34,6 @@ def get_fleet_status():
         return {"total_vessels": 0, "operating": 0, "maintenance": 0, "idle": 0}
     return df.astype(int).iloc[0].to_dict()
 
-# --- Posisi kapal terakhir ---
 @st.cache_data(ttl=30)
 def get_vessel_position():
     query = """
@@ -68,10 +62,8 @@ def get_path_vessel(vessel_id):
     """
     return run_query(query, params={"vessel_id": vessel_id})
 
-# --- Sensor Data ---
 @st.cache_data(ttl=60)
 def get_data_water():
-    """Get historical sensor readings for heatmap (last 30 days) for dynamic filtering"""
     query = """
     SELECT
         bsh.id_buoy,
@@ -93,7 +85,6 @@ def get_data_water():
 
 @st.cache_data(ttl=300)
 def get_sensor_trends(buoy_id=None):
-    """Get historical sensor data for charts"""
     params = {}
     where_clause = ""
     if buoy_id:
@@ -115,13 +106,11 @@ def get_sensor_trends(buoy_id=None):
 
 @st.cache_data(ttl=3600)
 def get_buoy_list():
-    """Get unique list of buoys"""
     query = "SELECT DISTINCT id_buoy FROM alpha.buoy_sensor_histories ORDER BY id_buoy"
     return run_query(query)
 
 @st.cache_data(ttl=600)
 def get_buoy_date_range(buoy_id):
-    """Get efficient min/max dates for slider"""
     query = """
     SELECT MIN(created_at) as min_date, MAX(created_at) as max_date
     FROM alpha.buoy_sensor_histories
@@ -131,9 +120,6 @@ def get_buoy_date_range(buoy_id):
 
 @st.cache_data(ttl=60)
 def get_buoy_history(buoy_id, start_date, end_date):
-    """
-    Optimized: Fetch only requested data from DB.
-    """
     query = """
     SELECT
         bsh.id_buoy,
@@ -162,7 +148,6 @@ def get_buoy_history(buoy_id, start_date, end_date):
 
 @st.cache_data(ttl=600)
 def get_global_date_range():
-    """Get min/max dates for all buoys"""
     query = """
     SELECT MIN(created_at) as min_date, MAX(created_at) as max_date
     FROM alpha.buoy_sensor_histories
@@ -171,9 +156,6 @@ def get_global_date_range():
 
 @st.cache_data(ttl=60)
 def get_aggregated_buoy_history(start_date, end_date):
-    """
-    Get averaged sensor data across all buoys, grouped by hour.
-    """
     query = """
     SELECT
         date_trunc('hour', created_at) as created_at,
@@ -193,7 +175,6 @@ def get_aggregated_buoy_history(start_date, end_date):
         "end_date": end_date
     })
 
-# --- Financial Metrics ---
 @st.cache_data(ttl=300)
 def get_financial_metrics():
     query = """
@@ -251,7 +232,6 @@ def get_revenue_analysis():
     """
     return run_query(query)
 
-# --- Operational Metrics ---
 @st.cache_data(ttl=300)
 def get_order_stats():
     query = """
@@ -344,13 +324,8 @@ def get_vessel_list():
     """
     return run_query(query)
 
-# --- Innovative Analytics Queries ---
-
 @st.cache_data(ttl=300)
 def get_vessel_utilization_stats():
-    """
-    Calculate Vessel Utilization Score based on activity duration.
-    """
     query = """
     SELECT 
         v.name as vessel_name,
@@ -371,9 +346,6 @@ def get_vessel_utilization_stats():
 
 @st.cache_data(ttl=300)
 def get_revenue_cycle_metrics():
-    """
-    Analyze Order-to-Cash cycle efficiency.
-    """
     query = """
     SELECT 
         DATE_TRUNC('month', o.order_date) as month,
@@ -391,10 +363,6 @@ def get_revenue_cycle_metrics():
 
 @st.cache_data(ttl=60)
 def get_environmental_anomalies():
-    """
-    Detect anomalies in sensor data using Z-Score (Statistical Deviation).
-    Returns rows where values deviate > 2 SD from the monthly average.
-    """
     query = """
     WITH stats AS (
         SELECT 
@@ -429,9 +397,6 @@ def get_environmental_anomalies():
 
 @st.cache_data(ttl=300)
 def get_logistics_performance():
-    """
-    Analyze delivery performance by destination.
-    """
     query = """
     SELECT 
         destination,
@@ -445,3 +410,218 @@ def get_logistics_performance():
     ORDER BY avg_delay_hours DESC
     """
     return run_query(query)
+
+def init_settings_table():
+    engine = get_engine()
+    if not engine: return
+    
+    try:
+        with engine.begin() as conn:
+            conn.execute(text("""
+                CREATE TABLE IF NOT EXISTS alpha.system_settings (
+                    key VARCHAR(50) PRIMARY KEY,
+                    value TEXT,
+                    description TEXT,
+                    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+                );
+            """))
+            
+            res = conn.execute(text("SELECT count(*) FROM alpha.system_settings")).scalar()
+            if res == 0:
+                defaults = [
+                    ("app_name", "MarineOS Dashboard", "Application Name displayed in header"),
+                    ("maintenance_mode", "false", "Enable maintenance mode overlay"),
+                    ("revenue_target_monthly", "5000000000", "Monthly Revenue Target (IDR)"),
+                    ("churn_risk_threshold", "3", "Number of high-risk clients to trigger alert"),
+                    ("theme_color", "#0ea5e9", "Primary accent color hex code")
+                ]
+                for k, v, d in defaults:
+                    conn.execute(
+                        text("INSERT INTO alpha.system_settings (key, value, description) VALUES (:k, :v, :d)"),
+                        {"k": k, "v": v, "d": d}
+                    )
+    except Exception as e:
+        print(f"Error initializing settings: {e}")
+
+@st.cache_data(ttl=60)
+def get_system_settings():
+    init_settings_table()
+    query = "SELECT key, value, description FROM alpha.system_settings"
+    df = run_query(query)
+    if df.empty: return {}
+    return pd.Series(df.value.values, index=df.key).to_dict()
+
+def update_system_setting(key, value):
+    engine = get_engine()
+    if not engine: return False
+    
+    try:
+        with engine.begin() as conn:
+            query = text("UPDATE alpha.system_settings SET value = :value, updated_at = NOW() WHERE key = :key")
+            conn.execute(query, {"value": str(value), "key": key})
+            st.cache_data.clear()
+            return True
+    except Exception as e:
+        st.error(f"Failed to update setting: {e}")
+        return False
+
+def get_all_users():
+    query = """
+    SELECT 
+        u.code_user,
+        um.id_user as username,
+        u.role,
+        u.status as user_status,
+        um.status as account_status,
+        um.last_login
+    FROM alpha.users u
+    JOIN alpha.user_managements um ON u.code_user = um.id_user
+    ORDER BY u.code_user ASC
+    """
+    return run_query(query)
+
+def create_new_user(username, password, role):
+    engine = get_engine()
+    if not engine:
+        return False, "Database connection failed."
+
+    try:
+        with engine.begin() as conn:
+            check_q = text("SELECT 1 FROM alpha.users WHERE code_user = :username")
+            res = conn.execute(check_q, {"username": username}).fetchone()
+            if res:
+                return False, f"User '{username}' already exists."
+
+            insert_user = text("""
+                INSERT INTO alpha.users (code_user, role, status)
+                VALUES (:username, :role, 'Active')
+            """)
+            conn.execute(insert_user, {"username": username, "role": role})
+
+            insert_auth = text("""
+                INSERT INTO alpha.user_managements (id_user, password, status)
+                VALUES (:username, :password, 'Active')
+            """)
+            conn.execute(insert_auth, {"username": username, "password": password})
+            
+            return True, "User created successfully."
+    except Exception as e:
+        return False, f"Error creating user: {e}"
+
+def update_user_status(username, new_status):
+    engine = get_engine()
+    if not engine: return False
+    
+    try:
+        with engine.begin() as conn:
+            q1 = text("UPDATE alpha.users SET status = :status WHERE code_user = :username")
+            conn.execute(q1, {"status": new_status, "username": username})
+            
+            q2 = text("UPDATE alpha.user_managements SET status = :status WHERE id_user = :username")
+            conn.execute(q2, {"status": new_status, "username": username})
+            return True
+    except Exception as e:
+        print(f"Error updating status: {e}")
+        return False
+
+def update_user_role(username, new_role):
+    engine = get_engine()
+    if not engine: return False
+    
+    try:
+        with engine.begin() as conn:
+            q = text("UPDATE alpha.users SET role = :role WHERE code_user = :username")
+            conn.execute(q, {"role": new_role, "username": username})
+            return True
+    except Exception as e:
+        print(f"Error updating role: {e}")
+        return False
+
+def delete_user(username):
+    engine = get_engine()
+    if not engine: return False
+    
+    try:
+        with engine.begin() as conn:
+            q1 = text("DELETE FROM alpha.user_managements WHERE id_user = :username")
+            conn.execute(q1, {"username": username})
+            
+            q2 = text("DELETE FROM alpha.users WHERE code_user = :username")
+            conn.execute(q2, {"username": username})
+            return True
+    except Exception as e:
+        print(f"Error deleting user: {e}")
+        return False
+
+def update_last_login_optimized(username, password):
+    engine = get_engine()
+    if not engine: return False
+    try:
+        with engine.begin() as conn:
+            update_query = text("""
+                UPDATE alpha.user_managements
+                SET last_login = CURRENT_TIMESTAMP
+                WHERE id_user = :user_id AND password = :pwd
+            """)
+            conn.execute(update_query, {"user_id": username, "pwd": password})
+        return True
+    except Exception as e:
+        print(f"Update last_login error: {e}")
+        return False
+
+def update_password(username, old_pass, new_pass):
+    if not username or not old_pass or not new_pass:
+        return False, "Semua field harus diisi"
+    
+    if old_pass == new_pass:
+        return False, "Password baru tidak boleh sama dengan password lama"
+    
+    engine = get_engine()
+    if not engine: return False, "Database connection failed"
+    try:
+        with engine.begin() as conn:
+            query = text("""
+                SELECT 
+                    um.id_user,
+                    u.role,
+                    u.status as user_status,
+                    um.status as account_status
+                FROM alpha.user_managements um
+                JOIN alpha.users u ON um.id_user = u.code_user
+                WHERE um.id_user = :username
+                    AND um.password = :password
+                    AND um.status = 'Active'
+                    AND u.status = 'Active'
+                    AND u.role IN ('Finance', 'Admin')
+            """)
+            
+            res = conn.execute(query, {
+                "username": username, 
+                "password": old_pass
+            }).fetchone()
+            
+            if not res:
+                return False, "Username atau password lama salah"
+            
+            update_query = text("""
+                UPDATE alpha.user_managements
+                SET password = :new_password,
+                updated_at = CURRENT_TIMESTAMP
+                WHERE id_user = :user_id 
+                    AND password = :old_password
+            """)
+            
+            result = conn.execute(update_query, {
+                "user_id": username, 
+                "old_password": old_pass, 
+                "new_password": new_pass.strip()
+            })
+            
+            if result.rowcount > 0:
+                return True, "Password berhasil diperbarui"
+            else:
+                return False, "Gagal memperbarui password"
+            
+    except Exception as e:
+        st.error(f"Database error: {e}")
+        return False, f"Terjadi kesalahan sistem: {str(e)}"

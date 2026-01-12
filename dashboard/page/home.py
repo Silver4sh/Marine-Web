@@ -7,7 +7,7 @@ from concurrent.futures import ThreadPoolExecutor
 from back.src.constants import ROLE_ADMIN, ROLE_FINANCE, ROLE_MARCOM, ROLE_OPERATIONS
 from back.src.utils import render_metric_card, apply_chart_style
 from back.query.queries import get_fleet_status, get_order_stats, get_financial_metrics, get_revenue_analysis, get_clients_summary
-from back.query.config_queries import get_system_settings
+from back.query.queries import get_system_settings
 
 # --- Async Data Loading ---
 class AsyncDataManager:

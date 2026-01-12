@@ -1,7 +1,7 @@
 import pandas as pd
 import altair as alt
 import streamlit as st
-from back.query.sensor_queries import (
+from back.query.queries import (
     get_buoy_history, 
     get_buoy_list, 
     get_buoy_date_range,

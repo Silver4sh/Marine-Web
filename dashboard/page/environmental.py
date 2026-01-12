@@ -6,18 +6,15 @@ from back.query.queries import get_data_water
 def render_heatmap_page():
      st.markdown("## 🔥 Environmental Heatmap")
         
-     # Load data (Cached)
      df = get_data_water()
      
-     # Layout Containers
      c_overview = st.container()
      st.divider()
      c_filter = st.container()
      st.divider()
      c_map = st.container()
 
-     # --- Filter Logic (Bottom) ---
-     filtered_df = df # Default
+     filtered_df = df
      if not df.empty and 'latest_timestamp' in df.columns:
          valid_dates = pd.to_datetime(df['latest_timestamp'], errors='coerce').dropna()
          if not valid_dates.empty:
@@ -37,16 +34,13 @@ def render_heatmap_page():
                      format="DD/MM/YY"
                  )
                  
-                 # Apply Filter
                  mask = (df['latest_timestamp'].dt.date >= date_range[0]) & (df['latest_timestamp'].dt.date <= date_range[1])
                  filtered_df = df[mask]
      
-     # --- Area Overview (Top) ---
      with c_overview:
          st.markdown("### 🕸️ Area Overview")
          radar_chart(filtered_df)
 
-     # --- Maps (Middle) ---
      with c_map:
          tab_main_sel = st.radio("Select Category", ["Water Quality", "Oceanographic"], horizontal=True)
          

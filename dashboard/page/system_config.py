@@ -1,5 +1,5 @@
 import streamlit as st
-from back.query.config_queries import get_system_settings, update_system_setting
+from back.query.queries import get_system_settings, update_system_setting
 
 def render_system_config_page():
     st.markdown("## 🔧 System Configuration")

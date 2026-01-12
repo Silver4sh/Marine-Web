@@ -1,6 +1,6 @@
 import streamlit as st
 import pandas as pd
-from back.query.user_queries import (
+from back.query.queries import (
     get_all_users, 
     create_new_user, 
     update_user_status, 

@@ -4,35 +4,28 @@ import plotly.graph_objects as go
 from folium.plugins import HeatMap
 from streamlit_folium import st_folium
 import numpy as np
-
-from back.query.sensor_queries import get_data_water
 from back.src.utils import load_html
 
 def page_heatmap(df, indikator):
-    # Fallback to mock data if empty
     if df.empty:
         st.warning("⚠️ Data real tidak tersedia.", icon="⚠️")
         return
 
-    # Check if indicator exists
     if indikator not in df.columns:
         st.error(f"❌ Indikator '{indikator}' tidak ditemukan dalam data.")
         return
         
     df_agg = df.groupby(['latitude', 'longitude'], as_index=False)[indikator].mean()
     
-    # Prepare heatmap data
     heat_data = df_agg[['latitude', 'longitude', indikator]].dropna().values.tolist()
 
     if not heat_data:
         st.warning(f"Data {indikator} kosong atau tidak valid.")
         return
 
-    # Map Center
     avg_lat = df['latitude'].mean()
     avg_lon = df['longitude'].mean()
     
-    # Base Map
     m = folium.Map(
         location=[avg_lat, avg_lon], 
         zoom_start=5, 
@@ -50,7 +43,6 @@ def page_heatmap(df, indikator):
         gradient={0.4: '#1e3a8a', 0.65: '#2dd4bf', 1: '#38bdf8'}
     ).add_to(m)
     
-    # Render
     try:
         st_folium(m, height=400, use_container_width=True, returned_objects=[])
     except Exception as e:
@@ -64,17 +56,14 @@ def radar_chart(df):
             
         metrics = ['salinitas', 'turbidity', 'current', 'oxygen', 'tide', 'density']
         
-        # Filter available metrics
         available_metrics = [m for m in metrics if m in df.columns]
         
         if not available_metrics:
             st.warning("Metric lingkungan tidak lengkap.")
             return
         
-        # Calculate averages
         avg_values = df[available_metrics].mean()
         
-        # Configuration for Normalization & Limits
         ranges = {
             'salinitas': {'min': 0, 'max': 40, 'limit': 35},
             'turbidity': {'min': 0, 'max': 60, 'limit': 40},
@@ -93,7 +82,6 @@ def radar_chart(df):
             val = avg_values[m]
             conf = ranges.get(m, {'min': 0, 'max': val * 1.5, 'limit': val})
             
-            # Normalize Value
             rn = conf['max'] - conf['min']
             pct = 0
             if rn != 0:
@@ -102,37 +90,31 @@ def radar_chart(df):
             normalized_data.append(pct)
             raw_data.append(val)
             
-            # Normalize Limit
             limit_pct = 0
             if rn != 0:
                 limit_pct = ((conf['limit'] - conf['min']) / rn) * 100
             limit_data_norm.append(limit_pct)
             
-            # Check Alert (Simple logic: if > limit)
             if val > conf['limit'] and m != 'oxygen':
                  alerts.append(f"{m.title()} High ({val:.1f})")
         
-        # Labels
         labels = [m.title() for m in available_metrics]
         
-        # Close the loop for Plotly Polar
         normalized_data_closed = normalized_data + [normalized_data[0]]
         limit_data_closed = limit_data_norm + [limit_data_norm[0]]
         labels_closed = labels + [labels[0]]
         
-        # --- UI Summary ---
-        # Calculate 'Stability Score'
         avg_stress = np.mean(normalized_data)
         health_score = max(0, 100 - avg_stress)
         
         if health_score > 70:
-            status_color = "#4ade80" # Green 400
+            status_color = "#4ade80"
             status_text = "Optimal"
         elif health_score > 40:
-            status_color = "#fbbf24" # Amber 400
+            status_color = "#fbbf24"
             status_text = "Caution"
         else:
-            status_color = "#f472b6" # Pink 400 (Trending Warning)
+            status_color = "#f472b6"
             status_text = "Critical"
 
         c1, c2 = st.columns([1, 2])
@@ -157,7 +139,6 @@ def radar_chart(df):
         with c2:
             fig = go.Figure()
     
-            # Trace 1: Safe Limit
             fig.add_trace(go.Scatterpolar(
                 r=limit_data_closed,
                 theta=labels_closed,
@@ -168,7 +149,6 @@ def radar_chart(df):
                 showlegend=True
             ))
     
-            # Trace 2: Live Data
             fig.add_trace(go.Scatterpolar(
                 r=normalized_data_closed,
                 theta=labels_closed,
@@ -190,7 +170,6 @@ def radar_chart(df):
                         visible=True,
                         range=[0, 100],
                         showticklabels=False,
-                        # gridcolor='rgba(255, 255, 255, 0.05)',
                         gridcolor='rgba(148, 163, 184, 0.2)', 
                     ),
                     angularaxis=dict(

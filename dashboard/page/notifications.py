@@ -3,7 +3,7 @@ import datetime
 import textwrap
 from back.src.n_logic import generate_insights, get_notification_id
 from back.query.queries import get_fleet_status, get_financial_metrics, get_clients_summary, get_logs
-from back.query.config_queries import get_system_settings
+from back.query.queries import get_system_settings
 
 # --- Optimized Data Loading ---
 @st.cache_data(ttl=60, show_spinner=False)

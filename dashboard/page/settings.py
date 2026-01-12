@@ -1,5 +1,5 @@
 import streamlit as st
-from back.query.update import update_password
+from back.query.queries import update_password
 
 def render_settings_page():
     st.markdown("## ⚙️ Account Settings")
