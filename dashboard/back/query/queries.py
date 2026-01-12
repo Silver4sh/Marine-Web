@@ -32,7 +32,7 @@ def get_fleet_status():
         SUM(CASE WHEN LOWER(status) = 'operating' THEN 1 ELSE 0 END) as operating,
         SUM(CASE WHEN LOWER(status) IN ('maintenance', 'mtc') THEN 1 ELSE 0 END) as maintenance,
         SUM(CASE WHEN LOWER(status) = 'idle' THEN 1 ELSE 0 END) as idle
-    FROM operational.vessels
+    FROM alpha.vessels
     """
     df = run_query(query)
     if df.empty:
@@ -52,8 +52,8 @@ def get_vessel_position():
            vp.speed,
            0 as heading,
            vp.created_at as "Last Update"
-    FROM operational.vessel_positions vp
-    JOIN operational.vessels v ON vp.id_vessel = v.code_vessel
+    FROM alpha.vessel_positions vp
+    JOIN alpha.vessels v ON vp.id_vessel = v.code_vessel
     ORDER BY vp.id_vessel, vp.created_at DESC;
     """
     return run_query(query)
@@ -62,7 +62,7 @@ def get_vessel_position():
 def get_path_vessel(vessel_id):
     query = """
     SELECT latitude, longitude, 0 as heading, speed, created_at
-    FROM operational.vessel_positions
+    FROM alpha.vessel_positions
     WHERE id_vessel = :vessel_id
     ORDER BY created_at DESC;
     """
@@ -76,7 +76,7 @@ def get_financial_metrics():
         COALESCE(SUM(total_amount), 0) as total_revenue,
         COUNT(DISTINCT id_order) as completed_orders,
         DATE_TRUNC('month', payment_date)::DATE AS payment_day
-    FROM operational.payments
+    FROM alpha.payments
     WHERE status = 'Payed'
     GROUP BY DATE_TRUNC('month', payment_date)
     ORDER BY payment_day DESC;
@@ -119,7 +119,7 @@ def get_revenue_analysis():
     SELECT 
         DATE_TRUNC('month', payment_date) as month,
         SUM(total_amount) as revenue
-    FROM operational.payments
+    FROM alpha.payments
     WHERE status = 'Payed'
     GROUP BY 1
     ORDER BY 1 DESC
@@ -136,7 +136,7 @@ def get_order_stats():
         SUM(CASE WHEN status = 'In Completed' THEN 1 ELSE 0 END) as in_completed,
         SUM(CASE WHEN status = 'On Progress' THEN 1 ELSE 0 END) as on_progress,
         SUM(CASE WHEN status = 'Failed' THEN 1 ELSE 0 END) as failed
-    FROM operational.orders
+    FROM alpha.orders
     """
     df = run_query(query)
     if df.empty:
@@ -149,9 +149,9 @@ def get_revenue_by_service():
     SELECT 
         c.industry as "Service",
         SUM(p.total_amount) as "Value"
-    FROM operational.payments p
-    JOIN operational.orders o ON p.id_order = o.id
-    JOIN operational.clients c ON o.id_client = c.code_client
+    FROM alpha.payments p
+    JOIN alpha.orders o ON p.id_order = o.id
+    JOIN alpha.clients c ON o.id_client = c.code_client
     WHERE p.status = 'Payed'
     GROUP BY c.industry
     ORDER BY "Value" DESC
@@ -166,8 +166,8 @@ def get_fleet_daily_activity():
         TO_CHAR(vp.created_at, 'Dy') as day_name,
         EXTRACT(ISODOW FROM vp.created_at) as day_num,
         COUNT(DISTINCT DATE_TRUNC('hour', vp.created_at)) as active_hours
-    FROM operational.vessel_positions vp
-    JOIN operational.vessels v ON vp.id_vessel = v.code_vessel
+    FROM alpha.vessel_positions vp
+    JOIN alpha.vessels v ON vp.id_vessel = v.code_vessel
     WHERE vp.created_at >= NOW() - INTERVAL '7 days'
       AND vp.speed > 0.5
     GROUP BY 1, 2, 3
@@ -186,9 +186,9 @@ def get_clients_summary():
         c.status,
         COUNT(DISTINCT o.id) as total_orders,
         COALESCE(SUM(p.total_amount), 0) as ltv
-    FROM operational.clients c
-    LEFT JOIN operational.orders o ON c.code_client = o.id_client
-    LEFT JOIN operational.payments p ON o.id = p.id_order AND p.status = 'Payed'
+    FROM alpha.clients c
+    LEFT JOIN alpha.orders o ON c.code_client = o.id_client
+    LEFT JOIN alpha.payments p ON o.id = p.id_order AND p.status = 'Payed'
     GROUP BY c.code_client, c.name, c.industry, c.region, c.status
     ORDER BY ltv DESC
     """
@@ -215,7 +215,7 @@ def get_vessel_list():
     query = """
     SELECT 
         code_vessel
-    FROM operational.vessels
+    FROM alpha.vessels
     """
     return run_query(query)
 
@@ -233,8 +233,8 @@ def get_vessel_utilization_stats():
         SUM(CASE WHEN LOWER(va.status) NOT IN ('idle', 'maintenance', 'docking') 
             THEN EXTRACT(EPOCH FROM (COALESCE(va.end_date, NOW()) - va.start_date))/3600 
             ELSE 0 END) as productive_hours
-    FROM operational.vessel_activities va
-    JOIN operational.vessels v ON va.id_vessel = v.code_vessel
+    FROM alpha.vessel_activities va
+    JOIN alpha.vessels v ON va.id_vessel = v.code_vessel
     WHERE va.start_date >= NOW() - INTERVAL '30 days'
     GROUP BY v.name
     """
@@ -256,8 +256,8 @@ def get_revenue_cycle_metrics():
         SUM(p.total_amount) as realized_revenue,
         SUM(CASE WHEN p.status = 'Payed' THEN 1 ELSE 0 END) as paid_count,
         COUNT(o.id) as total_orders
-    FROM operational.orders o
-    JOIN operational.payments p ON o.id = p.id_order
+    FROM alpha.orders o
+    JOIN alpha.payments p ON o.id = p.id_order
     WHERE o.order_date >= NOW() - INTERVAL '6 months'
     GROUP BY 1
     ORDER BY 1 DESC
@@ -278,7 +278,7 @@ def get_environmental_anomalies():
             STDDEV(salinitas) as std_sal,
             AVG(turbidity) as avg_tur,
             STDDEV(turbidity) as std_tur
-        FROM operational.buoy_sensor_histories
+        FROM alpha.buoy_sensor_histories
         WHERE created_at >= NOW() - INTERVAL '30 days'
         GROUP BY id_buoy
     )
@@ -289,7 +289,7 @@ def get_environmental_anomalies():
         h.turbidity,
         (h.salinitas - s.avg_sal) / NULLIF(s.std_sal, 0) as sal_z_score,
         (h.turbidity - s.avg_tur) / NULLIF(s.std_tur, 0) as tur_z_score
-    FROM operational.buoy_sensor_histories h
+    FROM alpha.buoy_sensor_histories h
     JOIN stats s ON h.id_buoy = s.id_buoy
     WHERE h.created_at >= NOW() - INTERVAL '7 days'
       AND (
@@ -313,7 +313,7 @@ def get_logistics_performance():
         COUNT(*) as total_trips,
         AVG(EXTRACT(EPOCH FROM (actual_delivery_date - scheduled_delivery_date))/3600) as avg_delay_hours,
         SUM(CASE WHEN actual_delivery_date > scheduled_delivery_date THEN 1 ELSE 0 END) as late_trips
-    FROM operational.orders
+    FROM alpha.orders
     WHERE actual_delivery_date IS NOT NULL 
       AND scheduled_delivery_date IS NOT NULL
     GROUP BY destination

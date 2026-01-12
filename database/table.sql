@@ -1,11 +1,11 @@
-CREATE SCHEMA operational 	AUTHORIZATION postgres;
+CREATE SCHEMA alpha 	AUTHORIZATION postgres;
 CREATE SCHEMA log 			AUTHORIZATION postgres;
 CREATE SCHEMA audit 		AUTHORIZATION postgres;
 CREATE SCHEMA rockworks 	AUTHORIZATION postgres;
 
 --- Table
 -- Operational
-CREATE TABLE operational.contacts (
+CREATE TABLE alpha.contacts (
 	id 				serial4 	NOT NULL,
 	code_contact 	varchar(20) NOT NULL,
 	phone 			varchar(18),
@@ -19,7 +19,7 @@ CREATE TABLE operational.contacts (
 	CONSTRAINT contacts_id_contact_key 	UNIQUE (code_contact)
 );
 
-CREATE TABLE operational.method_payments (
+CREATE TABLE alpha.method_payments (
 	id 					serial4 	NOT NULL,
 	code_methodpay 		varchar(20) NOT NULL,
 	transaction_name 	varchar(100) NOT NULL,
@@ -29,7 +29,7 @@ CREATE TABLE operational.method_payments (
 	CONSTRAINT site_id_payments_key UNIQUE (code_methodpay)
 );
 
-CREATE TABLE operational.parameters (
+CREATE TABLE alpha.parameters (
 	id 				serial4 	NOT NULL,
 	parent_desc 	varchar(20),
 	kode_desc 		varchar(20),
@@ -39,7 +39,7 @@ CREATE TABLE operational.parameters (
 	CONSTRAINT parameter_pkey PRIMARY KEY (id)
 );
 
-CREATE TABLE operational.sites (
+CREATE TABLE alpha.sites (
 	id 				serial4 				NOT NULL,
 	code_site 		varchar(20) 			NOT NULL,
 	type	 		varchar(20) 			NOT NULL,
@@ -59,7 +59,7 @@ CREATE TABLE operational.sites (
 	CONSTRAINT sites_id_site_key 	UNIQUE (code_site)
 );
 
-CREATE TABLE operational.buoys (
+CREATE TABLE alpha.buoys (
 	id 			serial4				NOT NULL,
 	id_site 	varchar(20) 		NOT NULL,
 	code_buoy 	varchar(20) 		NOT NULL,
@@ -72,10 +72,10 @@ CREATE TABLE operational.buoys (
 	deleted_at 	timestamp,
 	CONSTRAINT buoys_pkey 			PRIMARY KEY (id),
 	CONSTRAINT buoys_id_buoy_key 	UNIQUE (code_buoy),
-	CONSTRAINT buoys_id_site_fkey 	FOREIGN KEY (id_site) REFERENCES operational.sites(code_site) ON UPDATE CASCADE ON DELETE CASCADE
+	CONSTRAINT buoys_id_site_fkey 	FOREIGN KEY (id_site) REFERENCES alpha.sites(code_site) ON UPDATE CASCADE ON DELETE CASCADE
 );
 
-CREATE TABlE operational.buoy_sensor_histories (
+CREATE TABlE alpha.buoy_sensor_histories (
 	id 			serial4		NOT NULL,
 	id_buoy 	varchar(20) NOT NULL,
 	salinitas 	int4,
@@ -86,10 +86,10 @@ CREATE TABlE operational.buoy_sensor_histories (
 	density 	int4,
 	created_at 	timestamp 	DEFAULT NOW(),
 	CONSTRAINT buoy_sensor_histories_pkey 			PRIMARY KEY (id),
-	CONSTRAINT buoy_sensor_histories_id_site_fkey 	FOREIGN KEY (id_buoy) REFERENCES operational.buoys(code_buoy) ON UPDATE CASCADE ON DELETE CASCADE
+	CONSTRAINT buoy_sensor_histories_id_site_fkey 	FOREIGN KEY (id_buoy) REFERENCES alpha.buoys(code_buoy) ON UPDATE CASCADE ON DELETE CASCADE
 );
 
-CREATE TABLE operational.buoy_mtc_histories (
+CREATE TABLE alpha.buoy_mtc_histories (
 	id				serial4		NOT NULL,
 	id_buoy			varchar(20)	NOT NULL,
 	start_date		timestamp	NOT NULL,
@@ -99,10 +99,10 @@ CREATE TABLE operational.buoy_mtc_histories (
 	updated_at		timestamp,
 	deleted_at		timestamp,
 	CONSTRAINT buoy_mtc_histories_pkey			PRIMARY KEY (id),
-	CONSTRAINT buoy_mtc_histories_id_buoy_fkey	FOREIGN KEY (id_buoy) REFERENCES operational.buoys(code_buoy) ON UPDATE CASCADE ON DELETE CASCADE
+	CONSTRAINT buoy_mtc_histories_id_buoy_fkey	FOREIGN KEY (id_buoy) REFERENCES alpha.buoys(code_buoy) ON UPDATE CASCADE ON DELETE CASCADE
 );
 
-CREATE TABLE operational.users (
+CREATE TABLE alpha.users (
 	id 			serial4 	NOT NULL,
 	id_contact 	varchar(20) NOT NULL,
 	code_user 	varchar(20) NOT NULL,
@@ -116,10 +116,10 @@ CREATE TABLE operational.users (
 	deleted_at 	timestamp,
 	CONSTRAINT user_pkey 			PRIMARY KEY (id),
 	CONSTRAINT user_id_check_key 	UNIQUE (code_user),
-	CONSTRAINT user_contact_fkey 	FOREIGN KEY (id_contact) REFERENCES operational.contacts(code_contact) ON UPDATE CASCADE ON DELETE CASCADE
+	CONSTRAINT user_contact_fkey 	FOREIGN KEY (id_contact) REFERENCES alpha.contacts(code_contact) ON UPDATE CASCADE ON DELETE CASCADE
 );
 
-CREATE TABLE operational.clients (
+CREATE TABLE alpha.clients (
 	id 			serial4				NOT NULL,
 	code_client varchar(20) 		NOT NULL,
 	name 		varchar(100) 		NOT NULL,
@@ -133,10 +133,10 @@ CREATE TABLE operational.clients (
 	deleted_at 	timestamp,
 	CONSTRAINT clients_pkey 			PRIMARY KEY (id),
 	CONSTRAINT clients_id_client_key 	UNIQUE (code_client),
-	CONSTRAINT clients_id_contact_fkey 	FOREIGN KEY (id_contact) REFERENCES operational.contacts(code_contact) ON UPDATE CASCADE ON DELETE CASCADE
+	CONSTRAINT clients_id_contact_fkey 	FOREIGN KEY (id_contact) REFERENCES alpha.contacts(code_contact) ON UPDATE CASCADE ON DELETE CASCADE
 );
 
-CREATE TABLE operational.partners (
+CREATE TABLE alpha.partners (
 	id 				serial4 	NOT NULL,
 	id_contact 		varchar(20) NOT NULL,
 	code_partner	varchar(20),
@@ -148,10 +148,10 @@ CREATE TABLE operational.partners (
 	deleted_at 		timestamp,
 	CONSTRAINT partner_pkey 			PRIMARY KEY (id),
 	CONSTRAINT partner_id_partner_key 	UNIQUE (code_partner),
-	CONSTRAINT partner_id_contact_fkey 	FOREIGN KEY (id_contact) REFERENCES operational.contacts(code_contact) ON UPDATE CASCADE ON DELETE CASCADE
+	CONSTRAINT partner_id_contact_fkey 	FOREIGN KEY (id_contact) REFERENCES alpha.contacts(code_contact) ON UPDATE CASCADE ON DELETE CASCADE
 );
 
-CREATE TABLE operational.orders (
+CREATE TABLE alpha.orders (
 	id 						serial4 			NOT NULL,
 	id_client 				varchar(20) 		NOT NULL,
 	code_order				varchar(20) 		NOT NULL,
@@ -171,10 +171,10 @@ CREATE TABLE operational.orders (
 	deleted_at 				timestamp,
 	CONSTRAINT order_pkey 				PRIMARY KEY (id),
 	CONSTRAINT order_id_order_key 		UNIQUE (code_order),
-	CONSTRAINT order_id_client_fkey 	FOREIGN KEY (id_client) 	REFERENCES operational.clients(code_client) ON UPDATE CASCADE ON DELETE CASCADE
+	CONSTRAINT order_id_client_fkey 	FOREIGN KEY (id_client) 	REFERENCES alpha.clients(code_client) ON UPDATE CASCADE ON DELETE CASCADE
 );
 
-CREATE TABLE operational.payments (
+CREATE TABLE alpha.payments (
 	id 				serial4 		NOT NULL,
 	id_client 		varchar(20) 	NOT NULL,
 	id_order		varchar(20)		NOT NULL,
@@ -188,12 +188,12 @@ CREATE TABLE operational.payments (
 	updated_at 		timestamp,
 	CONSTRAINT payment_pkey 				PRIMARY KEY (id),
 	CONSTRAINT payment_id_payment_key 		UNIQUE (code_payment),
-	CONSTRAINT id_payment_client_fkey 		FOREIGN KEY (id_client) 	REFERENCES operational.clients(code_client) ON UPDATE CASCADE ON DELETE CASCADE,
-	CONSTRAINT payment_id_order_fkey 		FOREIGN KEY (id_order) 		REFERENCES operational.orders(code_order) ON UPDATE CASCADE ON DELETE CASCADE,
-	CONSTRAINT payment_id_mthod_pay_fkey 	FOREIGN KEY (id_methodpay) 	REFERENCES operational.method_payments(code_methodpay) ON UPDATE CASCADE ON DELETE CASCADE
+	CONSTRAINT id_payment_client_fkey 		FOREIGN KEY (id_client) 	REFERENCES alpha.clients(code_client) ON UPDATE CASCADE ON DELETE CASCADE,
+	CONSTRAINT payment_id_order_fkey 		FOREIGN KEY (id_order) 		REFERENCES alpha.orders(code_order) ON UPDATE CASCADE ON DELETE CASCADE,
+	CONSTRAINT payment_id_mthod_pay_fkey 	FOREIGN KEY (id_methodpay) 	REFERENCES alpha.method_payments(code_methodpay) ON UPDATE CASCADE ON DELETE CASCADE
 );
 
-CREATE TABLE operational.payment_details (
+CREATE TABLE alpha.payment_details (
 	id 				serial4 		NOT NULL,
 	id_payment 		varchar(20) 	NOT NULL,
 	doc_no			varchar(20)		NOT NULL,
@@ -204,22 +204,22 @@ CREATE TABLE operational.payment_details (
 	created_at 		timestamp 		DEFAULT NOW(),
 	updated_at 		timestamp,
 	CONSTRAINT payment_details_pkey 		PRIMARY KEY (id),
-	CONSTRAINT payment_id_method_pay_fkey 	FOREIGN KEY (id_payment) REFERENCES operational.payments(code_payment) ON UPDATE CASCADE ON DELETE CASCADE
+	CONSTRAINT payment_id_method_pay_fkey 	FOREIGN KEY (id_payment) REFERENCES alpha.payments(code_payment) ON UPDATE CASCADE ON DELETE CASCADE
 );
 
-CREATE TABLE operational.client_deposit_histories (
+CREATE TABLE alpha.client_deposit_histories (
 	id 				serial4 			NOT NULL,
 	id_client 		varchar(20) 		NOT NULL,
 	id_methodpay	varchar(20)			NOT NULL,
 	deposit 		numeric(12,2) 		NULL,
 	created_at 		timestamp 			NOT NULL,
 	CONSTRAINT client_deposit_histories_pkey 				PRIMARY KEY (id),
-	CONSTRAINT client_deposit_histories_id_client_fkey 		FOREIGN KEY (id_client) REFERENCES operational.clients(code_client) ON UPDATE CASCADE ON DELETE CASCADE,
-	CONSTRAINT client_deposit_histories_id_methodpay_fkey 	FOREIGN KEY (id_methodpay) REFERENCES operational.method_payments(code_methodpay) ON UPDATE CASCADE ON DELETE CASCADE
+	CONSTRAINT client_deposit_histories_id_client_fkey 		FOREIGN KEY (id_client) REFERENCES alpha.clients(code_client) ON UPDATE CASCADE ON DELETE CASCADE,
+	CONSTRAINT client_deposit_histories_id_methodpay_fkey 	FOREIGN KEY (id_methodpay) REFERENCES alpha.method_payments(code_methodpay) ON UPDATE CASCADE ON DELETE CASCADE
 );
 
 
-CREATE TABLE operational.vessels (
+CREATE TABLE alpha.vessels (
 	id 					serial4 	NOT NULL,
 	id_partner 			varchar(20) NOT NULL,
 	code_vessel 		varchar(20) NOT NULL,
@@ -231,10 +231,10 @@ CREATE TABLE operational.vessels (
 	deleted_at 			timestamp,
 	CONSTRAINT vessel_pkey 				PRIMARY KEY (id),
 	CONSTRAINT vessel_id_vessel_key 	UNIQUE (code_vessel),
-	CONSTRAINT vessel_id_partner_fkey 	FOREIGN KEY (id_partner) 	REFERENCES operational.partners(code_partner) ON UPDATE CASCADE ON DELETE CASCADE
+	CONSTRAINT vessel_id_partner_fkey 	FOREIGN KEY (id_partner) 	REFERENCES alpha.partners(code_partner) ON UPDATE CASCADE ON DELETE CASCADE
 );
 
-CREATE TABLE operational.vessel_details (
+CREATE TABLE alpha.vessel_details (
 	id 					serial4		NOT NULL,
 	id_vessel 			varchar(20) NOT NULL,
 	picture				varchar(20), -- Link Picture
@@ -250,10 +250,10 @@ CREATE TABLE operational.vessel_details (
 	updated_at 			timestamp,
 	deleted_at 			timestamp,
 	CONSTRAINT vessel_details_pkey 				PRIMARY KEY (id),
-	CONSTRAINT vessel_details_id_vessel_fkey 	FOREIGN KEY (id_vessel) REFERENCES operational.vessels(code_vessel) ON UPDATE CASCADE ON DELETE CASCADE
+	CONSTRAINT vessel_details_id_vessel_fkey 	FOREIGN KEY (id_vessel) REFERENCES alpha.vessels(code_vessel) ON UPDATE CASCADE ON DELETE CASCADE
 );
 
-CREATE TABLE operational.order_details (
+CREATE TABLE alpha.order_details (
 	id 				serial4 	NOT NULL,
 	id_order 		varchar(20) NOT NULL,
 	id_vessel		varchar(20) NOT NULL,
@@ -265,11 +265,11 @@ CREATE TABLE operational.order_details (
 	updated_at 		timestamp,
 	CONSTRAINT order_details_pkey 			PRIMARY KEY (id),
 	CONSTRAINT order_details_id_task_key 	UNIQUE (code_task),
-	CONSTRAINT order_details_id_order_fkey 	FOREIGN KEY (id_order) 	REFERENCES operational.orders(code_order) ON UPDATE CASCADE ON DELETE CASCADE,
-	CONSTRAINT order_details_id_vessel_fkey FOREIGN KEY (id_vessel) REFERENCES operational.vessels(code_vessel) ON UPDATE CASCADE ON DELETE CASCADE
+	CONSTRAINT order_details_id_order_fkey 	FOREIGN KEY (id_order) 	REFERENCES alpha.orders(code_order) ON UPDATE CASCADE ON DELETE CASCADE,
+	CONSTRAINT order_details_id_vessel_fkey FOREIGN KEY (id_vessel) REFERENCES alpha.vessels(code_vessel) ON UPDATE CASCADE ON DELETE CASCADE
 );
 
-CREATE TABLE operational.vessel_crews (
+CREATE TABLE alpha.vessel_crews (
 	id 			serial4 	NOT NULL,
 	id_user 	varchar(20),
 	id_vessel 	varchar(20) NOT NULL,
@@ -279,11 +279,11 @@ CREATE TABLE operational.vessel_crews (
 	updated_at 	timestamp,
 	deleted_at 	timestamp,
 	CONSTRAINT vessel_crew_pkey 			PRIMARY KEY (id),
-	CONSTRAINT vessel_crew_id_vessel_fkey 	FOREIGN KEY (id_vessel) REFERENCES operational.vessels(code_vessel) ON UPDATE CASCADE ON DELETE CASCADE,
-	CONSTRAINT vessel_crew_id_user_fkey 	FOREIGN KEY (id_user) 	REFERENCES operational.users(code_user) ON UPDATE CASCADE ON DELETE CASCADE
+	CONSTRAINT vessel_crew_id_vessel_fkey 	FOREIGN KEY (id_vessel) REFERENCES alpha.vessels(code_vessel) ON UPDATE CASCADE ON DELETE CASCADE,
+	CONSTRAINT vessel_crew_id_user_fkey 	FOREIGN KEY (id_user) 	REFERENCES alpha.users(code_user) ON UPDATE CASCADE ON DELETE CASCADE
 );
 
-CREATE TABLE operational.vessel_activities (
+CREATE TABLE alpha.vessel_activities (
 	id				serial4			NOT NULL,
 	id_vessel		varchar(20)		NOT NULL,
 	id_order		varchar(20),
@@ -298,13 +298,13 @@ CREATE TABLE operational.vessel_activities (
 	deleted_at		timestamp,
 	CONSTRAINT vessel_activities_pkey			PRIMARY KEY(id),
 	CONSTRAINT vessel_activities_key			UNIQUE (seq_activity),
-	CONSTRAINT vessel_activities_id_vessel_fkey	FOREIGN KEY (id_vessel) REFERENCES operational.vessels(code_vessel) ON UPDATE CASCADE ON DELETE CASCADE,
-	CONSTRAINT vessel_activities_id_order_fkey 	FOREIGN KEY (id_order) 	REFERENCES operational.orders(code_order) ON UPDATE CASCADE ON DELETE CASCADE,
-	CONSTRAINT vessel_activities_id_task_fkey 	FOREIGN KEY (id_task) 	REFERENCES operational.order_details(code_task) ON UPDATE CASCADE ON DELETE CASCADE
+	CONSTRAINT vessel_activities_id_vessel_fkey	FOREIGN KEY (id_vessel) REFERENCES alpha.vessels(code_vessel) ON UPDATE CASCADE ON DELETE CASCADE,
+	CONSTRAINT vessel_activities_id_order_fkey 	FOREIGN KEY (id_order) 	REFERENCES alpha.orders(code_order) ON UPDATE CASCADE ON DELETE CASCADE,
+	CONSTRAINT vessel_activities_id_task_fkey 	FOREIGN KEY (id_task) 	REFERENCES alpha.order_details(code_task) ON UPDATE CASCADE ON DELETE CASCADE
 
 );
 
-CREATE TABLE operational.vessel_positions (
+CREATE TABLE alpha.vessel_positions (
 	id 				serial4 			NOT NULL,
 	id_vessel		varchar(20)			NOT NULL,
 	seq_activity	varchar(20)			NOT NULL,
@@ -315,8 +315,8 @@ CREATE TABLE operational.vessel_positions (
 	note 			text 		NOT NULL,
 	created_at 		timestamp 			DEFAULT NOW(),
 	CONSTRAINT vessel_positions_pkey 				PRIMARY KEY (id),
-	CONSTRAINT vessel_positions_id_vessel_fkey 		FOREIGN KEY (id_vessel) REFERENCES operational.vessels(code_vessel) ON UPDATE CASCADE ON DELETE CASCADE,
-	CONSTRAINT vessel_positions_id_activity_fkey 	FOREIGN KEY (seq_activity) 	REFERENCES operational.vessel_activities(seq_activity) ON UPDATE CASCADE ON DELETE CASCADE
+	CONSTRAINT vessel_positions_id_vessel_fkey 		FOREIGN KEY (id_vessel) REFERENCES alpha.vessels(code_vessel) ON UPDATE CASCADE ON DELETE CASCADE,
+	CONSTRAINT vessel_positions_id_activity_fkey 	FOREIGN KEY (seq_activity) 	REFERENCES alpha.vessel_activities(seq_activity) ON UPDATE CASCADE ON DELETE CASCADE
 );
 
 CREATE TABLE audit.audit_logs (
@@ -334,7 +334,7 @@ CREATE TABLE audit.audit_logs (
 
 CREATE TABLE audit.audit_logs_default PARTITION OF audit.audit_logs DEFAULT; -- Default partition for unmatched dates
 
-CREATE TABLE operational.user_managements (
+CREATE TABLE alpha.user_managements (
 	id			serial4			NOT NULL,
 	id_user		varchar(20)		NOT NULL,
 	password	varchar(20)		NOT NULL,
@@ -344,7 +344,7 @@ CREATE TABLE operational.user_managements (
 	updated_at	timestamp,
 	deleted_at	timestamp,
 	CONSTRAINT user_managements_pkey			PRIMARY KEY (id),
-	CONSTRAINT user_managements_id_user_fkey	FOREIGN KEY (id_user) REFERENCES operational.users(code_user) ON UPDATE CASCADE ON DELETE CASCADE
+	CONSTRAINT user_managements_id_user_fkey	FOREIGN KEY (id_user) REFERENCES alpha.users(code_user) ON UPDATE CASCADE ON DELETE CASCADE
 );
 
 -- log
@@ -396,9 +396,9 @@ CREATE TABLE log.vibrocore_logs (
 	deleted_at			timestamp,
 	CONSTRAINT vibrocore_log_pkey 				PRIMARY KEY (id),
 	CONSTRAINT vibrocore_log_doc_no_key 		UNIQUE (doc_no),
-	CONSTRAINT vibrocore_log_id_site_fkey 		FOREIGN KEY (id_site) 	REFERENCES operational.sites(code_site) ON UPDATE CASCADE ON DELETE CASCADE,
-	CONSTRAINT vibrocore_log_id_client_fkey 	FOREIGN KEY (id_client) REFERENCES operational.clients(code_client) ON UPDATE CASCADE ON DELETE CASCADE,
-	CONSTRAINT vibrocore_log_id_checker_fkey 	FOREIGN KEY (id_user) 	REFERENCES operational.users(code_user) ON UPDATE CASCADE ON DELETE CASCADE
+	CONSTRAINT vibrocore_log_id_site_fkey 		FOREIGN KEY (id_site) 	REFERENCES alpha.sites(code_site) ON UPDATE CASCADE ON DELETE CASCADE,
+	CONSTRAINT vibrocore_log_id_client_fkey 	FOREIGN KEY (id_client) REFERENCES alpha.clients(code_client) ON UPDATE CASCADE ON DELETE CASCADE,
+	CONSTRAINT vibrocore_log_id_checker_fkey 	FOREIGN KEY (id_user) 	REFERENCES alpha.users(code_user) ON UPDATE CASCADE ON DELETE CASCADE
 );
 
 CREATE TABLE log.vibrocore_log_details (
@@ -438,10 +438,10 @@ CREATE TABLE log.sample_logs (
 	deleted_at			timestamp,
 	CONSTRAINT sample_logs_pkey 			PRIMARY KEY (id),
 	CONSTRAINT sample_doc_no_key 			UNIQUE (doc_no),
-	CONSTRAINT sample_logs_id_vessel_fkey 	FOREIGN KEY (id_vessel) 	REFERENCES operational.vessels(code_vessel) ON UPDATE CASCADE ON DELETE CASCADE,
-	CONSTRAINT sample_logs_id_surveyor_fkey FOREIGN KEY (id_surveyor) 	REFERENCES operational.users(code_user) ON UPDATE CASCADE ON DELETE CASCADE,
-	CONSTRAINT sample_logs_id_captain_fkey 	FOREIGN KEY (id_captain) 	REFERENCES operational.users(code_user) ON UPDATE CASCADE ON DELETE CASCADE,
-	CONSTRAINT sample_logs_id_site_fkey 	FOREIGN KEY (id_site) 		REFERENCES operational.sites(code_site) ON UPDATE CASCADE ON DELETE CASCADE
+	CONSTRAINT sample_logs_id_vessel_fkey 	FOREIGN KEY (id_vessel) 	REFERENCES alpha.vessels(code_vessel) ON UPDATE CASCADE ON DELETE CASCADE,
+	CONSTRAINT sample_logs_id_surveyor_fkey FOREIGN KEY (id_surveyor) 	REFERENCES alpha.users(code_user) ON UPDATE CASCADE ON DELETE CASCADE,
+	CONSTRAINT sample_logs_id_captain_fkey 	FOREIGN KEY (id_captain) 	REFERENCES alpha.users(code_user) ON UPDATE CASCADE ON DELETE CASCADE,
+	CONSTRAINT sample_logs_id_site_fkey 	FOREIGN KEY (id_site) 		REFERENCES alpha.sites(code_site) ON UPDATE CASCADE ON DELETE CASCADE
 );
 
 CREATE TABLE log.sample_log_details (
@@ -478,8 +478,8 @@ CREATE TABLE log.surveis (
 	deleted_at	timestamp,
 	CONSTRAINT	surveis_pkey				PRIMARY KEY (id),
 	CONSTRAINT	surveis_code_survey_key		UNIQUE (code_survey),
-	CONSTRAINT	surveis_id_site_fkey		FOREIGN KEY (id_site)		REFERENCES operational.sites(code_site) ON UPDATE CASCADE ON DELETE CASCADE,
-	CONSTRAINT	surveis_id_surveyor_fkey	FOREIGN KEY (id_surveyor)	REFERENCES operational.users(code_user) ON UPDATE CASCADE ON DELETE CASCADE
+	CONSTRAINT	surveis_id_site_fkey		FOREIGN KEY (id_site)		REFERENCES alpha.sites(code_site) ON UPDATE CASCADE ON DELETE CASCADE,
+	CONSTRAINT	surveis_id_surveyor_fkey	FOREIGN KEY (id_surveyor)	REFERENCES alpha.users(code_user) ON UPDATE CASCADE ON DELETE CASCADE
 );
 
 CREATE TABLE log.survey_details (
