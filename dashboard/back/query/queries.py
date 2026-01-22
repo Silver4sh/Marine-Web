@@ -309,7 +309,7 @@ def get_logs():
         old_data,
         new_data,
         changed_at        
-    FROM audit.audit_logs
+    FROM alpha.audit_logs
     WHERE created_at <= NOW() - interval '7 days'
     ORDER BY created_at desc
     """
