@@ -75,7 +75,7 @@ CREATE TABLE operation.buoys (
 	CONSTRAINT buoys_id_site_fkey 	FOREIGN KEY (id_site) REFERENCES operation.sites(code_site) ON UPDATE CASCADE ON DELETE CASCADE
 );
 
-CREATE TABlE operation.buoy_sensor_histories (
+CREATE TABLE operation.buoy_sensor_histories (
 	id 			serial4		NOT NULL,
 	id_buoy 	varchar(20) NOT NULL,
 	salinitas 	int4,
@@ -1303,16 +1303,16 @@ CREATE INDEX idx_vibrocore_details_litho 				ON log.vibrocore_log_details 			USI
 CREATE INDEX idx_sample_details_litho 					ON log.sample_log_details 				USING btree (id_lithology);
 
 -- al
-CREATE INDEX idx_vessel_activities_search 				ON al.vessel_activities 			USING btree (id_vessel, id_order, id_task, seq_activity);
-CREATE INDEX idx_vessel_positions_search 				ON al.vessel_positions 			USING btree (id_vessel, seq_activity);
-CREATE INDEX idx_client_deposit_histories_search 		ON al.client_deposit_histories 	USING btree (id_client);
-CREATE INDEX idx_payment_details_search 				ON al.payment_details 				USING btree (id_payment, doc_no);
-CREATE INDEX idx_payment_search 						ON al.payments 					USING btree (id_client, status);
-CREATE INDEX idx_order_search 							ON al.orders 						USING btree (id_client, status);
-CREATE INDEX idx_partner_search 						ON al.partners 					USING btree (status);
-CREATE INDEX idx_clients_region_search 					ON al.clients 						USING btree (region, status);
-CREATE INDEX idx_users_search 							ON al.users 						USING btree (organs, role);
-CREATE INDEX idx_buoy_sensor_histories_search 			ON al.buoy_sensor_histories 		USING btree (created_at);
+CREATE INDEX idx_vessel_activities_search 				ON operation.vessel_activities 			USING btree (id_vessel, id_order, id_task, seq_activity);
+CREATE INDEX idx_vessel_positions_search 				ON operation.vessel_positions 			USING btree (id_vessel, seq_activity);
+CREATE INDEX idx_client_deposit_histories_search 		ON operation.client_deposit_histories 	USING btree (id_client);
+CREATE INDEX idx_payment_details_search 				ON operation.payment_details 				USING btree (id_payment, doc_no);
+CREATE INDEX idx_payment_search 						ON operation.payments 					USING btree (id_client, status);
+CREATE INDEX idx_order_search 							ON operation.orders 						USING btree (id_client, status);
+CREATE INDEX idx_partner_search 						ON operation.partners 					USING btree (status);
+CREATE INDEX idx_clients_region_search 					ON operation.clients 						USING btree (region, status);
+CREATE INDEX idx_users_search 							ON operation.users 						USING btree (organs, role);
+CREATE INDEX idx_buoy_sensor_histories_search 			ON operation.buoy_sensor_histories 		USING btree (created_at);
 
 
 
@@ -1426,27 +1426,27 @@ CREATE UNIQUE INDEX rockworks_sys_idx_intervaltype_name_ix_11494 ON rockworks.in
 CREATE UNIQUE INDEX rockworks_sys_idx_aquifertype_name_ix_11406 ON rockworks.aquifertype USING btree (name);
 
 -- Optimization Indexes for Foreign Keys (Fast Joins)
-CREATE INDEX idx_buoys_site 					ON al.buoys (id_site);
-CREATE INDEX idx_clients_contact 				ON al.clients (id_contact);
-CREATE INDEX idx_partners_contact 				ON al.partners (id_contact);
-CREATE INDEX idx_vessels_partner 				ON al.vessels (id_partner);
-CREATE INDEX idx_order_details_order 			ON al.order_details (id_order);
-CREATE INDEX idx_order_details_vessel 			ON al.order_details (id_vessel);
-CREATE INDEX idx_vessel_crews_vessel 			ON al.vessel_crews (id_vessel);
-CREATE INDEX idx_vessel_crews_user 				ON al.vessel_crews (id_user);
+CREATE INDEX idx_buoys_site 					ON operation.buoys (id_site);
+CREATE INDEX idx_clients_contact 				ON operation.clients (id_contact);
+CREATE INDEX idx_partners_contact 				ON operation.partners (id_contact);
+CREATE INDEX idx_vessels_partner 				ON operation.vessels (id_partner);
+CREATE INDEX idx_order_details_order 			ON operation.order_details (id_order);
+CREATE INDEX idx_order_details_vessel 			ON operation.order_details (id_vessel);
+CREATE INDEX idx_vessel_crews_vessel 			ON operation.vessel_crews (id_vessel);
+CREATE INDEX idx_vessel_crews_user 				ON operation.vessel_crews (id_user);
 
 -- Auto-generation Sequences
-CREATE SEQUENCE al.seq_contact_code;
-CREATE SEQUENCE al.seq_methodpay_code;
-CREATE SEQUENCE al.seq_site_code;
-CREATE SEQUENCE al.seq_buoy_code;
-CREATE SEQUENCE al.seq_user_code;
-CREATE SEQUENCE al.seq_client_code;
-CREATE SEQUENCE al.seq_partner_code;
-CREATE SEQUENCE al.seq_order_code;
-CREATE SEQUENCE al.seq_payment_code;
-CREATE SEQUENCE al.seq_vessel_code;
-CREATE SEQUENCE al.seq_task_code;
+CREATE SEQUENCE operation.seq_contact_code;
+CREATE SEQUENCE operation.seq_methodpay_code;
+CREATE SEQUENCE operation.seq_site_code;
+CREATE SEQUENCE operation.seq_buoy_code;
+CREATE SEQUENCE operation.seq_user_code;
+CREATE SEQUENCE operation.seq_client_code;
+CREATE SEQUENCE operation.seq_partner_code;
+CREATE SEQUENCE operation.seq_order_code;
+CREATE SEQUENCE operation.seq_payment_code;
+CREATE SEQUENCE operation.seq_vessel_code;
+CREATE SEQUENCE operation.seq_task_code;
 CREATE SEQUENCE log.seq_term_code;
 CREATE SEQUENCE log.seq_lithology_code;
 CREATE SEQUENCE log.seq_survey_code;
@@ -1455,7 +1455,7 @@ CREATE SEQUENCE log.seq_survey_code;
 
 
 -- Refined Function to handle specific columns directly
-CREATE OR REPLACE FUNCTION generate_code_auto()
+CREATE OR REPLACE FUNCTION operation.generate_code_auto()
 RETURNS TRIGGER AS $$
 DECLARE
     next_val BIGINT;
@@ -1464,17 +1464,17 @@ DECLARE
     seq_name TEXT;
 BEGIN
     -- 1. Identify Prefix & Sequence
-    IF TG_TABLE_NAME = 'contacts' THEN prefix := 'CT'; seq_name := 'al.seq_contact_code';
-    ELSIF TG_TABLE_NAME = 'method_payments' THEN prefix := 'MP'; seq_name := 'al.seq_methodpay_code';
-    ELSIF TG_TABLE_NAME = 'sites' THEN prefix := 'ST'; seq_name := 'al.seq_site_code';
-    ELSIF TG_TABLE_NAME = 'buoys' THEN prefix := 'BY'; seq_name := 'al.seq_buoy_code';
-    ELSIF TG_TABLE_NAME = 'users' THEN prefix := 'USR'; seq_name := 'al.seq_user_code';
-    ELSIF TG_TABLE_NAME = 'clients' THEN prefix := 'CL'; seq_name := 'al.seq_client_code';
-    ELSIF TG_TABLE_NAME = 'partners' THEN prefix := 'PT'; seq_name := 'al.seq_partner_code';
-    ELSIF TG_TABLE_NAME = 'orders' THEN prefix := 'ORD'; seq_name := 'al.seq_order_code';
-    ELSIF TG_TABLE_NAME = 'payments' THEN prefix := 'PAY'; seq_name := 'al.seq_payment_code';
-    ELSIF TG_TABLE_NAME = 'vessels' THEN prefix := 'VSL'; seq_name := 'al.seq_vessel_code';
-    ELSIF TG_TABLE_NAME = 'order_details' THEN prefix := 'TSK'; seq_name := 'al.seq_task_code';
+    IF TG_TABLE_NAME = 'contacts' THEN prefix := 'CT'; seq_name := 'operation.seq_contact_code';
+    ELSIF TG_TABLE_NAME = 'method_payments' THEN prefix := 'MP'; seq_name := 'operation.seq_methodpay_code';
+    ELSIF TG_TABLE_NAME = 'sites' THEN prefix := 'ST'; seq_name := 'operation.seq_site_code';
+    ELSIF TG_TABLE_NAME = 'buoys' THEN prefix := 'BY'; seq_name := 'operation.seq_buoy_code';
+    ELSIF TG_TABLE_NAME = 'users' THEN prefix := 'USR'; seq_name := 'operation.seq_user_code';
+    ELSIF TG_TABLE_NAME = 'clients' THEN prefix := 'CL'; seq_name := 'operation.seq_client_code';
+    ELSIF TG_TABLE_NAME = 'partners' THEN prefix := 'PT'; seq_name := 'operation.seq_partner_code';
+    ELSIF TG_TABLE_NAME = 'orders' THEN prefix := 'ORD'; seq_name := 'operation.seq_order_code';
+    ELSIF TG_TABLE_NAME = 'payments' THEN prefix := 'PAY'; seq_name := 'operation.seq_payment_code';
+    ELSIF TG_TABLE_NAME = 'vessels' THEN prefix := 'VSL'; seq_name := 'operation.seq_vessel_code';
+    ELSIF TG_TABLE_NAME = 'order_details' THEN prefix := 'TSK'; seq_name := 'operation.seq_task_code';
     ELSIF TG_TABLE_NAME = 'term_desc' THEN prefix := 'TRM'; seq_name := 'log.seq_term_code';
     ELSIF TG_TABLE_NAME = 'soil_desc' THEN prefix := 'SL'; seq_name := 'log.seq_lithology_code';
     ELSIF TG_TABLE_NAME = 'surveis' THEN prefix := 'SRV'; seq_name := 'log.seq_survey_code';
@@ -1510,17 +1510,17 @@ END;
 $$ LANGUAGE plpgsql;
 
 -- Triggers (Execute BEFORE INSERT)
-CREATE TRIGGER trg_generate_code_contacts BEFORE INSERT ON al.contacts FOR EACH ROW WHEN (NEW.code_contact IS NULL) EXECUTE FUNCTION generate_code_auto();
-CREATE TRIGGER trg_generate_code_methodpay BEFORE INSERT ON al.method_payments FOR EACH ROW WHEN (NEW.code_methodpay IS NULL) EXECUTE FUNCTION generate_code_auto();
-CREATE TRIGGER trg_generate_code_sites BEFORE INSERT ON al.sites FOR EACH ROW WHEN (NEW.code_site IS NULL) EXECUTE FUNCTION generate_code_auto();
-CREATE TRIGGER trg_generate_code_buoys BEFORE INSERT ON al.buoys FOR EACH ROW WHEN (NEW.code_buoy IS NULL) EXECUTE FUNCTION generate_code_auto();
-CREATE TRIGGER trg_generate_code_users BEFORE INSERT ON al.users FOR EACH ROW WHEN (NEW.code_user IS NULL) EXECUTE FUNCTION generate_code_auto();
-CREATE TRIGGER trg_generate_code_clients BEFORE INSERT ON al.clients FOR EACH ROW WHEN (NEW.code_client IS NULL) EXECUTE FUNCTION generate_code_auto();
-CREATE TRIGGER trg_generate_code_partners BEFORE INSERT ON al.partners FOR EACH ROW WHEN (NEW.code_partner IS NULL) EXECUTE FUNCTION generate_code_auto();
-CREATE TRIGGER trg_generate_code_orders BEFORE INSERT ON al.orders FOR EACH ROW WHEN (NEW.code_order IS NULL) EXECUTE FUNCTION generate_code_auto();
-CREATE TRIGGER trg_generate_code_payments BEFORE INSERT ON al.payments FOR EACH ROW WHEN (NEW.code_payment IS NULL) EXECUTE FUNCTION generate_code_auto();
-CREATE TRIGGER trg_generate_code_vessels BEFORE INSERT ON al.vessels FOR EACH ROW WHEN (NEW.code_vessel IS NULL) EXECUTE FUNCTION generate_code_auto();
-CREATE TRIGGER trg_generate_code_order_details BEFORE INSERT ON al.order_details FOR EACH ROW WHEN (NEW.code_task IS NULL) EXECUTE FUNCTION generate_code_auto();
-CREATE TRIGGER trg_generate_code_term BEFORE INSERT ON log.term_desc FOR EACH ROW WHEN (NEW.code_term IS NULL) EXECUTE FUNCTION generate_code_auto();
-CREATE TRIGGER trg_generate_code_soil BEFORE INSERT ON log.soil_desc FOR EACH ROW WHEN (NEW.code_lithology IS NULL) EXECUTE FUNCTION generate_code_auto();
-CREATE TRIGGER trg_generate_code_survey BEFORE INSERT ON log.surveis FOR EACH ROW WHEN (NEW.code_survey IS NULL) EXECUTE FUNCTION generate_code_auto();
+CREATE TRIGGER trg_generate_code_contacts BEFORE INSERT ON operation.contacts FOR EACH ROW WHEN (NEW.code_contact IS NULL) EXECUTE FUNCTION operation.generate_code_auto();
+CREATE TRIGGER trg_generate_code_methodpay BEFORE INSERT ON operation.method_payments FOR EACH ROW WHEN (NEW.code_methodpay IS NULL) EXECUTE FUNCTION operation.generate_code_auto();
+CREATE TRIGGER trg_generate_code_sites BEFORE INSERT ON operation.sites FOR EACH ROW WHEN (NEW.code_site IS NULL) EXECUTE FUNCTION operation.generate_code_auto();
+CREATE TRIGGER trg_generate_code_buoys BEFORE INSERT ON operation.buoys FOR EACH ROW WHEN (NEW.code_buoy IS NULL) EXECUTE FUNCTION operation.generate_code_auto();
+CREATE TRIGGER trg_generate_code_users BEFORE INSERT ON operation.users FOR EACH ROW WHEN (NEW.code_user IS NULL) EXECUTE FUNCTION operation.generate_code_auto();
+CREATE TRIGGER trg_generate_code_clients BEFORE INSERT ON operation.clients FOR EACH ROW WHEN (NEW.code_client IS NULL) EXECUTE FUNCTION operation.generate_code_auto();
+CREATE TRIGGER trg_generate_code_partners BEFORE INSERT ON operation.partners FOR EACH ROW WHEN (NEW.code_partner IS NULL) EXECUTE FUNCTION operation.generate_code_auto();
+CREATE TRIGGER trg_generate_code_orders BEFORE INSERT ON operation.orders FOR EACH ROW WHEN (NEW.code_order IS NULL) EXECUTE FUNCTION operation.generate_code_auto();
+CREATE TRIGGER trg_generate_code_payments BEFORE INSERT ON operation.payments FOR EACH ROW WHEN (NEW.code_payment IS NULL) EXECUTE FUNCTION operation.generate_code_auto();
+CREATE TRIGGER trg_generate_code_vessels BEFORE INSERT ON operation.vessels FOR EACH ROW WHEN (NEW.code_vessel IS NULL) EXECUTE FUNCTION operation.generate_code_auto();
+CREATE TRIGGER trg_generate_code_order_details BEFORE INSERT ON operation.order_details FOR EACH ROW WHEN (NEW.code_task IS NULL) EXECUTE FUNCTION operation.generate_code_auto();
+CREATE TRIGGER trg_generate_code_term BEFORE INSERT ON log.term_desc FOR EACH ROW WHEN (NEW.code_term IS NULL) EXECUTE FUNCTION operation.generate_code_auto();
+CREATE TRIGGER trg_generate_code_soil BEFORE INSERT ON log.soil_desc FOR EACH ROW WHEN (NEW.code_lithology IS NULL) EXECUTE FUNCTION operation.generate_code_auto();
+CREATE TRIGGER trg_generate_code_survey BEFORE INSERT ON log.surveis FOR EACH ROW WHEN (NEW.code_survey IS NULL) EXECUTE FUNCTION operation.generate_code_auto();

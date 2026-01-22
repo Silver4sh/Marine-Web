@@ -27,7 +27,7 @@ def get_fleet_status():
         SUM(CASE WHEN LOWER(status) = 'operating' THEN 1 ELSE 0 END) as operating,
         SUM(CASE WHEN LOWER(status) IN ('maintenance', 'mtc') THEN 1 ELSE 0 END) as maintenance,
         SUM(CASE WHEN LOWER(status) = 'idle' THEN 1 ELSE 0 END) as idle
-    FROM alpha.vessels
+    FROM operation.vessels
     """
     df = run_query(query)
     if df.empty:
@@ -46,8 +46,8 @@ def get_vessel_position():
            vp.speed,
            0 as heading,
            vp.created_at as "Last Update"
-    FROM alpha.vessel_positions vp
-    JOIN alpha.vessels v ON vp.id_vessel = v.code_vessel
+    FROM operation.vessel_positions vp
+    JOIN operation.vessels v ON vp.id_vessel = v.code_vessel
     ORDER BY vp.id_vessel, vp.created_at DESC;
     """
     return run_query(query)
@@ -56,7 +56,7 @@ def get_vessel_position():
 def get_path_vessel(vessel_id):
     query = """
     SELECT latitude, longitude, 0 as heading, speed, created_at
-    FROM alpha.vessel_positions
+    FROM operation.vessel_positions
     WHERE id_vessel = :vessel_id
     ORDER BY created_at DESC;
     """
@@ -76,9 +76,9 @@ def get_data_water():
         bsh.tide as tide,
         bsh.density as density,
         bsh.created_at as latest_timestamp
-    FROM alpha.buoy_sensor_histories bsh
-    JOIN alpha.buoys b ON b.code_buoy = bsh.id_buoy
-    JOIN alpha.sites s ON s.code_site = b.id_site
+    FROM operation.buoy_sensor_histories bsh
+    JOIN operation.buoys b ON b.code_buoy = bsh.id_buoy
+    JOIN operation.sites s ON s.code_site = b.id_site
     ORDER BY bsh.created_at DESC
     """
     return run_query(query)
@@ -98,7 +98,7 @@ def get_sensor_trends(buoy_id=None):
         turbidity,
         current,
         oxygen
-    FROM alpha.buoy_sensor_histories bsh
+    FROM operation.buoy_sensor_histories bsh
     {where_clause}
     ORDER BY created_at ASC
     """
@@ -106,14 +106,14 @@ def get_sensor_trends(buoy_id=None):
 
 @st.cache_data(ttl=3600)
 def get_buoy_list():
-    query = "SELECT DISTINCT id_buoy FROM alpha.buoy_sensor_histories ORDER BY id_buoy"
+    query = "SELECT DISTINCT id_buoy FROM operation.buoy_sensor_histories ORDER BY id_buoy"
     return run_query(query)
 
 @st.cache_data(ttl=600)
 def get_buoy_date_range(buoy_id):
     query = """
     SELECT MIN(created_at) as min_date, MAX(created_at) as max_date
-    FROM alpha.buoy_sensor_histories
+    FROM operation.buoy_sensor_histories
     WHERE id_buoy = :buoy_id
     """
     return run_query(query, params={"buoy_id": buoy_id})
@@ -132,9 +132,9 @@ def get_buoy_history(buoy_id, start_date, end_date):
         s.latitude,
         s.longitude,
         bsh.created_at
-    FROM alpha.buoy_sensor_histories bsh
-    JOIN alpha.buoys b ON bsh.id_buoy = b.code_buoy 
-    JOIN alpha.sites s ON b.id_site = s.code_site 
+    FROM operation.buoy_sensor_histories bsh
+    JOIN operation.buoys b ON bsh.id_buoy = b.code_buoy 
+    JOIN operation.sites s ON b.id_site = s.code_site 
     WHERE bsh.id_buoy = :buoy_id
       AND bsh.created_at >= :start_date
       AND bsh.created_at <= :end_date
@@ -150,7 +150,7 @@ def get_buoy_history(buoy_id, start_date, end_date):
 def get_global_date_range():
     query = """
     SELECT MIN(created_at) as min_date, MAX(created_at) as max_date
-    FROM alpha.buoy_sensor_histories
+    FROM operation.buoy_sensor_histories
     """
     return run_query(query)
 
@@ -165,7 +165,7 @@ def get_aggregated_buoy_history(start_date, end_date):
         AVG(oxygen) as oxygen,
         AVG(tide) as tide,
         AVG(density) as density
-    FROM alpha.buoy_sensor_histories
+    FROM operation.buoy_sensor_histories
     WHERE created_at >= :start_date AND created_at <= :end_date
     GROUP BY 1
     ORDER BY 1 ASC
@@ -182,7 +182,7 @@ def get_financial_metrics():
         COALESCE(SUM(total_amount), 0) as total_revenue,
         COUNT(DISTINCT id_order) as completed_orders,
         DATE_TRUNC('month', payment_date)::DATE AS payment_day
-    FROM alpha.payments
+    FROM operation.payments
     WHERE status = 'Payed'
     GROUP BY DATE_TRUNC('month', payment_date)
     ORDER BY payment_day DESC;
@@ -225,7 +225,7 @@ def get_revenue_analysis():
     SELECT 
         DATE_TRUNC('month', payment_date) as month,
         SUM(total_amount) as revenue
-    FROM alpha.payments
+    FROM operation.payments
     WHERE status = 'Payed'
     GROUP BY 1
     ORDER BY 1 DESC
@@ -241,7 +241,7 @@ def get_order_stats():
         SUM(CASE WHEN status = 'In Completed' THEN 1 ELSE 0 END) as in_completed,
         SUM(CASE WHEN status = 'On Progress' THEN 1 ELSE 0 END) as on_progress,
         SUM(CASE WHEN status = 'Failed' THEN 1 ELSE 0 END) as failed
-    FROM alpha.orders
+    FROM operation.orders
     """
     df = run_query(query)
     if df.empty:
@@ -254,9 +254,9 @@ def get_revenue_by_service():
     SELECT 
         c.industry as "Service",
         SUM(p.total_amount) as "Value"
-    FROM alpha.payments p
-    JOIN alpha.orders o ON p.id_order = o.id
-    JOIN alpha.clients c ON o.id_client = c.code_client
+    FROM operation.payments p
+    JOIN operation.orders o ON p.id_order = o.id
+    JOIN operation.clients c ON o.id_client = c.code_client
     WHERE p.status = 'Payed'
     GROUP BY c.industry
     ORDER BY "Value" DESC
@@ -271,8 +271,8 @@ def get_fleet_daily_activity():
         TO_CHAR(vp.created_at, 'Dy') as day_name,
         EXTRACT(ISODOW FROM vp.created_at) as day_num,
         COUNT(DISTINCT DATE_TRUNC('hour', vp.created_at)) as active_hours
-    FROM alpha.vessel_positions vp
-    JOIN alpha.vessels v ON vp.id_vessel = v.code_vessel
+    FROM operation.vessel_positions vp
+    JOIN operation.vessels v ON vp.id_vessel = v.code_vessel
     WHERE vp.created_at >= NOW() - INTERVAL '7 days'
       AND vp.speed > 0.5
     GROUP BY 1, 2, 3
@@ -291,9 +291,9 @@ def get_clients_summary():
         c.status,
         COUNT(DISTINCT o.id) as total_orders,
         COALESCE(SUM(p.total_amount), 0) as ltv
-    FROM alpha.clients c
-    LEFT JOIN alpha.orders o ON c.code_client = o.id_client
-    LEFT JOIN alpha.payments p ON o.id = p.id_order AND p.status = 'Payed'
+    FROM operation.clients c
+    LEFT JOIN operation.orders o ON c.code_client = o.id_client
+    LEFT JOIN operation.payments p ON o.id = p.id_order AND p.status = 'Payed'
     GROUP BY c.code_client, c.name, c.industry, c.region, c.status
     ORDER BY ltv DESC
     """
@@ -309,7 +309,7 @@ def get_logs():
         old_data,
         new_data,
         changed_at        
-    FROM alpha.audit_logs
+    FROM audit.audit_logs
     WHERE created_at <= NOW() - interval '7 days'
     ORDER BY created_at desc
     """
@@ -320,7 +320,7 @@ def get_vessel_list():
     query = """
     SELECT 
         code_vessel
-    FROM alpha.vessels
+    FROM operation.vessels
     """
     return run_query(query)
 
@@ -334,7 +334,7 @@ def get_vessel_utilization_stats():
             THEN EXTRACT(EPOCH FROM (COALESCE(va.end_date, NOW()) - va.start_date))/3600 
             ELSE 0 END) as productive_hours
     FROM alpha.vessel_activities va
-    JOIN alpha.vessels v ON va.id_vessel = v.code_vessel
+    JOIN operation.vessels v ON va.id_vessel = v.code_vessel
     WHERE va.start_date >= NOW() - INTERVAL '30 days'
     GROUP BY v.name
     """
@@ -353,8 +353,8 @@ def get_revenue_cycle_metrics():
         SUM(p.total_amount) as realized_revenue,
         SUM(CASE WHEN p.status = 'Payed' THEN 1 ELSE 0 END) as paid_count,
         COUNT(o.id) as total_orders
-    FROM alpha.orders o
-    JOIN alpha.payments p ON o.id = p.id_order
+    FROM operation.orders o
+    JOIN operation.payments p ON o.id = p.id_order
     WHERE o.order_date >= NOW() - INTERVAL '6 months'
     GROUP BY 1
     ORDER BY 1 DESC
@@ -371,7 +371,7 @@ def get_environmental_anomalies():
             STDDEV(salinitas) as std_sal,
             AVG(turbidity) as avg_tur,
             STDDEV(turbidity) as std_tur
-        FROM alpha.buoy_sensor_histories
+        FROM operation.buoy_sensor_histories
         WHERE created_at >= NOW() - INTERVAL '30 days'
         GROUP BY id_buoy
     )
@@ -382,7 +382,7 @@ def get_environmental_anomalies():
         h.turbidity,
         (h.salinitas - s.avg_sal) / NULLIF(s.std_sal, 0) as sal_z_score,
         (h.turbidity - s.avg_tur) / NULLIF(s.std_tur, 0) as tur_z_score
-    FROM alpha.buoy_sensor_histories h
+    FROM operation.buoy_sensor_histories h
     JOIN stats s ON h.id_buoy = s.id_buoy
     WHERE h.created_at >= NOW() - INTERVAL '7 days'
       AND (
@@ -403,7 +403,7 @@ def get_logistics_performance():
         COUNT(*) as total_trips,
         AVG(EXTRACT(EPOCH FROM (actual_delivery_date - scheduled_delivery_date))/3600) as avg_delay_hours,
         SUM(CASE WHEN actual_delivery_date > scheduled_delivery_date THEN 1 ELSE 0 END) as late_trips
-    FROM alpha.orders
+    FROM operation.orders
     WHERE actual_delivery_date IS NOT NULL 
       AND scheduled_delivery_date IS NOT NULL
     GROUP BY destination
@@ -418,7 +418,7 @@ def init_settings_table():
     try:
         with engine.begin() as conn:
             conn.execute(text("""
-                CREATE TABLE IF NOT EXISTS alpha.system_settings (
+                CREATE TABLE IF NOT EXISTS operation.system_settings (
                     key VARCHAR(50) PRIMARY KEY,
                     value TEXT,
                     description TEXT,
@@ -426,7 +426,7 @@ def init_settings_table():
                 );
             """))
             
-            res = conn.execute(text("SELECT count(*) FROM alpha.system_settings")).scalar()
+            res = conn.execute(text("SELECT count(*) FROM operation.system_settings")).scalar()
             if res == 0:
                 defaults = [
                     ("app_name", "MarineOS Dashboard", "Application Name displayed in header"),
@@ -437,7 +437,7 @@ def init_settings_table():
                 ]
                 for k, v, d in defaults:
                     conn.execute(
-                        text("INSERT INTO alpha.system_settings (key, value, description) VALUES (:k, :v, :d)"),
+                        text("INSERT INTO operation.system_settings (key, value, description) VALUES (:k, :v, :d)"),
                         {"k": k, "v": v, "d": d}
                     )
     except Exception as e:
@@ -446,7 +446,7 @@ def init_settings_table():
 @st.cache_data(ttl=60)
 def get_system_settings():
     init_settings_table()
-    query = "SELECT key, value, description FROM alpha.system_settings"
+    query = "SELECT key, value, description FROM operation.system_settings"
     df = run_query(query)
     if df.empty: return {}
     return pd.Series(df.value.values, index=df.key).to_dict()
@@ -457,7 +457,7 @@ def update_system_setting(key, value):
     
     try:
         with engine.begin() as conn:
-            query = text("UPDATE alpha.system_settings SET value = :value, updated_at = NOW() WHERE key = :key")
+            query = text("UPDATE operation.system_settings SET value = :value, updated_at = NOW() WHERE key = :key")
             conn.execute(query, {"value": str(value), "key": key})
             st.cache_data.clear()
             return True
@@ -474,8 +474,8 @@ def get_all_users():
         u.status as user_status,
         um.status as account_status,
         um.last_login
-    FROM alpha.users u
-    JOIN alpha.user_managements um ON u.code_user = um.id_user
+    FROM operation.users u
+    JOIN operation.user_managements um ON u.code_user = um.id_user
     ORDER BY u.code_user ASC
     """
     return run_query(query)
@@ -487,19 +487,19 @@ def create_new_user(username, password, role):
 
     try:
         with engine.begin() as conn:
-            check_q = text("SELECT 1 FROM alpha.users WHERE code_user = :username")
+            check_q = text("SELECT 1 FROM operation.users WHERE code_user = :username")
             res = conn.execute(check_q, {"username": username}).fetchone()
             if res:
                 return False, f"User '{username}' already exists."
 
             insert_user = text("""
-                INSERT INTO alpha.users (code_user, role, status)
+                INSERT INTO operation.users (code_user, role, status)
                 VALUES (:username, :role, 'Active')
             """)
             conn.execute(insert_user, {"username": username, "role": role})
 
             insert_auth = text("""
-                INSERT INTO alpha.user_managements (id_user, password, status)
+                INSERT INTO operation.user_managements (id_user, password, status)
                 VALUES (:username, :password, 'Active')
             """)
             conn.execute(insert_auth, {"username": username, "password": password})
@@ -514,10 +514,10 @@ def update_user_status(username, new_status):
     
     try:
         with engine.begin() as conn:
-            q1 = text("UPDATE alpha.users SET status = :status WHERE code_user = :username")
+            q1 = text("UPDATE operation.users SET status = :status WHERE code_user = :username")
             conn.execute(q1, {"status": new_status, "username": username})
             
-            q2 = text("UPDATE alpha.user_managements SET status = :status WHERE id_user = :username")
+            q2 = text("UPDATE operation.user_managements SET status = :status WHERE id_user = :username")
             conn.execute(q2, {"status": new_status, "username": username})
             return True
     except Exception as e:
@@ -530,7 +530,7 @@ def update_user_role(username, new_role):
     
     try:
         with engine.begin() as conn:
-            q = text("UPDATE alpha.users SET role = :role WHERE code_user = :username")
+            q = text("UPDATE operation.users SET role = :role WHERE code_user = :username")
             conn.execute(q, {"role": new_role, "username": username})
             return True
     except Exception as e:
@@ -543,10 +543,10 @@ def delete_user(username):
     
     try:
         with engine.begin() as conn:
-            q1 = text("DELETE FROM alpha.user_managements WHERE id_user = :username")
+            q1 = text("DELETE FROM operation.user_managements WHERE id_user = :username")
             conn.execute(q1, {"username": username})
             
-            q2 = text("DELETE FROM alpha.users WHERE code_user = :username")
+            q2 = text("DELETE FROM operation.users WHERE code_user = :username")
             conn.execute(q2, {"username": username})
             return True
     except Exception as e:
@@ -559,7 +559,7 @@ def update_last_login_optimized(username, password):
     try:
         with engine.begin() as conn:
             update_query = text("""
-                UPDATE alpha.user_managements
+                UPDATE operation.user_managements
                 SET last_login = CURRENT_TIMESTAMP
                 WHERE id_user = :user_id AND password = :pwd
             """)
@@ -586,8 +586,8 @@ def update_password(username, old_pass, new_pass):
                     u.role,
                     u.status as user_status,
                     um.status as account_status
-                FROM alpha.user_managements um
-                JOIN alpha.users u ON um.id_user = u.code_user
+                FROM operation.user_managements um
+                JOIN operation.users u ON um.id_user = u.code_user
                 WHERE um.id_user = :username
                     AND um.password = :password
                     AND um.status = 'Active'
@@ -604,7 +604,7 @@ def update_password(username, old_pass, new_pass):
                 return False, "Username atau password lama salah"
             
             update_query = text("""
-                UPDATE alpha.user_managements
+                UPDATE operation.user_managements
                 SET password = :new_password,
                 updated_at = CURRENT_TIMESTAMP
                 WHERE id_user = :user_id 
