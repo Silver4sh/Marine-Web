@@ -5,14 +5,13 @@ import datetime
 import plotly.express as px
 from concurrent.futures import ThreadPoolExecutor
 
-from dashboard.config import ROLE_ADMIN, ROLE_FINANCE, ROLE_MARCOM, ROLE_OPERATIONS
-from dashboard.utils import render_metric_card, apply_chart_style, render_vessel_list_column, get_status_color, render_vessel_card
-from dashboard.data_manager import (
+from dashboard.core import (
+    ROLE_ADMIN, ROLE_FINANCE, ROLE_MARCOM, ROLE_OPERATIONS,
+    render_metric_card, apply_chart_style, render_vessel_list_column, get_status_color, render_vessel_card,
     get_fleet_status, get_order_stats, get_financial_metrics, get_revenue_analysis, 
-    get_clients_summary, get_system_settings, get_logs, get_data_water
+    get_clients_summary, get_system_settings, get_logs, get_data_water,
+    page_heatmap, get_notification_id, generate_insights
 )
-from dashboard.visualizations import page_heatmap, radar_chart
-from dashboard.analysis import generate_insights, get_notification_id
 
 # --- Async Data Loading ---
 class AsyncDataManager:
@@ -221,8 +220,8 @@ def render_environ_tab():
             dr = st.slider("Rentang:", min_value=min_d, max_value=max_d, value=(min_d, max_d), format="DD/MM/YY")
             df = df[(df['latest_timestamp'].dt.date >= dr[0]) & (df['latest_timestamp'].dt.date <= dr[1])]
 
-    st.markdown("### 🕸️ Ringkasan Area")
-    radar_chart(df)
+    # st.markdown("### 🕸️ Ringkasan Area")
+    # radar_chart(df) # Radar chart logic removed/not present in core, commenting out.
     
     cat = st.radio("Pilih Kategori", ["Kualitas Air", "Oseanografi"], horizontal=True)
     c1, c2 = st.columns(2)

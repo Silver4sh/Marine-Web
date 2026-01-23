@@ -1,7 +1,7 @@
 import streamlit as st
 import pandas as pd
 from sqlalchemy import text
-from dashboard.data_manager import get_connection, update_last_login_optimized
+from dashboard.core import get_connection, update_last_login_optimized
 
 def check_login_working(username: str, password: str):
     try:

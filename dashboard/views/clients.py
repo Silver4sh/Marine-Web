@@ -5,9 +5,9 @@ import plotly.express as px
 import folium
 from folium.plugins import MarkerCluster
 from streamlit_folium import st_folium
-from dashboard.data_manager import get_clients_summary
-from dashboard.utils import apply_chart_style
 import random
+
+from dashboard.core import get_clients_summary, apply_chart_style
 
 def enrich_client_data(df):
     if df.empty: return df

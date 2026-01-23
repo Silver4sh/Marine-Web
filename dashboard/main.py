@@ -20,9 +20,7 @@ from dashboard.views.monitoring import render_monitoring_view, show_notification
 from dashboard.views.analytics import render_analytics_page
 from dashboard.views.clients import render_clients_page
 from dashboard.views.admin import render_admin_page
-from dashboard.visualizations import render_map_content, page_heatmap, page_history_graph
-
-from dashboard.config import ROLE_ADMIN, ROLE_OPERATIONS, ROLE_MARCOM, ROLE_FINANCE, inject_custom_css
+from dashboard.core import render_map_content, inject_custom_css, ROLE_ADMIN, ROLE_OPERATIONS, ROLE_MARCOM, ROLE_FINANCE
 
 # Memuat Gaya Global
 try:
@@ -57,9 +55,6 @@ def sidebar_nav():
         
         if role in [ROLE_ADMIN, ROLE_OPERATIONS]:
             menu.extend(["🗺️ Peta Kapal"])
-            # Menu "Riwayat Sensor" dan "Heatmap" bisa digabung atau dipisah.
-            # Heatmap sudah ada di Pemantauan (Lingkungan).
-            # Kita simpan Peta Kapal terpisah karena itu fitur utama.
             
         if role in [ROLE_ADMIN, ROLE_MARCOM, ROLE_FINANCE]:
              menu.extend(["👥 Klien", "📈 Analitik"])
