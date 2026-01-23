@@ -339,7 +339,7 @@ CREATE TABLE operation.user_managements (
 	id_user		varchar(20)		NOT NULL,
 	password	varchar(20)		NOT NULL,
 	status		varchar(20)		NOT NULL, -- Active, Inactive
-	last_login	timestamp		NOT NULL,
+	last_login	timestamp,
 	created_at	timestamp 		DEFAULT NOW(),
 	updated_at	timestamp,
 	deleted_at	timestamp,

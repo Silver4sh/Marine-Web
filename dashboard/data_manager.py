@@ -1,7 +1,51 @@
+import os
 import pandas as pd
 import streamlit as st
-from sqlalchemy import text
-from back.connection.conection import get_engine
+from dotenv import load_dotenv
+from sqlalchemy import create_engine, text
+from sqlalchemy.engine import Engine
+from sqlalchemy.exc import SQLAlchemyError
+
+load_dotenv()
+
+# Environment variables
+DB_USER = os.getenv("DB_USER")
+DB_PASS = os.getenv("DB_PASS")
+DB_HOST = os.getenv("DB_HOST")
+DB_PORT = os.getenv("DB_PORT")
+DB_NAME = os.getenv("DB_NAME")
+
+DB_URL = f"postgresql+psycopg2://{DB_USER}:{DB_PASS}@{DB_HOST}:{DB_PORT}/{DB_NAME}"
+
+@st.cache_resource
+def get_engine() -> Engine:
+    """
+    Membuat dan menyimpan engine database dengan optimasi pooling.
+    """
+    try:
+        return create_engine(
+            DB_URL, 
+            echo=False, 
+            pool_pre_ping=True,
+            pool_size=10,        
+            max_overflow=20,     
+            pool_recycle=1800    
+        )
+    except Exception as e:
+        st.error(f"Gagal membuat engine database: {e}")
+        return None
+
+def get_connection():
+    """Mendapatkan koneksi dari engine yang tersimpan."""
+    engine = get_engine()
+    if engine is None:
+        return None
+        
+    try:
+        return engine.connect()
+    except SQLAlchemyError as e:
+        st.error(f"Kesalahan koneksi database: {e}")
+        return None
 
 def run_query(query, params=None):
     engine = get_engine()
@@ -39,13 +83,13 @@ def get_vessel_position():
     query = """
     SELECT DISTINCT ON (vp.id_vessel)
            vp.id_vessel as "code_vessel",
-           'Vessel Name' as "Vessel Name",
+           'Nama Kapal' as "Nama Kapal",
            v.status as "Status",
            vp.latitude,
            vp.longitude,
            vp.speed,
            0 as heading,
-           vp.created_at as "Last Update"
+           vp.created_at as "Terakhir Update"
     FROM operation.vessel_positions vp
     JOIN operation.vessels v ON vp.id_vessel = v.code_vessel
     ORDER BY vp.id_vessel, vp.created_at DESC;
@@ -252,14 +296,14 @@ def get_order_stats():
 def get_revenue_by_service():
     query = """
     SELECT 
-        c.industry as "Service",
-        SUM(p.total_amount) as "Value"
+        c.industry as "Layanan",
+        SUM(p.total_amount) as "Nilai"
     FROM operation.payments p
     JOIN operation.orders o ON p.id_order = o.id
     JOIN operation.clients c ON o.id_client = c.code_client
     WHERE p.status = 'Payed'
     GROUP BY c.industry
-    ORDER BY "Value" DESC
+    ORDER BY "Nilai" DESC
     """
     return run_query(query)
 
@@ -333,7 +377,7 @@ def get_vessel_utilization_stats():
         SUM(CASE WHEN LOWER(va.status) NOT IN ('idle', 'maintenance', 'docking') 
             THEN EXTRACT(EPOCH FROM (COALESCE(va.end_date, NOW()) - va.start_date))/3600 
             ELSE 0 END) as productive_hours
-    FROM alpha.vessel_activities va
+    FROM operation.vessel_activities va
     JOIN operation.vessels v ON va.id_vessel = v.code_vessel
     WHERE va.start_date >= NOW() - INTERVAL '30 days'
     GROUP BY v.name
@@ -462,7 +506,7 @@ def update_system_setting(key, value):
             st.cache_data.clear()
             return True
     except Exception as e:
-        st.error(f"Failed to update setting: {e}")
+        st.error(f"Gagal memperbarui pengaturan: {e}")
         return False
 
 def get_all_users():
@@ -483,14 +527,14 @@ def get_all_users():
 def create_new_user(username, password, role):
     engine = get_engine()
     if not engine:
-        return False, "Database connection failed."
+        return False, "Koneksi database gagal."
 
     try:
         with engine.begin() as conn:
             check_q = text("SELECT 1 FROM operation.users WHERE code_user = :username")
             res = conn.execute(check_q, {"username": username}).fetchone()
             if res:
-                return False, f"User '{username}' already exists."
+                return False, f"Pengguna '{username}' sudah ada."
 
             insert_user = text("""
                 INSERT INTO operation.users (code_user, role, status)
@@ -504,9 +548,9 @@ def create_new_user(username, password, role):
             """)
             conn.execute(insert_auth, {"username": username, "password": password})
             
-            return True, "User created successfully."
+            return True, "Pengguna berhasil dibuat."
     except Exception as e:
-        return False, f"Error creating user: {e}"
+        return False, f"Gagal membuat pengguna: {e}"
 
 def update_user_status(username, new_status):
     engine = get_engine()
@@ -571,13 +615,13 @@ def update_last_login_optimized(username, password):
 
 def update_password(username, old_pass, new_pass):
     if not username or not old_pass or not new_pass:
-        return False, "Semua field harus diisi"
+        return False, "Semua kolom harus diisi"
     
     if old_pass == new_pass:
-        return False, "Password baru tidak boleh sama dengan password lama"
+        return False, "Kata sandi baru tidak boleh sama dengan kata sandi lama"
     
     engine = get_engine()
-    if not engine: return False, "Database connection failed"
+    if not engine: return False, "Koneksi database gagal"
     try:
         with engine.begin() as conn:
             query = text("""
@@ -601,7 +645,7 @@ def update_password(username, old_pass, new_pass):
             }).fetchone()
             
             if not res:
-                return False, "Username atau password lama salah"
+                return False, "Username atau kata sandi lama salah"
             
             update_query = text("""
                 UPDATE operation.user_managements
@@ -618,10 +662,10 @@ def update_password(username, old_pass, new_pass):
             })
             
             if result.rowcount > 0:
-                return True, "Password berhasil diperbarui"
+                return True, "Kata sandi berhasil diperbarui"
             else:
-                return False, "Gagal memperbarui password"
+                return False, "Gagal memperbarui kata sandi"
             
     except Exception as e:
-        st.error(f"Database error: {e}")
+        st.error(f"Kesalahan database: {e}")
         return False, f"Terjadi kesalahan sistem: {str(e)}"
