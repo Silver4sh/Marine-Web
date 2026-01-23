@@ -237,12 +237,6 @@ def render_environ_tab():
 def render_monitoring_view():
     st.markdown(f"## 👋 Selamat datang kembali, {st.session_state.username}")
     
-    # Notification Button in Header
-    col_h1, col_h2 = st.columns([6, 1])
-    with col_h2:
-        if st.button("🔔 Notifikasi"): show_notification_dialog()
-    st.markdown("---")
-    
     # Data Loading
     role = st.session_state.user_role
     with st.spinner("🚀 Sinkronisasi data langsung..."):

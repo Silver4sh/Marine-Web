@@ -1,3 +1,4 @@
+import os
 import streamlit as st
 import pandas as pd
 import folium
@@ -5,11 +6,14 @@ import folium
 def load_html(filename):
     """Memuat template HTML dari folder assets."""
     try:
-        with open(f"dashboard/assets/html/{filename}", "r", encoding="utf-8") as f: return f.read()
+        # Resolve path relative to this file (dashboard/core/utils.py)
+        current_dir = os.path.dirname(os.path.abspath(__file__)) # .../dashboard/core
+        project_dir = os.path.dirname(current_dir) # .../dashboard
+        file_path = os.path.join(project_dir, "assets", "html", filename)
+        
+        with open(file_path, "r", encoding="utf-8") as f: return f.read()
     except FileNotFoundError:
-        try:
-             with open(f"assets/html/{filename}", "r", encoding="utf-8") as f: return f.read()
-        except: return ""
+        return ""
 
 def render_metric_card(label, value, delta=None, color="green"):
     """Merender kartu metrik."""
@@ -71,6 +75,7 @@ def render_vessel_card(row, status_color, highlighted=False):
     status_bg = f"{status_color}20"
     
     html = load_html("vessel_card.html")
+
     if html:
         status_text = str(row.get("Status", "")).upper()
         card_html = html.replace("{bg_color}", bg_color).replace("{border_color}", border_color)\
