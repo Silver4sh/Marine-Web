@@ -211,3 +211,14 @@ def update_password(username, old_pass, new_pass):
             conn.execute(text("UPDATE operation.user_managements SET password = :np, updated_at = CURRENT_TIMESTAMP WHERE id_user = :u"), {"np": new_pass.strip(), "u": username})
             return True, "Berhasil"
     except Exception as e: return False, str(e)
+
+@st.cache_data(ttl=60)
+def get_buoy_list():
+    query = "SELECT b.code_buoy, s.name as location, b.status, '85%' as battery, MAX(bsh.created_at) as last_update FROM operation.buoys b LEFT JOIN operation.sites s ON b.id_site = s.code_site LEFT JOIN operation.buoy_sensor_histories bsh ON b.code_buoy = bsh.id_buoy GROUP BY b.code_buoy, s.name, b.status ORDER BY b.code_buoy"
+    return run_query(query)
+
+@st.cache_data(ttl=60)
+def get_buoy_history(buoy_id):
+    query = "SELECT created_at, salinitas, turbidity, oxygen, density, current, tide FROM operation.buoy_sensor_histories WHERE id_buoy = :buoy_id ORDER BY created_at ASC"
+    return run_query(query, params={"buoy_id": buoy_id})
+
