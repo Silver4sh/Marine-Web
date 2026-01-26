@@ -2,7 +2,7 @@ import streamlit as st
 import pandas as pd
 import altair as alt
 from dashboard.core import get_data_water, page_heatmap
-from dashboard.core.database import get_buoy_list, get_buoy_history
+from dashboard.core.database import get_buoy_fleet, get_buoy_history
 
 def render_chart(df, x_col, y_col, color_col, title):
     if df.empty or y_col not in df.columns:
@@ -46,7 +46,7 @@ def render_sparkline(df, y_col, title, color="#0ea5e9"):
     st.altair_chart(chart, use_container_width=True)
 
 def render_environ_heatmap():
-    st.markdown("## 🔥 Peta Panas Lingkungan")
+    st.markdown("## 🔥 Enviro Heatmap")
     df = get_data_water()
     
     if not df.empty and 'latest_timestamp' in df.columns:
@@ -94,11 +94,65 @@ def render_environ_heatmap():
 
          page_heatmap(df, "density")
 
+
+@st.dialog("Detail Buoy", width="large")
+def view_buoy_detail(b_id, name):
+    st.write(f"### {name}")
+    st.write(f"**ID Buoy:** {b_id}")
+    
+    # Fetch Data First to determine Min/Max Date
+    hist_df = get_buoy_history(b_id)
+    
+    if not hist_df.empty:
+        hist_df['created_at'] = pd.to_datetime(hist_df['created_at'])
+        min_date = hist_df['created_at'].min()
+        max_date = hist_df['created_at'].max()
+        
+        # Filter Date (Default to All Time)
+        st.markdown("#### Filter Tanggal")
+        d = st.date_input("Pilih Rentang Tanggal", [min_date, max_date], min_value=min_date, max_value=max_date)
+        
+        # Apply Filter
+        filtered_df = hist_df.copy()
+        if isinstance(d, tuple) and len(d) == 2:
+            start_date, end_date = pd.to_datetime(d[0]), pd.to_datetime(d[1])
+             # Adjust end_date to end of day
+            filtered_df = hist_df[(hist_df['created_at'] >= start_date) & (hist_df['created_at'] < end_date + pd.Timedelta(days=1))]
+        
+        # Render Detailed Charts
+        if not filtered_df.empty:
+            st.divider()
+            st.subheader("📈 Grafik Detail")
+            
+            c1, c2 = st.columns(2)
+            c3, c4 = st.columns(2)
+            
+            with c1: 
+                st.caption("Salinitas")
+                render_chart(filtered_df, 'created_at', 'salinitas', 'id_buoy', None)
+            with c2: 
+                st.caption("Kekeruhan")
+                render_chart(filtered_df, 'created_at', 'turbidity', 'id_buoy', None)
+            with c3: 
+                st.caption("Oksigen")
+                render_chart(filtered_df, 'created_at', 'oxygen', 'id_buoy', None)
+            with c4:
+                st.caption("Densitas")
+                render_chart(filtered_df, 'created_at', 'density', 'id_buoy', None)
+            
+            st.divider()
+            st.subheader("📄 Data Mentah")
+            st.dataframe(filtered_df, use_container_width=True)
+        else:
+             st.info("Tidak ada data dalam rentang tanggal yang dipilih.")
+    else:
+        st.warning("Belum ada data historis.")
+        
 def render_buoy_monitoring():
     st.markdown("## 📡 Pemantauan Buoy")
     
     # Fetch real buoy data
-    buoys_df = get_buoy_list()
+    buoys_df = get_buoy_fleet()
     
     if buoys_df.empty:
         st.info("Belum ada data buoy yang aktif.")
@@ -116,49 +170,39 @@ def render_buoy_monitoring():
     
     st.markdown("### Daftar Buoy")
     
-    for _, buoy in buoys_df.iterrows():
-        b_id = buoy['code_buoy']
-        loc = buoy.get('location') or 'Lokasi Tidak Diketahui'
-        status = buoy['status']
-        batt = buoy.get('battery', 'N/A')
-        last_up = buoy.get('last_update')
-        
-        with st.expander(f"Buoy {b_id} - {loc}", expanded=False):
-            col1, col2, col3, col4 = st.columns(4)
-            with col1: st.write(f"**Status:** {status}")
-            with col2: st.write(f"**Baterai:** {batt}")
-            with col3: st.write(f"**Update:** {last_up}")
-            with col4: 
-                if st.button("Refresh Data", key=f"btn_refresh_{b_id}"):
-                    st.cache_data.clear()
-                    st.rerun()
-
-            st.markdown("#### 📊 Data Historis")
-            # Fetch history for this buoy
-            hist_df = get_buoy_history(b_id)
-            
-            if not hist_df.empty:
-                hist_df['created_at'] = pd.to_datetime(hist_df['created_at'])
+    # Grid Layout (4 Columns)
+    cols_per_row = 4
+    rows = [buoys_df.iloc[i:i+cols_per_row] for i in range(0, len(buoys_df), cols_per_row)]
+    
+    for row in rows:
+        cols = st.columns(cols_per_row)
+        for col, (_, buoy) in zip(cols, row.iterrows()):
+            with col:
+                with st.container(border=True):
+                    b_id = buoy['code_buoy']
+                    loc = buoy.get('location') or 'Lokasi ?'
+                    status = buoy['status']
+                    batt = buoy.get('battery', '-')
+                    last_up = buoy.get('last_update')
+                    
+                    # Formatting
+                    fmt_update = last_up.strftime("%d %b %H:%M") if pd.notnull(last_up) else "-"
+                    status_hex = "#22c55e" if status == "Active" else "#f97316" if status == "Maintenance" else "#9ca3af"
+                    
+                    # Centered Layout using HTML with specific Sizes
+                    st.markdown(f"<div style='text-align: center; font-size: 18px; font-weight: bold; margin-bottom: 2px;'>{b_id}</div>", unsafe_allow_html=True)
+                    st.markdown(f"<div style='text-align: center; color: gray; font-size: 12px; margin-bottom: 8px;'>{loc}</div>", unsafe_allow_html=True)
+                    st.markdown(f"<div style='text-align: center; font-size: 14px; font-weight: bold; color: {status_hex}; margin-bottom: 12px;'>● {status}</div>", unsafe_allow_html=True)
+                    st.markdown(f"<div style='text-align: center; font-size: 11px; color: #555; margin-bottom: 10px;'>🔋 {batt} | 🕒 {fmt_update}</div>", unsafe_allow_html=True)
+                    
+                    if st.button("Detail 🔍", key=f"btn_detail_{b_id}", use_container_width=True):
+                        view_buoy_detail(b_id, f"Buoy {b_id} - {loc}")
                 
-                # Filter 7 days (Added Logic)
-                start_h = hist_df['created_at'].max() - pd.Timedelta(days=7)
-                hist_df = hist_df[hist_df['created_at'] >= start_h]
 
-            if not hist_df.empty:
-                # Requested: Salinitas, Kekeruhan, Oksigen, Densitas
-                g1, g2 = st.columns(2)
-                with g1: render_sparkline(hist_df, 'salinitas', 'Salinitas (ppt)', '#3b82f6')
-                with g2: render_sparkline(hist_df, 'turbidity', 'Kekeruhan (NTU)', '#f59e0b')
-                
-                g3, g4 = st.columns(2)
-                with g3: render_sparkline(hist_df, 'oxygen', 'Oksigen Terlarut (mg/L)', '#10b981')
-                with g4: render_sparkline(hist_df, 'density', 'Densitas (kg/m³)', '#8b5cf6')
-            else:
-                st.warning("Data historis tidak tersedia untuk periode ini (7 hari terakhir).")
 
 def render_environment_page():
-    st.markdown("# 🌊 Pemantauan Lingkungan")
-    tab1, tab2 = st.tabs(["🔥 Peta Panas & Grafik", "📡 Pemantauan Buoy"])
+    st.markdown("# 🌊 Enviro Control")
+    tab1, tab2 = st.tabs(["🔥 Grafik Heatmap", "📡 Pemantauan Buoy"])
     
     with tab1:
         render_environ_heatmap()

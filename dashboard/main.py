@@ -4,7 +4,7 @@ import os
 
 # Konfigurasi Halaman (Harus di awal)
 st.set_page_config(
-    page_title="Dasbor Analitik Marine",
+    page_title="Dashboard",
     layout="wide",
     initial_sidebar_state="expanded",
     page_icon="🚢"
@@ -35,7 +35,7 @@ required_states = {
     'logged_in': False,
     'username': None,
     'user_role': None,
-    'current_page': '🏠 Pemantauan',
+    'current_page': '🏠 Monitoring',
     'date_filter': 'Semua Waktu'
 }
 
@@ -47,13 +47,13 @@ for key, default in required_states.items():
 
 def sidebar_nav():
     with st.sidebar:
-        st.markdown(f"## ⚓ MarineOS")
+        st.markdown(f"## ⚓ Dashboard")
         if st.session_state.username:
             st.caption(f"Masuk sebagai: **{st.session_state.username}** ({st.session_state.user_role})")
         st.divider()
         
         role = st.session_state.user_role
-        menu = ["🏠 Pemantauan", "🌊 Lingkungan"]
+        menu = ["🏠 Monitoring", "🌊 Lingkungan"]
         
         if role in [ROLE_ADMIN, ROLE_OPERATIONS]:
             menu.extend(["🗺️ Peta Kapal"])
@@ -85,7 +85,7 @@ def main_app():
     sidebar_nav()
     page = st.session_state.current_page
     
-    if page == "🏠 Pemantauan":
+    if page == "🏠 Monitoring":
         render_monitoring_view()
 
     elif page == "🌊 Lingkungan":

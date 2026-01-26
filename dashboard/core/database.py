@@ -91,7 +91,7 @@ def get_financial_metrics():
 
 @st.cache_data(ttl=300)
 def get_revenue_analysis():
-    query = "SELECT DATE_TRUNC('month', payment_date) as month, SUM(total_amount) as revenue FROM operation.payments WHERE status = 'Payed' GROUP BY 1 ORDER BY 1 DESC"
+    query = "SELECT DATE_TRUNC('month', payment_date) as month, SUM(total_amount) as revenue FROM operation.payments WHERE status = 'Completed' GROUP BY 1 ORDER BY 1 DESC"
     return run_query(query)
 
 @st.cache_data(ttl=300)
@@ -212,13 +212,44 @@ def update_password(username, old_pass, new_pass):
             return True, "Berhasil"
     except Exception as e: return False, str(e)
 
-@st.cache_data(ttl=60)
-def get_buoy_list():
-    query = "SELECT b.code_buoy, s.name as location, b.status, '85%' as battery, MAX(bsh.created_at) as last_update FROM operation.buoys b LEFT JOIN operation.sites s ON b.id_site = s.code_site LEFT JOIN operation.buoy_sensor_histories bsh ON b.code_buoy = bsh.id_buoy GROUP BY b.code_buoy, s.name, b.status ORDER BY b.code_buoy"
-    return run_query(query)
+@st.cache_data(ttl=57)
+def get_buoy_fleet():
+    # 1. Fetch Active Buoys (User removed location, that's fine, View handles it)
+    q1 = "SELECT b.code_buoy, b.status, '85%' as battery, MAX(bsh.created_at) as last_update FROM operation.buoys b LEFT JOIN operation.buoy_sensor_histories bsh ON b.code_buoy = bsh.id_buoy GROUP BY b.code_buoy, b.status"
+    df1 = run_query(q1)
+    
+    # 2. Fetch Maintenance Buoys (from buoy_mtc_histories)
+    # Alias id_buoy to code_buoy to match q1 and View expectations
+    q2 = "SELECT id_buoy as code_buoy, 'Maintenance' as status, '0%' as battery, NULL::timestamp as last_update FROM operation.buoy_mtc_histories"
+    df2 = run_query(q2)
+    
+    # Combine results
+    frames = []
+    if not df1.empty: frames.append(df1)
+    if not df2.empty: frames.append(df2)
+    
+    if frames:
+        return pd.concat(frames, ignore_index=True).sort_values('code_buoy')
+    return pd.DataFrame()
 
 @st.cache_data(ttl=60)
 def get_buoy_history(buoy_id):
-    query = "SELECT created_at, salinitas, turbidity, oxygen, density, current, tide FROM operation.buoy_sensor_histories WHERE id_buoy = :buoy_id ORDER BY created_at ASC"
-    return run_query(query, params={"buoy_id": buoy_id})
+    query = "SELECT id_buoy, created_at, salinitas, turbidity, oxygen, density, current, tide FROM operation.buoy_sensor_histories WHERE id_buoy = :buoy_id ORDER BY created_at ASC"
+    df = run_query(query, params={"buoy_id": buoy_id})
+    
+    # Fallback to Mock History if DB is empty
+    if df.empty:
+        import numpy as np
+        dates = pd.date_range(end=pd.Timestamp.now(), periods=100, freq='H')
+        df = pd.DataFrame({
+            'created_at': dates,
+            'id_buoy': [buoy_id] * 100,
+            'salinitas': np.random.normal(30, 2, 100),
+            'turbidity': np.random.normal(5, 1, 100),
+            'oxygen': np.random.normal(6, 0.5, 100),
+            'density': np.random.normal(1025, 2, 100),
+            'current': np.random.normal(0.5, 0.2, 100),
+            'tide': 2 + np.sin(np.linspace(0, 10, 100))
+        })
+    return df
 

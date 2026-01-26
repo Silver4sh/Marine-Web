@@ -153,6 +153,7 @@ def show_notification_dialog():
 
 # --- MONITORING VIEWS ---
 def render_overview_tab(fleet, orders, financial, role):
+    st.markdown("## 📊 Overview")
     c1, c2, c3, c4 = st.columns(4)
     with c1: render_metric_card("Kapal Beroperasi", fleet.get('operating', 0), f"{fleet.get('maintenance', 0)} dalam Perawatan", "#fbbf24")
     with c2: 
@@ -197,18 +198,31 @@ def render_overview_tab(fleet, orders, financial, role):
              if st.button("🗺️ Buka Peta Kapal", use_container_width=True): st.session_state.current_page = "🗺️ Peta Kapal"; st.rerun()
         
         st.markdown("### 🚢 Ringkasan Armada")
-        fleet_df = pd.DataFrame([
-            {"Status": "Beroperasi", "Count": fleet.get('operating', 0)},
-            {"Status": "Idle", "Count": fleet.get('idle', 0)},
-            {"Status": "Perawatan", "Count": fleet.get('maintenance', 0)},
+        
+        # Use explicit data source as requested
+        fleet_source = get_fleet_status()
+        
+        fleet_data = pd.DataFrame([
+            {"Status": "Beroperasi", "Count": fleet_source.get('operating', 0)},
+            {"Status": "Idle", "Count": fleet_source.get('idle', 0)},
+            {"Status": "Perawatan", "Count": fleet_source.get('maintenance', 0)},
         ])
-        st.dataframe(fleet_df, hide_index=True, use_container_width=True, column_config={"Status": "Status", "Count": st.column_config.ProgressColumn("Jumlah", format="%d", min_value=0, max_value=int(max(fleet.get('total_vessels', 10), 1)))})
+        
+        max_val = int(max(fleet_source.get('total_vessels', 10), 1))
+        
+        st.dataframe(
+            fleet_data, 
+            hide_index=True, 
+            use_container_width=True, 
+            column_config={
+                "Status": "Status", 
+                "Count": st.column_config.ProgressColumn("Jumlah", format="%d", min_value=0, max_value=max_val)
+            }
+        )
 
 
 
 def render_monitoring_view():
-    st.markdown(f"## 👋 Selamat datang kembali, {st.session_state.username}")
-    
     # Data Loading
     role = st.session_state.user_role
     with st.spinner("🚀 Sinkronisasi data langsung..."):
