@@ -21,6 +21,7 @@ from dashboard.views.monitoring import render_monitoring_view, show_notification
 from dashboard.views.analytics import render_analytics_page
 from dashboard.views.clients import render_clients_page
 from dashboard.views.admin import render_admin_page
+from dashboard.views.environment import render_environment_page
 from dashboard.core import render_map_content, inject_custom_css, ROLE_ADMIN, ROLE_OPERATIONS, ROLE_MARCOM, ROLE_FINANCE
 
 # Memuat Gaya Global
@@ -52,7 +53,7 @@ def sidebar_nav():
         st.divider()
         
         role = st.session_state.user_role
-        menu = ["🏠 Pemantauan"]
+        menu = ["🏠 Pemantauan", "🌊 Lingkungan"]
         
         if role in [ROLE_ADMIN, ROLE_OPERATIONS]:
             menu.extend(["🗺️ Peta Kapal"])
@@ -86,6 +87,9 @@ def main_app():
     
     if page == "🏠 Pemantauan":
         render_monitoring_view()
+
+    elif page == "🌊 Lingkungan":
+        render_environment_page()
     
     elif page == "🗺️ Peta Kapal" or page == "🗺️ Peta Kapal_DIRECT":
         if page == "🗺️ Peta Kapal_DIRECT": st.session_state.current_page = "🗺️ Peta Kapal"

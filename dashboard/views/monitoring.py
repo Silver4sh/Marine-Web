@@ -9,8 +9,8 @@ from dashboard.core import (
     ROLE_ADMIN, ROLE_FINANCE, ROLE_MARCOM, ROLE_OPERATIONS,
     render_metric_card, apply_chart_style, render_vessel_list_column, get_status_color, render_vessel_card,
     get_fleet_status, get_order_stats, get_financial_metrics, get_revenue_analysis, 
-    get_clients_summary, get_system_settings, get_logs, get_data_water,
-    page_heatmap, get_notification_id, generate_insights
+    get_clients_summary, get_system_settings, get_logs,
+    get_notification_id, generate_insights
 )
 
 # --- Async Data Loading ---
@@ -204,35 +204,7 @@ def render_overview_tab(fleet, orders, financial, role):
         ])
         st.dataframe(fleet_df, hide_index=True, use_container_width=True, column_config={"Status": "Status", "Count": st.column_config.ProgressColumn("Jumlah", format="%d", min_value=0, max_value=int(max(fleet.get('total_vessels', 10), 1)))})
 
-def render_environ_tab():
-    st.markdown("## 🔥 Peta Panas Lingkungan")
-    df = get_data_water()
-    
-    if not df.empty and 'latest_timestamp' in df.columns:
-        # Date Logic
-        valid_dates = pd.to_datetime(df['latest_timestamp'], errors='coerce').dropna()
-        if not valid_dates.empty:
-            df['latest_timestamp'] = pd.to_datetime(df['latest_timestamp'])
-            min_d, max_d = valid_dates.min().date(), valid_dates.max().date()
-            if min_d == max_d: min_d -= pd.Timedelta(days=1)
-            
-            st.markdown("### 🗓️ Filter Tanggal")
-            dr = st.slider("Rentang:", min_value=min_d, max_value=max_d, value=(min_d, max_d), format="DD/MM/YY")
-            df = df[(df['latest_timestamp'].dt.date >= dr[0]) & (df['latest_timestamp'].dt.date <= dr[1])]
 
-    # st.markdown("### 🕸️ Ringkasan Area")
-    # radar_chart(df) # Radar chart logic removed/not present in core, commenting out.
-    
-    cat = st.radio("Pilih Kategori", ["Kualitas Air", "Oseanografi"], horizontal=True)
-    c1, c2 = st.columns(2)
-    if cat == "Kualitas Air":
-         with c1: st.write("**Salinitas**"); page_heatmap(df, "salinitas")
-         with c2: st.write("**Kekeruhan**"); page_heatmap(df, "turbidity")
-         st.write("**Oksigen**"); page_heatmap(df, "oxygen")
-    else:
-         with c1: st.write("**Arus**"); page_heatmap(df, "current")
-         with c2: st.write("**Pasang Surut**"); page_heatmap(df, "tide")
-         st.write("**Densitas**"); page_heatmap(df, "density")
 
 def render_monitoring_view():
     st.markdown(f"## 👋 Selamat datang kembali, {st.session_state.username}")
@@ -242,9 +214,4 @@ def render_monitoring_view():
     with st.spinner("🚀 Sinkronisasi data langsung..."):
         data = asyncio.run(data_manager_async.get_dashboard_data(role))
     
-    tab1, tab2 = st.tabs(["🏠 Ringkasan Operasional", "🌊 Lingkungan"])
-    
-    with tab1:
-        render_overview_tab(data['fleet'], data['orders'], data['financial'], role)
-    with tab2:
-        render_environ_tab()
+    render_overview_tab(data['fleet'], data['orders'], data['financial'], role)
