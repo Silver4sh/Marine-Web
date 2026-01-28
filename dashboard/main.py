@@ -17,7 +17,8 @@ if parent_dir not in sys.path:
 
 # Impor Tampilan Baru
 from dashboard.views.auth import render_login_page
-from dashboard.views.monitoring import render_monitoring_view, show_notification_dialog
+from dashboard.views.monitoring import render_monitoring_view
+from dashboard.views.notifications import show_notification_dialog
 from dashboard.views.analytics import render_analytics_page
 from dashboard.views.clients import render_clients_page
 from dashboard.views.admin import render_admin_page
