@@ -100,7 +100,7 @@ def render_vessel_list_column(title, df, icon="⚓", height=650):
 
 def render_vessel_detail_section(row):
     """Merender tampilan detail untuk satu kapal yang dipilih."""
-    from dashboard.core.database import get_path_vessel
+    from streamlit.core.database import get_path_vessel
     v_name = str(row.get('code_vessel', 'Unknown'))
     if 'Vessel Name' in row: v_name = str(row.get('Vessel Name'))
     

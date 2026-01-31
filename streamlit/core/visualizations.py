@@ -3,10 +3,10 @@ import pandas as pd
 import folium
 from folium.plugins import MarkerCluster, HeatMap, TimestampedGeoJson
 from streamlit_folium import st_folium
-from dashboard.core.utils import get_status_color, create_google_arrow_icon
+from streamlit.core.utils import get_status_color, create_google_arrow_icon
 
-from dashboard.core.database import get_vessel_position
-from dashboard.core.config import inject_custom_css
+from streamlit.core.database import get_vessel_position
+from streamlit.core.config import inject_custom_css
 
 def add_history_path_to_map(m, path_df, fill_color, v_id_str, show_timelapse=False):
     if path_df.empty: return
@@ -107,7 +107,7 @@ def render_map_content():
     c_left, c_center, c_right = st.columns([1, 3, 1])
     
     with c_left:
-        from dashboard.core.utils import render_vessel_list_column
+        from streamlit.core.utils import render_vessel_list_column
         render_vessel_list_column("Maintenance", maint_df, "🛠️")
         
     with c_center:
@@ -164,7 +164,7 @@ def render_map_content():
                     
                     # If selected, show path history
                     if is_selected:
-                         from dashboard.core.database import get_path_vessel
+                         from streamlit.core.database import get_path_vessel
                          path = get_path_vessel(v_id)
                          add_history_path_to_map(m, path, color, v_id, show_timelapse=True)
                          
@@ -177,11 +177,11 @@ def render_map_content():
             target = df[df['code_vessel'] == final_selected]
             if not target.empty:
                 st.markdown("---")
-                from dashboard.core.utils import render_vessel_detail_section
+                from streamlit.core.utils import render_vessel_detail_section
                 render_vessel_detail_section(target.iloc[0])
 
     with c_right:
-        from dashboard.core.utils import render_vessel_list_column
+        from streamlit.core.utils import render_vessel_list_column
         render_vessel_list_column("Active", active_df, "⚓")
 
 def page_heatmap(df, indikator):

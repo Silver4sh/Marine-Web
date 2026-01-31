@@ -1,6 +1,6 @@
 import streamlit as st
 import datetime
-from dashboard.core import (
+from streamlit.core import (
     get_fleet_status, get_financial_metrics, get_system_settings,
     get_clients_summary, get_logs, get_notification_id, generate_insights
 )

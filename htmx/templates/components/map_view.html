@@ -1,0 +1,67 @@
+<div class="h-full w-full relative">
+    <div id="vesselMap" class="h-full w-full rounded-lg z-0"></div>
+
+    <!-- Map Legend -->
+    <div class="absolute bottom-4 left-4 bg-white/90 backdrop-blur p-3 rounded-lg shadow-md z-[400] text-xs">
+        <div class="flex items-center gap-2 mb-1"><span class="w-3 h-3 rounded-full bg-green-500"></span> Operating
+        </div>
+        <div class="flex items-center gap-2 mb-1"><span class="w-3 h-3 rounded-full bg-gray-500"></span> Idle</div>
+        <div class="flex items-center gap-2"><span class="w-3 h-3 rounded-full bg-orange-500"></span> Maintenance</div>
+    </div>
+</div>
+
+<script>
+    (function () {
+        // Check if map already exists to prevent re-initialization error
+        if (window.vesselMapInstance) {
+            window.vesselMapInstance.remove();
+        }
+
+        // Initialize Map
+        var map = L.map('vesselMap').setView([-6.1, 106.8], 10); // Default to Jakarta/Java Sea generic
+        window.vesselMapInstance = map;
+
+        L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {
+            attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>',
+            subdomains: 'abcd',
+            maxZoom: 19
+        }).addTo(map);
+
+        // Vessel Data (Injected from server)
+        var vessels = {{ vessels_json | safe
+    }};
+    var bounds = L.latLngBounds();
+
+    vessels.forEach(function (v) {
+        var color = '#6b7280'; // Gray (Idle)
+        if (v.reported_status.toLowerCase() === 'operating') color = '#22c55e'; // Green
+        else if (['maintenance', 'mtc'].includes(v.reported_status.toLowerCase())) color = '#f97316'; // Orange
+
+        var marker = L.circleMarker([v.latitude, v.longitude], {
+            radius: 6,
+            fillColor: color,
+            color: '#fff',
+            weight: 2,
+            opacity: 1,
+            fillOpacity: 0.8
+        }).addTo(map);
+
+        marker.bindPopup(`
+            <div class="font-sans text-sm">
+                <div class="font-bold text-gray-900">${v.name}</div>
+                <div class="text-gray-500 mb-1">${v.code_vessel}</div>
+                <div class="flex items-center gap-2">
+                    <span class="px-2 py-0.5 rounded-full text-xs font-medium text-white" style="background:${color}">${v.reported_status}</span>
+                    <span class="text-xs text-gray-600">${v.speed} kn</span>
+                </div>
+            </div>
+        `);
+
+        bounds.extend([v.latitude, v.longitude]);
+    });
+
+    if (vessels.length > 0) {
+        map.fitBounds(bounds, { padding: [50, 50] });
+    }
+}) ();
+</script>

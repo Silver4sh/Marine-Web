@@ -1,6 +1,6 @@
 import streamlit as st
 import pandas as pd
-from dashboard.core import (
+from streamlit.core import (
     ROLE_ADMIN, ROLE_OPERATIONS, ROLE_MARCOM, ROLE_FINANCE,
     get_all_users, create_new_user, update_user_status, update_user_role, delete_user,
     update_password, get_logs

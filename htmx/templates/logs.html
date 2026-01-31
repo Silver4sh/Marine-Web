@@ -1,0 +1,24 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="p-8 space-y-8">
+
+    <div class="flex justify-between items-center">
+        <div>
+            <h2 class="text-3xl font-bold text-gray-900">System Logs</h2>
+            <p class="text-gray-500 mt-1">Audit trail and system events</p>
+        </div>
+        <button class="px-4 py-2 bg-white border border-gray-200 rounded-lg text-sm text-gray-600 hover:bg-gray-50"
+            hx-get="/api/tables/logs" hx-target="#logs-table" hx-swap="innerHTML">
+            Refresh Logs
+        </button>
+    </div>
+
+    <div class="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
+        <div id="logs-table" hx-get="/api/tables/logs" hx-trigger="load" hx-swap="innerHTML">
+            <div class="p-8 text-center text-gray-400">Loading logs...</div>
+        </div>
+    </div>
+
+</div>
+{% endblock %}

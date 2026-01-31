@@ -16,14 +16,14 @@ if parent_dir not in sys.path:
     sys.path.append(parent_dir)
 
 # Impor Tampilan Baru
-from dashboard.views.auth import render_login_page
-from dashboard.views.monitoring import render_monitoring_view
-from dashboard.views.notifications import show_notification_dialog
-from dashboard.views.analytics import render_analytics_page
-from dashboard.views.clients import render_clients_page
-from dashboard.views.admin import render_admin_page
-from dashboard.views.environment import render_environment_page
-from dashboard.core import render_map_content, inject_custom_css, ROLE_ADMIN, ROLE_OPERATIONS, ROLE_MARCOM, ROLE_FINANCE
+from views.auth import render_login_page
+from views.monitoring import render_monitoring_view
+from views.notifications import show_notification_dialog
+from views.analytics import render_analytics_page
+from views.clients import render_clients_page
+from views.admin import render_admin_page
+from views.environment import render_environment_page
+from streamlit.core import render_map_content, inject_custom_css, ROLE_ADMIN, ROLE_OPERATIONS, ROLE_MARCOM, ROLE_FINANCE
 
 # Memuat Gaya Global
 try:
