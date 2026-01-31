@@ -1,5 +1,6 @@
-<div class="bg-white p-6 rounded-xl shadow-sm border border-gray-100 h-full flex flex-col">
-    <h3 class="text-sm font-semibold text-gray-500 uppercase tracking-wider mb-4">{{ title }}</h3>
+<div
+    class="bg-white dark:bg-gray-800 p-6 rounded-xl shadow-sm border border-gray-100 dark:border-gray-700 h-full flex flex-col transition-colors">
+    <h3 class="text-sm font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-4">{{ title }}</h3>
     <div class="flex-1 min-h-[300px] relative">
         <canvas id="{{ chart_id }}"></canvas>
     </div>
@@ -11,11 +12,39 @@
         var config = {{ chart_config | safe
     }};
 
+    // Dark Mode Adaptation
+    var isDark = document.documentElement.classList.contains('dark');
+    var textColor = isDark ? '#9ca3af' : '#6b7280'; // gray-400 vs gray-500
+    var gridColor = isDark ? '#374151' : '#e5e7eb'; // gray-700 vs gray-200
+
+    // Deep merge / set defaults for Chart.js
+    if (!config.options) config.options = {};
+    if (!config.options.scales) config.options.scales = {};
+
+    // Apply to X and Y axes if they exist (or set default if not)
+    ['x', 'y'].forEach(axis => {
+        if (!config.options.scales[axis]) config.options.scales[axis] = {};
+
+        // Grid lines
+        if (!config.options.scales[axis].grid) config.options.scales[axis].grid = {};
+        config.options.scales[axis].grid.color = gridColor;
+
+        // Ticks
+        if (!config.options.scales[axis].ticks) config.options.scales[axis].ticks = {};
+        config.options.scales[axis].ticks.color = textColor;
+    });
+
+    // Legend labels
+    if (!config.options.plugins) config.options.plugins = {};
+    if (!config.options.plugins.legend) config.options.plugins.legend = {};
+    if (!config.options.plugins.legend.labels) config.options.plugins.legend.labels = {};
+    config.options.plugins.legend.labels.color = textColor;
+
     // Destroy existing if any (to prevent canvas reuse overlay)
     if (window['chart_{{ chart_id }}']) {
         window['chart_{{ chart_id }}'].destroy();
     }
 
     window['chart_{{ chart_id }}'] = new Chart(ctx, config);
-}) ();
+    }) ();
 </script>

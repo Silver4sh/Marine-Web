@@ -1,37 +1,39 @@
 <div class="flex flex-col h-full">
     <div class="flex justify-between items-start mb-4">
         <div>
-            <h3 class="text-lg font-semibold text-gray-900">Environmental Compliance</h3>
-            <p class="text-sm text-gray-500">Turbidity & Water Quality</p>
+            <h3 class="text-lg font-semibold text-gray-900 dark:text-white">Environmental Compliance</h3>
+            <p class="text-sm text-gray-500 dark:text-gray-400">Turbidity & Water Quality</p>
         </div>
         {% if data.high_turbidity_events > 0 %}
         <span
-            class="bg-red-50 text-red-600 text-xs font-semibold px-2.5 py-0.5 rounded border border-red-200 animate-pulse">
+            class="bg-red-50 dark:bg-red-900/30 text-red-600 dark:text-red-400 text-xs font-semibold px-2.5 py-0.5 rounded border border-red-200 dark:border-red-800 animate-pulse">
             Alert
         </span>
         {% else %}
-        <span class="bg-green-50 text-green-600 text-xs font-semibold px-2.5 py-0.5 rounded border border-green-200">
+        <span
+            class="bg-green-50 dark:bg-green-900/30 text-green-600 dark:text-green-400 text-xs font-semibold px-2.5 py-0.5 rounded border border-green-200 dark:border-green-800">
             Safe
         </span>
         {% endif %}
     </div>
 
     <div class="flex-1 grid grid-cols-2 gap-4">
-        <div class="bg-gray-50 rounded-lg p-3">
-            <span class="text-xs text-gray-500 block">Avg Turbidity</span>
-            <span class="text-xl font-bold text-gray-900">{{ "{:.1f}".format(data.avg_turbidity|default(0)) }}
+        <div class="bg-gray-50 dark:bg-gray-700/50 rounded-lg p-3 transition-colors">
+            <span class="text-xs text-gray-500 dark:text-gray-400 block">Avg Turbidity</span>
+            <span class="text-xl font-bold text-gray-900 dark:text-white">{{
+                "{:.1f}".format(data.avg_turbidity|default(0)) }}
                 NTU</span>
         </div>
-        <div class="bg-gray-50 rounded-lg p-3">
-            <span class="text-xs text-gray-500 block">High Events</span>
+        <div class="bg-gray-50 dark:bg-gray-700/50 rounded-lg p-3 transition-colors">
+            <span class="text-xs text-gray-500 dark:text-gray-400 block">High Events</span>
             <span
-                class="text-xl font-bold {{ 'text-red-600' if data.high_turbidity_events > 0 else 'text-green-600' }}">
+                class="text-xl font-bold {{ 'text-red-600 dark:text-red-400' if data.high_turbidity_events > 0 else 'text-green-600 dark:text-green-400' }}">
                 {{ data.high_turbidity_events|default(0) }}
             </span>
         </div>
     </div>
 
-    <div class="mt-4 text-xs text-gray-400 text-center">
+    <div class="mt-4 text-xs text-gray-400 dark:text-gray-500 text-center">
         Monitoring data from Buoy Network
     </div>
 </div>
