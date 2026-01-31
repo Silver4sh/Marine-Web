@@ -22,7 +22,10 @@ async def login_submit(request: Request, response: Response, username: str = For
         # Here we will just set a signed cookie for simplicity or use a global dict (not production safe for scalabiltiy but fine for single instance)
         # For better statelessness, let's just set the user info in a secure HTTPOnly cookie
         
-        resp = RedirectResponse(url="/", status_code=303)
+        # Use HX-Redirect to force a full page reload/navigation on the client side
+        # This prevents the dashboard from being rendered inside the login form div
+        resp = Response(status_code=200)
+        resp.headers["HX-Redirect"] = "/"
         resp.set_cookie(key="session_user", value=username, httponly=True)
         resp.set_cookie(key="session_role", value=user['role'], httponly=True)
         return resp
@@ -30,7 +33,7 @@ async def login_submit(request: Request, response: Response, username: str = For
         # Return the form with error
         return HTMLResponse(
             """
-            <div class="text-red-500 text-sm mb-4 bg-red-50 p-3 rounded text-center">
+            <div class="text-red-500 dark:text-red-400 text-sm mb-4 bg-red-50 dark:bg-red-900/30 p-3 rounded text-center border border-red-100 dark:border-red-900">
                 Invalid username or password
             </div>
             """, 

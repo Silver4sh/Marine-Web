@@ -1,48 +1,54 @@
 <div class="overflow-x-auto">
-    <table class="min-w-full divide-y divide-gray-200">
-        <thead class="bg-gray-50">
+    <table class="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
+        <thead class="bg-gray-50 dark:bg-gray-800">
             <tr>
-                <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                <th scope="col"
+                    class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
                     User</th>
-                <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                <th scope="col"
+                    class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
                     Role</th>
-                <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                <th scope="col"
+                    class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
                     Status</th>
-                <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                <th scope="col"
+                    class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
                     Last Login</th>
-                <th scope="col" class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
+                <th scope="col"
+                    class="px-6 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
                     Actions</th>
             </tr>
         </thead>
-        <tbody class="bg-white divide-y divide-gray-200">
+        <tbody class="bg-white dark:bg-gray-900 divide-y divide-gray-200 dark:divide-gray-700">
             {% for user in users %}
-            <tr>
+            <tr class="hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors">
                 <td class="px-6 py-4 whitespace-nowrap">
                     <div class="flex items-center">
                         <div
-                            class="h-8 w-8 rounded-full bg-blue-100 flex items-center justify-center text-blue-600 font-bold text-xs">
+                            class="h-8 w-8 rounded-full bg-blue-100 dark:bg-blue-900/50 flex items-center justify-center text-blue-600 dark:text-blue-300 font-bold text-xs">
                             {{ user.username[:2].upper() }}
                         </div>
                         <div class="ml-4">
-                            <div class="text-sm font-medium text-gray-900">{{ user.username }}</div>
+                            <div class="text-sm font-medium text-gray-900 dark:text-white">{{ user.username }}</div>
                         </div>
                     </div>
                 </td>
-                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
                     {{ user.role }}
                 </td>
                 <td class="px-6 py-4 whitespace-nowrap">
                     <span
                         class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full 
-                        {% if user.user_status == 'Active' %} bg-green-100 text-green-800 {% else %} bg-red-100 text-red-800 {% endif %}">
+                        {% if user.user_status == 'Active' %} bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300 {% else %} bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-300 {% endif %}">
                         {{ user.user_status }}
                     </span>
                 </td>
-                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
                     {{ user.last_login or '-' }}
                 </td>
                 <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                    <button class="text-red-600 hover:text-red-900 ml-4"
+                    <button
+                        class="text-red-600 dark:text-red-400 hover:text-red-900 dark:hover:text-red-300 ml-4 transition-colors"
                         hx-delete="/api/admin/users/{{ user.username }}"
                         hx-confirm="Are you sure you want to delete {{ user.username }}?"
                         hx-on::after-request="htmx.trigger('body', 'userListChanged')">

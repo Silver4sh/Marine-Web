@@ -1,40 +1,45 @@
 <div class="overflow-x-auto">
-    <table class="min-w-full divide-y divide-gray-200">
-        <thead class="bg-gray-50">
+    <table class="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
+        <thead class="bg-gray-50 dark:bg-gray-800">
             <tr>
-                <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                <th scope="col"
+                    class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
                     Timestamp</th>
-                <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                <th scope="col"
+                    class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
                     User</th>
-                <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                <th scope="col"
+                    class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
                     Action</th>
-                <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                <th scope="col"
+                    class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
                     Target</th>
-                <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                <th scope="col"
+                    class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
                     Details</th>
             </tr>
         </thead>
-        <tbody class="bg-white divide-y divide-gray-200">
+        <tbody class="bg-white dark:bg-gray-900 divide-y divide-gray-200 dark:divide-gray-700">
             {% for log in logs %}
-            <tr class="hover:bg-gray-50 transition-colors">
-                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+            <tr class="hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors">
+                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
                     {{ log.changed_at }}
                 </td>
-                <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
+                <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900 dark:text-white">
                     {{ log.changed_by }}
                 </td>
                 <td class="px-6 py-4 whitespace-nowrap">
                     <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full 
-                        {{ 'bg-green-100 text-green-800' if log.action == 'INSERT' else 
-                           'bg-blue-100 text-blue-800' if log.action == 'UPDATE' else 
-                           'bg-red-100 text-red-800' }}">
+                        {{ 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300' if log.action == 'INSERT' else 
+                           'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-300' if log.action == 'UPDATE' else 
+                           'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-300' }}">
                         {{ log.action }}
                     </span>
                 </td>
-                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
                     {{ log.table_name }}
                 </td>
-                <td class="px-6 py-4 text-sm text-gray-500 truncate max-w-xs">
+                <td class="px-6 py-4 text-sm text-gray-500 dark:text-gray-400 truncate max-w-xs">
                     <span title="{{ log.new_data }}">
                         {{ log.new_data }}
                     </span>
@@ -42,7 +47,7 @@
             </tr>
             {% else %}
             <tr>
-                <td colspan="5" class="px-6 py-8 text-center text-gray-400">
+                <td colspan="5" class="px-6 py-8 text-center text-gray-400 dark:text-gray-500">
                     No logs found.
                 </td>
             </tr>

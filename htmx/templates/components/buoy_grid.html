@@ -1,23 +1,24 @@
 {% if buoys %}
 <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
     {% for buoy in buoys %}
-    <div class="bg-white rounded-xl border border-gray-200 p-6 hover:shadow-md transition-shadow">
+    <div
+        class="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-6 hover:shadow-md transition-all">
         <div class="text-center mb-4">
-            <h4 class="text-lg font-bold text-gray-900">{{ buoy.code_buoy }}</h4>
-            <p class="text-xs text-gray-500">{{ buoy.location or "Unknown Location" }}</p>
+            <h4 class="text-lg font-bold text-gray-900 dark:text-white">{{ buoy.code_buoy }}</h4>
+            <p class="text-xs text-gray-500 dark:text-gray-400">{{ buoy.location or "Unknown Location" }}</p>
         </div>
 
         <div class="flex justify-center mb-4">
             <span
                 class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium 
-                {% if buoy.status == 'Active' %} bg-green-100 text-green-700 {% elif buoy.status == 'Maintenance' %} bg-orange-100 text-orange-700 {% else %} bg-gray-100 text-gray-700 {% endif %}">
+                {% if buoy.status == 'Active' %} bg-green-100 text-green-700 dark:bg-green-900 dark:text-green-300 {% elif buoy.status == 'Maintenance' %} bg-orange-100 text-orange-700 dark:bg-orange-900 dark:text-orange-300 {% else %} bg-gray-100 text-gray-700 dark:bg-gray-700 dark:text-gray-300 {% endif %}">
                 <span
                     class="w-1.5 h-1.5 rounded-full {% if buoy.status == 'Active' %} bg-green-500 {% elif buoy.status == 'Maintenance' %} bg-orange-500 {% else %} bg-gray-500 {% endif %}"></span>
                 {{ buoy.status }}
             </span>
         </div>
 
-        <div class="flex justify-center items-center gap-4 text-xs text-gray-500 mb-4">
+        <div class="flex justify-center items-center gap-4 text-xs text-gray-500 dark:text-gray-400 mb-4">
             <div class="flex items-center gap-1">
                 <span>🔋</span> {{ buoy.battery }}
             </div>
@@ -27,14 +28,15 @@
         </div>
 
         <button hx-get="/api/environment/buoys/{{ buoy.code_buoy }}" hx-target="body" hx-swap="beforeend"
-            class="w-full py-2 px-4 bg-gray-50 hover:bg-gray-100 text-gray-700 text-sm font-medium rounded-lg transition-colors border border-gray-200">
+            class="w-full py-2 px-4 bg-gray-50 dark:bg-gray-700 hover:bg-gray-100 dark:hover:bg-gray-600 text-gray-700 dark:text-gray-200 text-sm font-medium rounded-lg transition-colors border border-gray-200 dark:border-gray-600">
             View Details 🔍
         </button>
     </div>
     {% endfor %}
 </div>
 {% else %}
-<div class="p-8 text-center text-gray-500 bg-gray-50 rounded-lg border border-dashed border-gray-300">
+<div
+    class="p-8 text-center text-gray-500 dark:text-gray-400 bg-gray-50 dark:bg-gray-800 rounded-lg border border-dashed border-gray-300 dark:border-gray-700 transition-colors">
     No buoys found.
 </div>
 {% endif %}
