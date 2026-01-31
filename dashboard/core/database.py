@@ -86,7 +86,6 @@ def get_financial_metrics():
     if df.empty: return {"total_revenue": 0, "completed_orders": 0, "delta_revenue": 0.0}
     current = df.iloc[0]
     metrics = {"total_revenue": float(current["total_revenue"]), "completed_orders": int(current["completed_orders"]), "delta_revenue": 0.0}
-    metrics["delta_revenue"] = 5.2 
     return metrics
 
 @st.cache_data(ttl=300)
@@ -106,7 +105,7 @@ def get_order_stats():
     if df.empty: return {"total_orders": 0, "completed": 0, "in_completed": 0, "on_progress": 0, "failed": 0}
     return df.astype(int).iloc[0].to_dict()
 
-@st.cache_data(ttl=300)
+@st.cache_data(ttl=1800) # Increased TTL to 30 mins
 def get_revenue_cycle_metrics():
     query = "SELECT DATE_TRUNC('month', o.order_date) as month, AVG(EXTRACT(DAY FROM (p.payment_date - o.order_date))) as avg_days_to_cash, SUM(p.total_amount) as realized_revenue, SUM(CASE WHEN p.status = 'Payed' THEN 1 ELSE 0 END) as paid_count, COUNT(o.id) as total_orders FROM operation.orders o JOIN operation.payments p ON o.id = p.id_order WHERE o.order_date >= NOW() - INTERVAL '6 months' GROUP BY 1 ORDER BY 1 DESC"
     return run_query(query)
@@ -236,20 +235,111 @@ def get_buoy_fleet():
 def get_buoy_history(buoy_id):
     query = "SELECT id_buoy, created_at, salinitas, turbidity, oxygen, density, current, tide FROM operation.buoy_sensor_histories WHERE id_buoy = :buoy_id ORDER BY created_at ASC"
     df = run_query(query, params={"buoy_id": buoy_id})
-    
-    # Fallback to Mock History if DB is empty
-    if df.empty:
-        import numpy as np
-        dates = pd.date_range(end=pd.Timestamp.now(), periods=100, freq='H')
-        df = pd.DataFrame({
-            'created_at': dates,
-            'id_buoy': [buoy_id] * 100,
-            'salinitas': np.random.normal(30, 2, 100),
-            'turbidity': np.random.normal(5, 1, 100),
-            'oxygen': np.random.normal(6, 0.5, 100),
-            'density': np.random.normal(1025, 2, 100),
-            'current': np.random.normal(0.5, 0.2, 100),
-            'tide': 2 + np.sin(np.linspace(0, 10, 100))
-        })
     return df
+
+# --- ADVANCED INSIGHTS ---
+@st.cache_data(ttl=60)
+def get_operational_anomalies():
+    """
+    Detects operational inefficiencies:
+    1. Ghost Operation: Status 'Operating' but Speed < 0.5 knots (faking work/engine issue).
+    2. Unauthorized Move: Status not 'Operating'/'Moving' but Speed > 2 knots (drifting/unauthorized).
+    """
+    # Optimized: Filter by Time FIRST to leverage idx_vp_created_at
+    query = """
+    WITH recent_pos AS (
+        SELECT id_vessel, speed, created_at, latitude, longitude
+        FROM operation.vessel_positions
+        WHERE created_at >= NOW() - INTERVAL '1 hour'
+    )
+    SELECT 
+        vp.id_vessel,
+        v.name,
+        v.status as reported_status,
+        vp.speed,
+        vp.latitude,
+        vp.longitude,
+        vp.created_at,
+        CASE 
+            WHEN LOWER(v.status) = 'operating' AND vp.speed < 0.5 THEN 'Ghost Operation (Low Speed)'
+            WHEN LOWER(v.status) IN ('idle', 'maintenance', 'docking') AND vp.speed > 2.0 THEN 'Unauthorized Movement'
+            ELSE 'Normal'
+        END as anomaly_type
+    FROM recent_pos vp
+    JOIN operation.vessels v ON vp.id_vessel = v.code_vessel
+    WHERE 
+        (LOWER(v.status) = 'operating' AND vp.speed < 0.5)
+        OR 
+        (LOWER(v.status) IN ('idle', 'maintenance', 'docking') AND vp.speed > 2.0)
+    ORDER BY vp.created_at DESC
+    LIMIT 20
+    """
+    return run_query(query)
+
+@st.cache_data(ttl=3600)  # Increased TTL to 1 hour
+def get_environmental_compliance_dashboard():
+    """
+    Aggregates environmental risk factors.
+    Returns daily stats on high turbidity events reported by Buoys.
+    """
+    # Optimized: Removed MAX() to save some scans if not strictly needed, 
+    # but kept for now. Date Trunc can slow things down on huge datasets without index expression, 
+    # but idx_bsh_created helps filter range first.
+    query = """
+    SELECT 
+        DATE_TRUNC('day', created_at) as monitor_date,
+        COUNT(*) as total_readings,
+        SUM(CASE WHEN turbidity > 50 THEN 1 ELSE 0 END) as high_turbidity_events,
+        AVG(turbidity) as avg_turbidity
+    FROM operation.buoy_sensor_histories
+    WHERE created_at >= NOW() - INTERVAL '30 days'
+    GROUP BY 1
+    ORDER BY 1 DESC
+    """
+    return run_query(query)
+
+@st.cache_data(ttl=3600) # Increased TTL to 1 hour
+def get_client_reliability_scoring():
+    """
+    Scores clients based on:
+    - Payment Speed (lower delay is better)
+    - Total Monied Value (higher LTV is better)
+    """
+    # Optimized: Aggregation in CTE before Join
+    query = """
+    WITH payment_stats AS (
+        SELECT 
+            id_order,
+            SUM(total_amount) as total_paid,
+            MAX(payment_date) as last_payment_date
+        FROM operation.payments
+        WHERE status = 'Payed'
+        GROUP BY 1
+    ),
+    client_metrics AS (
+        SELECT 
+            c.code_client,
+            c.name,
+            COUNT(DISTINCT o.id) as total_orders,
+            COALESCE(SUM(ps.total_paid), 0) as total_revenue,
+            AVG(EXTRACT(DAY FROM (ps.last_payment_date - o.order_date))) as avg_payment_delay_days
+        FROM operation.clients c
+        JOIN operation.orders o ON c.code_client = o.id_client
+        JOIN payment_stats ps ON CAST(o.id AS VARCHAR) = ps.id_order
+        GROUP BY 1, 2
+    )
+    SELECT 
+        code_client,
+        name,
+        total_revenue,
+        COALESCE(avg_payment_delay_days, 0) as avg_payment_delay,
+        (
+            (total_revenue / 100000000) * 0.6
+            - 
+            (COALESCE(avg_payment_delay_days, 30) / 10) * 0.4
+        ) as reliability_score
+    FROM client_metrics
+    ORDER BY reliability_score DESC
+    """
+    return run_query(query)
 
