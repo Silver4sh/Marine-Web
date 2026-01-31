@@ -2,7 +2,7 @@ import streamlit as st
 import pandas as pd
 import plotly.express as px
 import plotly.graph_objects as go
-from streamlit.core import (
+from core import (
     get_financial_metrics, get_revenue_analysis, get_order_stats,
     get_vessel_utilization_stats, get_revenue_cycle_metrics,
     get_environmental_anomalies, get_logistics_performance,
@@ -78,7 +78,13 @@ def render_analytics_page():
                 ))
 
                 apply_chart_style(fig)
-                fig.update_layout(yaxis_title="Pendapatan (IDR)", xaxis_title="Bulan")
+                fig.update_layout(
+                    yaxis_title="Pendapatan (IDR)", 
+                    xaxis_title="Bulan",
+                    template="plotly_dark",
+                    paper_bgcolor='rgba(0,0,0,0)',
+                    plot_bgcolor='rgba(0,0,0,0)'
+                )
                 st.plotly_chart(fig, use_container_width=True)
                 
                 model_name = forecast_df['model_name'].iloc[0]
@@ -93,7 +99,7 @@ def render_analytics_page():
         col_rev1, col_rev2 = st.columns(2)
         with col_rev1:
             st.markdown("#### 💰 Komposisi Pendapatan")
-            from streamlit.core import get_revenue_by_service, get_fleet_daily_activity
+            from core import get_revenue_by_service, get_fleet_daily_activity
             
             comp_df = get_revenue_by_service()
             if not comp_df.empty:
@@ -134,7 +140,7 @@ def render_analytics_page():
                 colorscale='Viridis', colorbar=dict(title='Jam Aktif')
             ))
             apply_chart_style(fig)
-            fig.update_layout(height=400)
+            fig.update_layout(height=400, template="plotly_dark", paper_bgcolor='rgba(0,0,0,0)')
             st.plotly_chart(fig, use_container_width=True)
         else:
             st.info("Tidak ada data aktivitas armada.")
@@ -155,7 +161,7 @@ def render_analytics_page():
                              'threshold' : {'line': {'color': "red", 'width': 4}, 'thickness': 0.75, 'value': 90}}
                 ))
                 apply_chart_style(fig_util)
-                fig_util.update_layout(height=300)
+                fig_util.update_layout(height=300, template="plotly_dark", paper_bgcolor='rgba(0,0,0,0)')
                 st.plotly_chart(fig_util, use_container_width=True)
                 with st.expander("Detail Penggunaan per Kapal"):
                     st.dataframe(util_df[['vessel_name', 'total_hours', 'productive_hours', 'utilization_rate']], use_container_width=True)

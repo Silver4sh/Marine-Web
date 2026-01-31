@@ -2,7 +2,7 @@ import pandas as pd
 import numpy as np
 import hashlib
 from sklearn.metrics import r2_score
-from streamlit.core.config import ROLE_ADMIN, ROLE_FINANCE, ROLE_MARCOM
+from .config import ROLE_ADMIN, ROLE_FINANCE, ROLE_MARCOM
 
 def get_notification_id(category, message, time_val):
     return hashlib.md5(f"{category}|{message}|{str(time_val)}".encode()).hexdigest()
