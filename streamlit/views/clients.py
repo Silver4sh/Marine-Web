@@ -6,7 +6,7 @@ from folium.plugins import MarkerCluster
 from streamlit_folium import st_folium
 import random
 
-from dashboard.core import get_clients_summary, apply_chart_style
+from streamlit.core import get_clients_summary, apply_chart_style
 
 def enrich_client_data(df):
     if df.empty: return df

@@ -1,0 +1,41 @@
+<div class="grid grid-cols-1 md:grid-cols-4 gap-6">
+    <!-- Total Vessels -->
+    <div class="bg-white p-6 rounded-xl shadow-sm border border-gray-100 flex flex-col">
+        <span class="text-xs font-semibold text-gray-500 uppercase tracking-wider">Total Vessels</span>
+        <div class="flex items-baseline gap-2 mt-2">
+            <span class="text-3xl font-bold text-gray-900">{{ stats.total_vessels }}</span>
+            <span class="text-sm text-gray-400">active</span>
+        </div>
+    </div>
+
+    <!-- Operating -->
+    <div class="bg-white p-6 rounded-xl shadow-sm border border-gray-100 flex flex-col">
+        <span class="text-xs font-semibold text-gray-500 uppercase tracking-wider">Operating</span>
+        <div class="flex items-baseline gap-2 mt-2">
+            <span class="text-3xl font-bold text-green-600">{{ stats.operating }}</span>
+            <span class="text-sm text-gray-400">dredging</span>
+        </div>
+        <div class="w-full bg-gray-100 rounded-full h-1.5 mt-4">
+            <div class="bg-green-500 h-1.5 rounded-full"
+                style="width: {{ (stats.operating / stats.total_vessels * 100) if stats.total_vessels else 0 }}%"></div>
+        </div>
+    </div>
+
+    <!-- Maintenance -->
+    <div class="bg-white p-6 rounded-xl shadow-sm border border-gray-100 flex flex-col">
+        <span class="text-xs font-semibold text-gray-500 uppercase tracking-wider">Maintenance</span>
+        <div class="flex items-baseline gap-2 mt-2">
+            <span class="text-3xl font-bold text-orange-600">{{ stats.maintenance }}</span>
+            <span class="text-sm text-gray-400">vessels</span>
+        </div>
+    </div>
+
+    <!-- Idle -->
+    <div class="bg-white p-6 rounded-xl shadow-sm border border-gray-100 flex flex-col">
+        <span class="text-xs font-semibold text-gray-500 uppercase tracking-wider">Idle</span>
+        <div class="flex items-baseline gap-2 mt-2">
+            <span class="text-3xl font-bold text-gray-600">{{ stats.idle }}</span>
+            <span class="text-sm text-gray-400">waiting</span>
+        </div>
+    </div>
+</div>

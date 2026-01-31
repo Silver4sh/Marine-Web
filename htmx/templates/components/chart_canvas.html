@@ -1,0 +1,21 @@
+<div class="bg-white p-6 rounded-xl shadow-sm border border-gray-100 h-full flex flex-col">
+    <h3 class="text-sm font-semibold text-gray-500 uppercase tracking-wider mb-4">{{ title }}</h3>
+    <div class="flex-1 min-h-[300px] relative">
+        <canvas id="{{ chart_id }}"></canvas>
+    </div>
+</div>
+
+<script>
+    (function () {
+        var ctx = document.getElementById('{{ chart_id }}').getContext('2d');
+        var config = {{ chart_config | safe
+    }};
+
+    // Destroy existing if any (to prevent canvas reuse overlay)
+    if (window['chart_{{ chart_id }}']) {
+        window['chart_{{ chart_id }}'].destroy();
+    }
+
+    window['chart_{{ chart_id }}'] = new Chart(ctx, config);
+}) ();
+</script>

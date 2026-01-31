@@ -1,0 +1,90 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="p-8 space-y-8">
+    <div class="flex justify-between items-center">
+        <div>
+            <h2 class="text-3xl font-bold text-gray-900">Enviro Control</h2>
+            <p class="text-gray-500 mt-1">Real-time environmental monitoring and buoy fleet management</p>
+        </div>
+        <div class="flex gap-2">
+            <button
+                class="px-4 py-2 bg-white border border-gray-200 text-gray-700 rounded-lg hover:bg-gray-50 text-sm font-medium shadow-sm"
+                onclick="toggleHeatmapType('salinitas')">
+                Salinity
+            </button>
+            <button
+                class="px-4 py-2 bg-white border border-gray-200 text-gray-700 rounded-lg hover:bg-gray-50 text-sm font-medium shadow-sm"
+                onclick="toggleHeatmapType('turbidity')">
+                Turbidity
+            </button>
+        </div>
+    </div>
+
+    <!-- Heatmap Section -->
+    <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+        <h3 class="text-lg font-semibold text-gray-900 mb-4">Environmental Heatmap</h3>
+        <div id="heatmap-container" class="h-96 w-full rounded-lg z-0 relative"></div>
+    </div>
+
+    <!-- Buoy Fleet Section -->
+    <div>
+        <h3 class="text-xl font-bold text-gray-900 mb-4">Buoy Fleet Status</h3>
+        <div hx-get="/api/environment/buoys" hx-trigger="load" hx-swap="innerHTML">
+            <div class="animate-pulse space-y-4">
+                <div class="h-10 bg-gray-200 rounded w-full"></div>
+                <div class="h-10 bg-gray-200 rounded w-full"></div>
+            </div>
+        </div>
+    </div>
+
+</div>
+
+<!-- Leaflet Heatmap Plugin -->
+<script src="https://leaflet.github.io/Leaflet.heat/dist/leaflet-heat.js"></script>
+<script>
+    let map = L.map('heatmap-container').setView([-2.5, 118], 5); // Default Indonesia view
+    L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {
+        attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>',
+        subdomains: 'abcd',
+        maxZoom: 19
+    }).addTo(map);
+
+    let heatLayer = null;
+
+    function loadHeatmap(type) {
+        fetch('/api/environment/heatmap-data')
+            .then(response => response.json())
+            .then(data => {
+                const points = data.data.map(p => [p.latitude, p.longitude, p[type] || 0]); // lat, lng, intensity
+
+                if (heatLayer) {
+                    map.removeLayer(heatLayer);
+                }
+
+                // Adjust focus if points exist
+                if (points.length > 0) {
+                    const bounds = L.latLngBounds(points.map(p => [p[0], p[1]]));
+                    map.fitBounds(bounds, { padding: [50, 50] });
+                }
+
+                heatLayer = L.heatLayer(points, {
+                    radius: 25,
+                    blur: 15,
+                    maxZoom: 17,
+                    max: type === 'salinitas' ? 35 : 100 // Adjust max intensity based on type
+                }).addTo(map);
+            });
+    }
+
+    // Load default
+    loadHeatmap('salinitas');
+
+    function toggleHeatmapType(type) {
+        loadHeatmap(type);
+    }
+
+    // Fix map size on load
+    setTimeout(() => { map.invalidateSize(); }, 500);
+</script>
+{% endblock %}

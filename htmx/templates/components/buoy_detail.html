@@ -1,0 +1,124 @@
+<div id="buoy-modal" class="fixed inset-0 z-50 overflow-y-auto" aria-labelledby="modal-title" role="dialog"
+    aria-modal="true">
+    <div class="flex items-end justify-center min-h-screen pt-4 px-4 pb-20 text-center sm:block sm:p-0">
+
+        <!-- Background overlay -->
+        <div class="fixed inset-0 bg-gray-500 bg-opacity-75 transition-opacity" aria-hidden="true"
+            onclick="closeModal()"></div>
+
+        <span class="hidden sm:inline-block sm:align-middle sm:h-screen" aria-hidden="true">&#8203;</span>
+
+        <!-- Modal panel -->
+        <div
+            class="inline-block align-bottom bg-white rounded-lg text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-4xl sm:w-full">
+            <div class="bg-white px-4 pt-5 pb-4 sm:p-6 sm:pb-4">
+                <div class="sm:flex sm:items-start">
+                    <div class="mt-3 text-center sm:mt-0 sm:ml-4 sm:text-left w-full">
+                        <div class="flex justify-between items-center mb-4">
+                            <h3 class="text-2xl leading-6 font-bold text-gray-900" id="modal-title">
+                                Buoy Analysis: {{ buoy_id }}
+                            </h3>
+                            <button onclick="closeModal()" type="button" class="text-gray-400 hover:text-gray-500">
+                                <svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                        d="M6 18L18 6M6 6l12 12" />
+                                </svg>
+                            </button>
+                        </div>
+
+                        <!-- Charts Grid -->
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                            <div class="bg-gray-50 p-4 rounded-lg">
+                                <canvas id="chartSalinity"></canvas>
+                            </div>
+                            <div class="bg-gray-50 p-4 rounded-lg">
+                                <canvas id="chartTurbidity"></canvas>
+                            </div>
+                            <div class="bg-gray-50 p-4 rounded-lg">
+                                <canvas id="chartOxygen"></canvas>
+                            </div>
+                            <div class="bg-gray-50 p-4 rounded-lg">
+                                <canvas id="chartDensity"></canvas>
+                            </div>
+                        </div>
+
+                        <!-- Data Table Preview -->
+                        <div class="mt-8">
+                            <h4 class="text-lg font-medium text-gray-900 mb-2">Recent Readings</h4>
+                            <div class="overflow-x-auto">
+                                <table class="min-w-full divide-y divide-gray-200 text-sm">
+                                    <thead class="bg-gray-50">
+                                        <tr>
+                                            <th class="px-4 py-2 text-left">Time</th>
+                                            <th class="px-4 py-2 text-left">Salinity</th>
+                                            <th class="px-4 py-2 text-left">Turbidity</th>
+                                            <th class="px-4 py-2 text-left">Oxygen</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody class="bg-white divide-y divide-gray-200">
+                                        {% for row in history_raw[:5] %}
+                                        <tr>
+                                            <td class="px-4 py-2">{{ row.created_at[:16] }}</td>
+                                            <td class="px-4 py-2">{{ "%.2f"|format(row.salinitas) }}</td>
+                                            <td class="px-4 py-2">{{ "%.2f"|format(row.turbidity) }}</td>
+                                            <td class="px-4 py-2">{{ "%.2f"|format(row.oxygen) }}</td>
+                                        </tr>
+                                        {% endfor %}
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+
+                    </div>
+                </div>
+            </div>
+            <div class="bg-gray-50 px-4 py-3 sm:px-6 sm:flex sm:flex-row-reverse">
+                <button type="button" onclick="closeModal()"
+                    class="w-full inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 bg-blue-600 text-base font-medium text-white hover:bg-blue-700 focus:outline-none sm:ml-3 sm:w-auto sm:text-sm">
+                    Close
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    function closeModal() {
+        document.getElementById('buoy-modal').remove();
+    }
+
+    (function () {
+        const historyData = {{ history | safe
+    }};
+    if (!historyData || historyData.length === 0) return;
+
+    const labels = historyData.map(d => d.created_at.substring(5, 16)); // MM-DD HH:mm
+
+    function createChart(ctxId, label, dataKey, color) {
+        new Chart(document.getElementById(ctxId), {
+            type: 'line',
+            data: {
+                labels: labels,
+                datasets: [{
+                    label: label,
+                    data: historyData.map(d => d[dataKey]),
+                    borderColor: color,
+                    tension: 0.4,
+                    fill: true,
+                    backgroundColor: color + '20'
+                }]
+            },
+            options: {
+                responsive: true,
+                plugins: { legend: { display: false }, title: { display: true, text: label } },
+                scales: { x: { display: false } }
+            }
+        });
+    }
+
+    createChart('chartSalinity', 'Salinity (PSU)', 'salinitas', '#0ea5e9');
+    createChart('chartTurbidity', 'Turbidity (NTU)', 'turbidity', '#f59e0b');
+    createChart('chartOxygen', 'Oxygen (mg/L)', 'oxygen', '#10b981');
+    createChart('chartDensity', 'Density (kg/m3)', 'density', '#8b5cf6');
+    }) ();
+</script>

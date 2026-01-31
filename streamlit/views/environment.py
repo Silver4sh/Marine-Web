@@ -1,8 +1,8 @@
 import streamlit as st
 import pandas as pd
 import altair as alt
-from dashboard.core import get_data_water, page_heatmap
-from dashboard.core.database import get_buoy_fleet, get_buoy_history
+from streamlit.core import get_data_water, page_heatmap
+from streamlit.core.database import get_buoy_fleet, get_buoy_history
 
 def render_chart(df, x_col, y_col, color_col, title):
     if df.empty or y_col not in df.columns:
