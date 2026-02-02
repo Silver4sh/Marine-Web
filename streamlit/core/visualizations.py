@@ -1,10 +1,10 @@
 from core.utils import get_status_color, create_google_arrow_icon
-
 from core.database import get_vessel_position
 from core.config import inject_custom_css
-import folium
 from folium.plugins import TimestampedGeoJson, MarkerCluster, HeatMap
 from streamlit_folium import st_folium
+
+import folium
 
 def add_history_path_to_map(m, path_df, fill_color, v_id_str, show_timelapse=False):
     if path_df.empty: return
