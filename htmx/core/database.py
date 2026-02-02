@@ -184,11 +184,10 @@ def get_operational_anomalies():
     FROM recent_pos vp
     JOIN operation.vessels v ON vp.id_vessel = v.code_vessel
     WHERE 
-        (LOWER(v.status) = 'operating' AND vp.speed < 0.5)
+        (LOWER(v.status) = 'active' AND vp.speed < 0.5)
         OR 
         (LOWER(v.status) IN ('idle', 'maintenance', 'docking') AND vp.speed > 2.0)
     ORDER BY vp.created_at DESC
-    LIMIT 20
     """
     return run_query(query)
 
