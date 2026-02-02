@@ -1,7 +1,7 @@
 from fastapi import FastAPI, Request
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
-from fastapi.responses import HTMLResponse, RedirectResponse
+from fastapi.responses import HTMLResponse, RedirectResponse, FileResponse
 import os
 import uvicorn
 
@@ -12,6 +12,10 @@ app.mount("/static", StaticFiles(directory="htmx/static"), name="static")
 
 # Templates
 templates = Jinja2Templates(directory="htmx/templates")
+
+@app.get("/favicon.ico", include_in_schema=False)
+async def favicon():
+    return FileResponse("htmx/static/favicon.ico")
 
 from htmx.routes import dashboard, analytics, tables, auth, environment, admin
 app.include_router(auth.router)

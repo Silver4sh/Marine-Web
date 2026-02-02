@@ -53,3 +53,24 @@ async def get_buoy_detail(request: Request, buoy_id: str):
         "history": json.dumps(history), # Pass as JSON string for JS
         "history_raw": history 
     })
+
+@router.get("/api/environment/insights")
+async def get_environment_insights(request: Request):
+    # Reuse existing queries for efficiency
+    compliance = db.get_environmental_compliance_dashboard()
+    buoy_fleet = db.get_buoy_fleet()
+    
+    # Calculate metrics
+    latest_compliance = compliance.iloc[0].to_dict() if not compliance.empty else {}
+    
+    total_buoys = len(buoy_fleet)
+    active_buoys = len(buoy_fleet[buoy_fleet['status'] == 'Active']) if not buoy_fleet.empty else 0
+    
+    metrics = {
+        "avg_turbidity": latest_compliance.get('avg_turbidity', 0),
+        "high_turbidity_events": latest_compliance.get('high_turbidity_events', 0),
+        "active_buoys": active_buoys,
+        "total_buoys": total_buoys
+    }
+    
+    return templates.TemplateResponse("components/environment_insights.html", {"request": request, "metrics": metrics})

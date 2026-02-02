@@ -78,3 +78,26 @@ async def get_utilization_chart(request: Request):
         "chart_config": json.dumps(chart_config),
         "title": "Fleet Utilization"
     })
+
+@router.get("/api/analytics/insights")
+async def get_analytics_insights(request: Request):
+    financials = db.get_financial_metrics()
+    orders = db.get_order_stats()
+    
+    # Calculate derived metrics
+    total_rev = financials.get('total_revenue', 0)
+    completed = orders.get('completed', 0)
+    total_orders = orders.get('total_orders', 1) # avoid div by zero
+    
+    rev_per_order = total_rev / completed if completed > 0 else 0
+    completion_rate = (completed / total_orders) * 100 if total_orders > 0 else 0
+    
+    metrics = {
+        "revenue_per_order": rev_per_order,
+        "completion_rate": completion_rate,
+        "completed_orders": completed,
+        "total_orders": total_orders,
+        "total_revenue": total_rev
+    }
+    
+    return templates.TemplateResponse("components/analytics_insights.html", {"request": request, "metrics": metrics})
