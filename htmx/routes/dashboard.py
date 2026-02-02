@@ -48,5 +48,28 @@ async def get_financials(request: Request):
 async def get_environmental(request: Request):
     df = db.get_environmental_compliance_dashboard()
     # Just take the latest day for the summary card
-    latest = df.iloc[0].to_dict() if not df.empty else {}
+    if not df.empty:
+        latest = df.iloc[0].to_dict()
+    else:
+        latest = {
+            "high_turbidity_events": 0,
+            "avg_turbidity": 0
+        }
     return templates.TemplateResponse("components/environmental_card.html", {"request": request, "data": latest})
+
+@router.get("/insights")
+async def get_insights(request: Request):
+    utilization = db.get_vessel_utilization_stats()
+    reliability = db.get_client_reliability_scoring()
+    
+    # Process best vessel
+    best_vessel = utilization.sort_values('utilization_rate', ascending=False).iloc[0].to_dict() if not utilization.empty else {}
+    
+    # Process best client
+    best_client = reliability.iloc[0].to_dict() if not reliability.empty else {}
+    
+    return templates.TemplateResponse("components/insights_card.html", {
+        "request": request, 
+        "vessel": best_vessel,
+        "client": best_client
+    })

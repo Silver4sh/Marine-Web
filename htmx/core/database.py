@@ -129,7 +129,18 @@ def get_environmental_anomalies():
 
 def get_buoy_fleet():
     # 1. Fetch Active Buoys
-    q1 = "SELECT b.code_buoy, b.status, '85%' as battery, MAX(bsh.created_at) as last_update, b.location FROM operation.buoys b LEFT JOIN operation.buoy_sensor_histories bsh ON b.code_buoy = bsh.id_buoy GROUP BY b.code_buoy, b.status"
+    q1 = """
+        SELECT 
+            b.code_buoy, 
+            b.status, 
+            '85%' as battery, 
+            MAX(bsh.created_at) as last_update, 
+            s.location 
+        FROM operation.buoys b 
+        LEFT JOIN operation.buoy_sensor_histories bsh ON b.code_buoy = bsh.id_buoy 
+        LEFT JOIN operation.sites s ON b.id_site = s.code_site
+        GROUP BY b.code_buoy, b.status, s.location
+    """
     df1 = run_query(q1)
     
     # 2. Fetch Maintenance Buoys
@@ -173,11 +184,10 @@ def get_operational_anomalies():
     FROM recent_pos vp
     JOIN operation.vessels v ON vp.id_vessel = v.code_vessel
     WHERE 
-        (LOWER(v.status) = 'operating' AND vp.speed < 0.5)
+        (LOWER(v.status) = 'active' AND vp.speed < 0.5)
         OR 
         (LOWER(v.status) IN ('idle', 'maintenance', 'docking') AND vp.speed > 2.0)
     ORDER BY vp.created_at DESC
-    LIMIT 20
     """
     return run_query(query)
 

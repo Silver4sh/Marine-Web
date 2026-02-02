@@ -9,6 +9,8 @@ templates = Jinja2Templates(directory="htmx/templates")
 
 @router.get("/login", response_class=HTMLResponse)
 async def login_page(request: Request):
+    if request.cookies.get("session_user"):
+        return RedirectResponse(url="/", status_code=302)
     return templates.TemplateResponse("login.html", {"request": request})
 
 @router.post("/login")

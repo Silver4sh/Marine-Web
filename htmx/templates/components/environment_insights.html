@@ -1,0 +1,63 @@
+<div
+    class="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-100 dark:border-gray-700 p-6 transition-colors mb-8">
+    <div class="flex items-center justify-between mb-6">
+        <div>
+            <h3 class="text-lg font-bold text-gray-900 dark:text-white">Eco-Compliance Monitor</h3>
+            <p class="text-sm text-gray-500 dark:text-gray-400">Real-time environmental health analysis</p>
+        </div>
+        <div class="p-2 bg-teal-50 dark:bg-teal-900/30 rounded-lg">
+            <svg class="w-6 h-6 text-teal-600 dark:text-teal-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                    d="M21 12a9 9 0 01-9 9m9-9a9 9 0 00-9-9m9 9H3m9 9a9 9 0 01-9-9m9 9c1.657 0 3-4.03 3-9s-1.343-9-3-9m0 18c-1.657 0-3-4.03-3-9s1.343-9 3-9m-9 9a9 9 0 019-9">
+                </path>
+            </svg>
+        </div>
+    </div>
+
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <!-- Water Quality -->
+        <div class="p-4 bg-gray-50 dark:bg-gray-700/30 rounded-lg border border-gray-100 dark:border-gray-700/50">
+            <p class="text-xs font-semibold uppercase tracking-wider text-gray-400 dark:text-gray-500 mb-1">Avg
+                Turbidity</p>
+            <div class="flex items-baseline gap-2">
+                <h4 class="text-2xl font-bold text-gray-900 dark:text-white">{{
+                    "%.1f"|format(metrics.avg_turbidity|default(0)) }} NTU</h4>
+            </div>
+            <p class="text-xs mt-2 {{ 'text-red-500' if metrics.high_turbidity_events > 0 else 'text-teal-500' }}">
+                {{ metrics.high_turbidity_events }} Alert Events Detected
+            </p>
+        </div>
+
+        <!-- Fleet Health -->
+        <div class="p-4 bg-gray-50 dark:bg-gray-700/30 rounded-lg border border-gray-100 dark:border-gray-700/50">
+            <p class="text-xs font-semibold uppercase tracking-wider text-gray-400 dark:text-gray-500 mb-1">Active
+                Sensors</p>
+            <div class="flex items-baseline gap-2">
+                <h4 class="text-2xl font-bold text-gray-900 dark:text-white">{{ metrics.active_buoys }}</h4>
+                <span class="text-xs text-gray-500 dark:text-gray-400">/ {{ metrics.total_buoys }} Total</span>
+            </div>
+            <div class="w-full bg-gray-200 dark:bg-gray-600 rounded-full h-1 mt-3 overflow-hidden">
+                <div class="bg-teal-500 h-1 rounded-full"
+                    style="width: {{ (metrics.active_buoys / metrics.total_buoys * 100) if metrics.total_buoys > 0 else 0 }}%">
+                </div>
+            </div>
+        </div>
+
+        <!-- Compliance Status -->
+        <div class="p-4 bg-gray-50 dark:bg-gray-700/30 rounded-lg border border-gray-100 dark:border-gray-700/50">
+            <p class="text-xs font-semibold uppercase tracking-wider text-gray-400 dark:text-gray-500 mb-1">Status</p>
+            <div class="flex items-center gap-2 mt-1">
+                {% if metrics.high_turbidity_events == 0 %}
+                <span class="w-3 h-3 rounded-full bg-teal-500"></span>
+                <h4 class="text-xl font-bold text-teal-600 dark:text-teal-400">Compliant</h4>
+                {% else %}
+                <span class="w-3 h-3 rounded-full bg-red-500 animate-pulse"></span>
+                <h4 class="text-xl font-bold text-red-600 dark:text-red-400">Attention Needed</h4>
+                {% endif %}
+            </div>
+            <p class="text-xs text-gray-500 dark:text-gray-400 mt-2">
+                Based on last 24h readings
+            </p>
+        </div>
+    </div>
+</div>

@@ -10,6 +10,11 @@
         </div>
     </div>
 
+    <!-- Smart Insights (HTMX Load) -->
+    <div hx-get="/api/analytics/insights" hx-trigger="load" hx-swap="innerHTML">
+        <div class="h-32 bg-gray-100 dark:bg-gray-800 rounded-xl animate-pulse mb-8"></div>
+    </div>
+
     <!-- Charts Grid -->
     <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
         <!-- Revenue Chart -->

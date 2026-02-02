@@ -91,33 +91,50 @@
     }
 
     (function () {
-        const historyData = {{ history | safe
-    }};
-    if (!historyData || historyData.length === 0) return;
+        const historyData = {{ history | safe }};
+        if (!historyData || historyData.length === 0) return;
 
-    const labels = historyData.map(d => d.created_at.substring(5, 16)); // MM-DD HH:mm
+        const labels = historyData.map(d => d.created_at.substring(5, 16)); // MM-DD HH:mm
+        
+        // Dark Mode Detection
+        var isDark = document.documentElement.classList.contains('dark');
+        var textColor = isDark ? '#9ca3af' : '#6b7280'; // gray-400 : gray-500
+        var gridColor = isDark ? '#374151' : '#e5e7eb'; // gray-700 : gray-200
 
-    function createChart(ctxId, label, dataKey, color) {
-        new Chart(document.getElementById(ctxId), {
-            type: 'line',
-            data: {
-                labels: labels,
-                datasets: [{
-                    label: label,
-                    data: historyData.map(d => d[dataKey]),
-                    borderColor: color,
-                    tension: 0.4,
-                    fill: true,
-                    backgroundColor: color + '20'
-                }]
-            },
-            options: {
-                responsive: true,
-                plugins: { legend: { display: false }, title: { display: true, text: label } },
-                scales: { x: { display: false } }
-            }
-        });
-    }
+        function createChart(ctxId, label, dataKey, color) {
+            new Chart(document.getElementById(ctxId), {
+                type: 'line',
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        label: label,
+                        data: historyData.map(d => d[dataKey]),
+                        borderColor: color,
+                        tension: 0.4,
+                        fill: true,
+                        backgroundColor: color + '20'
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    plugins: { 
+                        legend: { display: false }, 
+                        title: { 
+                            display: true, 
+                            text: label,
+                            color: textColor
+                        } 
+                    },
+                    scales: { 
+                        x: { display: false },
+                        y: {
+                            grid: { color: gridColor },
+                            ticks: { color: textColor }
+                        }
+                    }
+                }
+            });
+        }
 
     createChart('chartSalinity', 'Salinity (PSU)', 'salinitas', '#0ea5e9');
     createChart('chartTurbidity', 'Turbidity (NTU)', 'turbidity', '#f59e0b');

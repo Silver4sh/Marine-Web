@@ -1,8 +1,8 @@
 import streamlit as st
 import pandas as pd
 import altair as alt
-from streamlit.core import get_data_water, page_heatmap
-from streamlit.core.database import get_buoy_fleet, get_buoy_history
+from core import get_data_water, page_heatmap
+from core.database import get_buoy_fleet, get_buoy_history
 
 def render_chart(df, x_col, y_col, color_col, title):
     if df.empty or y_col not in df.columns:
@@ -83,12 +83,14 @@ def render_environ_heatmap():
 
          # Prepare data for charts (ensure sorted by time)
          chart_df = chart_df.sort_values("latest_timestamp") if not chart_df.empty else pd.DataFrame()
+         c1, c2 = st.columns(2) 
+         with c1:
+            st.subheader("Rerata Arus (Current)")
+            render_chart(chart_df, 'latest_timestamp', 'current', 'id_buoy', None)
          
-         st.subheader("Rerata Arus (Current)")
-         render_chart(chart_df, 'latest_timestamp', 'current', 'id_buoy', None)
-         
-         st.subheader("Rerata Pasang Surut (Tide)")
-         render_chart(chart_df, 'latest_timestamp', 'tide', 'id_buoy', None)
+         with c2:
+            st.subheader("Rerata Pasang Surut (Tide)")
+            render_chart(chart_df, 'latest_timestamp', 'tide', 'id_buoy', None)
 
          st.markdown("### Densitas")
 

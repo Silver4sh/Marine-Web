@@ -1,0 +1,96 @@
+<div
+    class="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-100 dark:border-gray-700 p-6 transition-colors h-full">
+    <div class="flex items-center justify-between mb-6">
+        <div>
+            <h3 class="text-lg font-bold text-gray-900 dark:text-white">Smart Insights</h3>
+            <p class="text-sm text-gray-500 dark:text-gray-400">AI-driven operational analysis</p>
+        </div>
+        <div class="p-2 bg-indigo-50 dark:bg-indigo-900/30 rounded-lg">
+            <svg class="w-6 h-6 text-indigo-600 dark:text-indigo-400" fill="none" stroke="currentColor"
+                viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z">
+                </path>
+            </svg>
+        </div>
+    </div>
+
+    <div class="space-y-6">
+        <!-- Top Vessel Utilization -->
+        <div class="flex items-start gap-4">
+            <div class="flex-shrink-0 mt-1">
+                <div class="w-2 h-2 rounded-full bg-blue-500 ring-4 ring-blue-50 dark:ring-blue-900/30"></div>
+            </div>
+            <div class="flex-1">
+                <div class="flex justify-between items-start">
+                    <div>
+                        <p
+                            class="text-xs font-semibold uppercase tracking-wider text-gray-400 dark:text-gray-500 mb-0.5">
+                            Top Performer</p>
+                        <h4 class="font-medium text-gray-900 dark:text-white">{{ vessel.vessel_name|default('No Data')
+                            }}</h4>
+                    </div>
+                    <span class="text-sm font-bold text-blue-600 dark:text-blue-400">
+                        {{ "%.1f"|format(vessel.utilization_rate|default(0)) }}%
+                    </span>
+                </div>
+                <div class="w-full bg-gray-100 dark:bg-gray-700 rounded-full h-1.5 mt-2 overflow-hidden">
+                    <div class="bg-blue-500 h-1.5 rounded-full"
+                        style="width: {{ vessel.utilization_rate|default(0) }}%"></div>
+                </div>
+                <p class="text-xs text-gray-500 dark:text-gray-400 mt-1">Productive Hours: {{
+                    "%.0f"|format(vessel.productive_hours|default(0)) }}h</p>
+            </div>
+        </div>
+
+        <!-- Client Reliability -->
+        <div class="flex items-start gap-4 pt-4 border-t border-gray-100 dark:border-gray-700">
+            <div class="flex-shrink-0 mt-1">
+                <div class="w-2 h-2 rounded-full bg-purple-500 ring-4 ring-purple-50 dark:ring-purple-900/30"></div>
+            </div>
+            <div class="flex-1">
+                <div class="flex justify-between items-start">
+                    <div>
+                        <p
+                            class="text-xs font-semibold uppercase tracking-wider text-gray-400 dark:text-gray-500 mb-0.5">
+                            Top Client</p>
+                        <h4 class="font-medium text-gray-900 dark:text-white">{{ client.name|default('No Data') }}</h4>
+                    </div>
+                    <div class="flex items-center gap-1">
+                        <span class="text-sm font-bold text-purple-600 dark:text-purple-400">{{
+                            "%.1f"|format(client.reliability_score|default(0)) }}</span>
+                        <span class="text-[10px] text-gray-400">/ 10</span>
+                    </div>
+                </div>
+                <p class="text-xs text-gray-500 dark:text-gray-400 mt-1">Avg Payment Delay: {{
+                    "%.0f"|format(client.avg_payment_delay|default(0)) }} days</p>
+            </div>
+        </div>
+
+        <!-- Actionable Recommendation -->
+        <div class="mt-4 p-3 bg-gray-50 dark:bg-gray-700/30 rounded-lg border border-gray-100 dark:border-gray-700/50">
+            <div class="flex gap-2">
+                <svg class="w-4 h-4 text-amber-500 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor"
+                    viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                        d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z">
+                    </path>
+                </svg>
+                <div class="text-xs">
+                    {% if vessel.utilization_rate < 50 %} <span class="font-semibold text-gray-700 dark:text-gray-200">
+                        Low Utilization Alert</span>
+                        <p class="text-gray-500 dark:text-gray-400 mt-0.5">Consider scheduling maintenance for
+                            underutilized vessels.</p>
+                        {% elif client.avg_payment_delay > 45 %}
+                        <span class="font-semibold text-gray-700 dark:text-gray-200">Revenue Risk</span>
+                        <p class="text-gray-500 dark:text-gray-400 mt-0.5">Follow up with {{ client.name }} regarding
+                            overdue payments.</p>
+                        {% else %}
+                        <span class="font-semibold text-gray-700 dark:text-gray-200">System Healthy</span>
+                        <p class="text-gray-500 dark:text-gray-400 mt-0.5">Operations are running within optimal
+                            parameters.</p>
+                        {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

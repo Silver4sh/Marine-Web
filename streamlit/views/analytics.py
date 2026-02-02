@@ -2,9 +2,9 @@ import streamlit as st
 import pandas as pd
 import plotly.express as px
 import plotly.graph_objects as go
-from streamlit.core import (
+from core import (
     get_financial_metrics, get_revenue_analysis, get_order_stats,
-    get_vessel_utilization_stats, get_revenue_cycle_metrics,
+    get_client_stats, get_vessel_utilization_stats, get_revenue_cycle_metrics,
     get_environmental_anomalies, get_logistics_performance,
     calculate_advanced_forecast, apply_chart_style
 )
@@ -15,7 +15,8 @@ def render_analytics_page():
     fin = get_financial_metrics()
     rev_df = get_revenue_analysis() 
     orders = get_order_stats()
-    
+    clients = get_client_stats()
+
     c1, c2, c3, c4 = st.columns(4)
     
     total_revenue = float(fin.get('total_revenue', 0))
@@ -23,16 +24,37 @@ def render_analytics_page():
     c1.metric("Total Pendapatan", f"Rp {total_revenue:,.0f}", f"{delta_revenue:.1f}%")
     
     total_orders = int(orders.get('total_orders', 0))
+    total_clients = int(clients.get('total_clients', 0))
     failed_orders = int(orders.get('failed', 0))
     completed_orders = int(orders.get('completed', 0))
+    percentage_order = 0.0
+    
+    if total_orders > 0:
+        percentage_order = (completed_orders / total_orders) * 100.0
+
+    new_clients = int(clients.get('new_clients', 0))
+    deactive_clients = int(clients.get('deactive_clients', 0))
     
     fail_rate = 0.0
     if total_orders > 0:
         fail_rate = (failed_orders / total_orders) * 100.0
-        
-    c2.metric("Total Pesanan", total_orders, f"Gagal: {fail_rate:.1f}%")
-    c3.metric("Misi Selesai", completed_orders, "100% Sukses")
-    c4.metric("Klien Aktif", "18", "+2 Baru")
+
+    fail_str = "0.0%"
+    fail_color = "off"
+    if fail_rate > 0:
+        fail_str = f"-{fail_rate:.1f}%"
+        fail_color = "normal"
+    
+    client_delta = new_clients - deactive_clients
+    client_str = f"0"
+    client_color = "off"
+    if client_delta != 0:
+        client_str = f"{client_delta:+d}"
+        client_color = "normal"
+
+    c2.metric("Total Pesanan", total_orders, fail_str, delta_color=fail_color)
+    c3.metric("Task Selesai", completed_orders, f"{percentage_order:.1f}%", delta_color="normal")
+    c4.metric("Klien Aktif", total_clients, client_str, delta_color=client_color)
 
     st.markdown("<br>", unsafe_allow_html=True)
     
@@ -78,7 +100,13 @@ def render_analytics_page():
                 ))
 
                 apply_chart_style(fig)
-                fig.update_layout(yaxis_title="Pendapatan (IDR)", xaxis_title="Bulan")
+                fig.update_layout(
+                    yaxis_title="Pendapatan (IDR)", 
+                    xaxis_title="Bulan",
+                    template="plotly_dark",
+                    paper_bgcolor='rgba(0,0,0,0)',
+                    plot_bgcolor='rgba(0,0,0,0)'
+                )
                 st.plotly_chart(fig, use_container_width=True)
                 
                 model_name = forecast_df['model_name'].iloc[0]
@@ -93,7 +121,7 @@ def render_analytics_page():
         col_rev1, col_rev2 = st.columns(2)
         with col_rev1:
             st.markdown("#### 💰 Komposisi Pendapatan")
-            from streamlit.core import get_revenue_by_service, get_fleet_daily_activity
+            from core import get_revenue_by_service, get_fleet_daily_activity
             
             comp_df = get_revenue_by_service()
             if not comp_df.empty:
@@ -134,7 +162,7 @@ def render_analytics_page():
                 colorscale='Viridis', colorbar=dict(title='Jam Aktif')
             ))
             apply_chart_style(fig)
-            fig.update_layout(height=400)
+            fig.update_layout(height=400, template="plotly_dark", paper_bgcolor='rgba(0,0,0,0)')
             st.plotly_chart(fig, use_container_width=True)
         else:
             st.info("Tidak ada data aktivitas armada.")
@@ -155,8 +183,30 @@ def render_analytics_page():
                              'threshold' : {'line': {'color': "red", 'width': 4}, 'thickness': 0.75, 'value': 90}}
                 ))
                 apply_chart_style(fig_util)
-                fig_util.update_layout(height=300)
+                fig_util.update_layout(height=300, template="plotly_dark", paper_bgcolor='rgba(0,0,0,0)')
                 st.plotly_chart(fig_util, use_container_width=True)
+                
+                # "AI" Insight Logic with Chat UI
+                ui_insight = "Membutuhkan data lebih lanjut."
+                
+                # Semantic logic
+                status_key = "normal"
+                if avg_util >= 80: 
+                    ui_insight = f"**Analisis Efisiensi**: Tingkat utilisasi armada mencapai **{avg_util:.1f}%**, yang mengindikasikan efisiensi sangat tinggi.\n\n**Rekomendasi**: Waspadai keausan aset. Jadwalkan perawatan preventif prioritas tinggi untuk menghindari *downtime* mendadak. Pertimbangkan penambahan unit jika tren ini berlanjut selama >2 minggu."
+                    status_key = "warning"
+                elif avg_util >= 50: 
+                    ui_insight = f"**Analisis Efisiensi**: Utilisasi armada seimbang pada **{avg_util:.1f}%**. Operasional berjalan optimal dengan beban kerja yang terdistribusi baik.\n\n**Rekomendasi**: Pertahankan ritme ini. Ruang optimasi masih tersedia untuk meningkatkan throughput tanpa membebani aset."
+                    status_key = "success"
+                elif avg_util > 0: 
+                    ui_insight = f"**Analisis Efisiensi**: Armada beroperasi di bawah kapasitas (**{avg_util:.1f}%**). Aset tidak dimanfaatkan secara maksimal.\n\n**Rekomendasi**: Evaluasi rute logistik atau pertimbangkan strategi penyewaan aset (*asset leasing*) untuk monetisasi kapasitas berlebih."
+                    status_key = "warning"
+                else: 
+                    ui_insight = "**Analisis Status**: Tidak ada aktivitas armada yang tercatat (0%).\n\n**Rekomendasi**: Periksa konektivitas IoT sensor atau validasi jadwal operasional. Pastikan tidak ada isu sistemik pada pelaporan data."
+                    status_key = "error"
+                
+                with st.chat_message("assistant", avatar="🤖"):
+                    st.markdown(ui_insight)
+
                 with st.expander("Detail Penggunaan per Kapal"):
                     st.dataframe(util_df[['vessel_name', 'total_hours', 'productive_hours', 'utilization_rate']], use_container_width=True)
             else: st.info("Data utilisasi tidak tersedia.")
@@ -175,9 +225,12 @@ def render_analytics_page():
         anom_df = get_environmental_anomalies()
         
         if not anom_df.empty:
+            # Ensure size is positive (absolute z-score)
+            anom_df['magnitude'] = anom_df['tur_z_score'].abs()
+            
             st.error(f"⚠️ Terdeteksi {len(anom_df)} pembacaan anomali dalam 7 hari terakhir.")
             fig_anom = px.scatter(anom_df, x='created_at', y='salinitas', color='sal_z_score',
-                                  size='tur_z_score', hover_data=['id_buoy', 'turbidity'],
+                                  size='magnitude', hover_data=['id_buoy', 'turbidity', 'tur_z_score'],
                                   title="Keparahan Anomali", color_continuous_scale='Reds')
             apply_chart_style(fig_anom)
             st.plotly_chart(fig_anom, use_container_width=True)

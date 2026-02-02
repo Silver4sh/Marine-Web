@@ -23,7 +23,7 @@ from views.analytics import render_analytics_page
 from views.clients import render_clients_page
 from views.admin import render_admin_page
 from views.environment import render_environment_page
-from streamlit.core import render_map_content, inject_custom_css, ROLE_ADMIN, ROLE_OPERATIONS, ROLE_MARCOM, ROLE_FINANCE
+from core import render_map_content, inject_custom_css, ROLE_ADMIN, ROLE_OPERATIONS, ROLE_MARCOM, ROLE_FINANCE
 
 # Memuat Gaya Global
 try:

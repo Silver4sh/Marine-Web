@@ -54,15 +54,24 @@ def create_circle_icon(fill_color, size=10):
     return folium.DivIcon(html=svg, icon_size=(d, d), icon_anchor=(d/2, d/2))
 
 def apply_chart_style(fig, title=None):
-    """Menerapkan gaya pada grafik Plotly."""
-    fig.update_layout(
-        title=dict(text=title, font=dict(family="Outfit", size=18, color="#FFFFFF")) if title else None,
-        paper_bgcolor='rgba(0,0,0,0)', plot_bgcolor='rgba(0,0,0,0)',
-        font=dict(family="Outfit", color="#94a3b8"),
+    """Menerapkan gaya pada grafik Plotly (Dark Mode Optimized)."""
+    layout_args = dict(
+        template="plotly_dark",
+        paper_bgcolor='rgba(0,0,0,0)', 
+        plot_bgcolor='rgba(0,0,0,0)',
+        font=dict(family="Outfit", color="#e2e8f0"), # Slate-200 for better contrast
         xaxis=dict(showgrid=False, showline=True, linecolor="rgba(148, 163, 184, 0.2)"),
         yaxis=dict(showgrid=True, gridcolor="rgba(148, 163, 184, 0.05)", showline=False),
         legend=dict(orientation="h", y=1.02, x=1), margin=dict(t=50, l=10, r=10, b=10), hovermode="x unified"
     )
+    
+    if title:
+        layout_args["title"] = dict(text=title, font=dict(family="Outfit", size=18, color="#FFFFFF"))
+    else:
+        # Explicitly hide title to prevent "undefined" or default title
+        layout_args["title"] = dict(text="", font=dict(size=1))
+
+    fig.update_layout(**layout_args)
     return fig
 
 def render_vessel_card(row, status_color, highlighted=False):
@@ -100,7 +109,7 @@ def render_vessel_list_column(title, df, icon="⚓", height=650):
 
 def render_vessel_detail_section(row):
     """Merender tampilan detail untuk satu kapal yang dipilih."""
-    from streamlit.core.database import get_path_vessel
+    from core.database import get_path_vessel
     v_name = str(row.get('code_vessel', 'Unknown'))
     if 'Vessel Name' in row: v_name = str(row.get('Vessel Name'))
     

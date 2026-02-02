@@ -22,6 +22,11 @@
         </div>
     </div>
 
+    <!-- Smart Insights (HTMX Load) -->
+    <div hx-get="/api/environment/insights" hx-trigger="load" hx-swap="innerHTML">
+        <div class="h-32 bg-gray-100 dark:bg-gray-800 rounded-xl animate-pulse mb-8"></div>
+    </div>
+
     <!-- Heatmap Section -->
     <div
         class="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-6 transition-colors">
