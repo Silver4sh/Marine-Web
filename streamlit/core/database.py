@@ -81,12 +81,19 @@ def get_logistics_performance():
 # --- FINANCIAL & ORDERS QUERIES ---
 @st.cache_data(ttl=300)
 def get_financial_metrics():
-    query = "SELECT COALESCE(SUM(total_amount), 0) as total_revenue, COUNT(DISTINCT id_order) as completed_orders FROM operation.payments WHERE status = 'Payed'"
+    query = "SELECT COALESCE(SUM(total_amount), 0) as total_revenue, COUNT(DISTINCT id_order) as completed_orders FROM operation.payments WHERE status = 'Completed'"
     df = run_query(query)
     if df.empty: return {"total_revenue": 0, "completed_orders": 0, "delta_revenue": 0.0}
     current = df.iloc[0]
     metrics = {"total_revenue": float(current["total_revenue"]), "completed_orders": int(current["completed_orders"]), "delta_revenue": 0.0}
     return metrics
+
+@st.cache_data(ttl=300)
+def get_client_stats():
+    query = "SELECT COUNT(code_client) as total_clients, SUM(CASE WHEN created_at <= NOW() - INTERVAL '21 days' and status = 'Active' THEN 1 ELSE 0 END) as new_clients,  SUM(CASE WHEN created_at <= NOW() - INTERVAL '21 days' and status <> 'Active' THEN 1 ELSE 0 END) as deactive_clients FROM operation.clients"
+    df = run_query(query)
+    if df.empty: return {"total_clients": 0, "new_clients": 0, "deactive_clients": 0}
+    return {"total_clients": int(df.iloc[0]["total_clients"]), "new_clients": int(df.iloc[0]["new_clients"]), "deactive_clients": int(df.iloc[0]["deactive_clients"])}
 
 @st.cache_data(ttl=300)
 def get_revenue_analysis():
@@ -95,7 +102,7 @@ def get_revenue_analysis():
 
 @st.cache_data(ttl=300)
 def get_revenue_by_service():
-    query = "SELECT c.industry as \"Layanan\", SUM(p.total_amount) as \"Nilai\" FROM operation.payments p JOIN operation.orders o ON p.id_order = o.id JOIN operation.clients c ON o.id_client = c.code_client WHERE p.status = 'Payed' GROUP BY c.industry ORDER BY \"Nilai\" DESC"
+    query = "SELECT c.industry as \"Layanan\", SUM(p.total_amount) as \"Nilai\" FROM operation.payments p JOIN operation.orders o ON p.id_order = o.code_order JOIN operation.clients c ON o.id_client = c.code_client WHERE p.status = 'Completed' GROUP BY c.industry ORDER BY \"Nilai\" DESC"
     return run_query(query)
 
 @st.cache_data(ttl=300)
@@ -107,7 +114,7 @@ def get_order_stats():
 
 @st.cache_data(ttl=1800) # Increased TTL to 30 mins
 def get_revenue_cycle_metrics():
-    query = "SELECT DATE_TRUNC('month', o.order_date) as month, AVG(EXTRACT(DAY FROM (p.payment_date - o.order_date))) as avg_days_to_cash, SUM(p.total_amount) as realized_revenue, SUM(CASE WHEN p.status = 'Payed' THEN 1 ELSE 0 END) as paid_count, COUNT(o.id) as total_orders FROM operation.orders o JOIN operation.payments p ON o.id = p.id_order WHERE o.order_date >= NOW() - INTERVAL '6 months' GROUP BY 1 ORDER BY 1 DESC"
+    query = "SELECT DATE_TRUNC('month', o.order_date) as month, AVG(EXTRACT(DAY FROM (p.payment_date - o.order_date))) as avg_days_to_cash, SUM(p.total_amount) as realized_revenue, SUM(CASE WHEN p.status = 'Completed' THEN 1 ELSE 0 END) as paid_count, COUNT(o.code_order) as total_orders FROM operation.orders o JOIN operation.payments p ON o.code_order = p.id_order WHERE o.order_date >= NOW() - INTERVAL '6 months' GROUP BY 1 ORDER BY 1 DESC"
     return run_query(query)
 
 # --- ENVIRONMENTAL & OTHER QUERIES ---
@@ -128,7 +135,7 @@ def get_logs():
 
 @st.cache_data(ttl=60)
 def get_environmental_anomalies():
-    query = "WITH stats AS (SELECT id_buoy, AVG(salinitas) as avg_sal, STDDEV(salinitas) as std_sal, AVG(turbidity) as avg_tur, STDDEV(turbidity) as std_tur FROM operation.buoy_sensor_histories WHERE created_at >= NOW() - INTERVAL '30 days' GROUP BY id_buoy) SELECT h.id_buoy, h.created_at, h.salinitas, h.turbidity, (h.salinitas - s.avg_sal) / NULLIF(s.std_sal, 0) as sal_z_score, (h.turbidity - s.avg_tur) / NULLIF(s.std_tur, 0) as tur_z_score FROM operation.buoy_sensor_histories h JOIN stats s ON h.id_buoy = s.id_buoy WHERE h.created_at >= NOW() - INTERVAL '7 days' AND (ABS((h.salinitas - s.avg_sal) / NULLIF(s.std_sal, 0)) > 2 OR ABS((h.turbidity - s.avg_tur) / NULLIF(s.std_tur, 0)) > 2) ORDER BY h.created_at DESC LIMIT 50"
+    query = "WITH stats AS (SELECT id_buoy, AVG(salinitas) as avg_sal, STDDEV(salinitas) as std_sal, AVG(turbidity) as avg_tur, STDDEV(turbidity) as std_tur FROM operation.buoy_sensor_histories WHERE created_at >= NOW() - INTERVAL '30 days' GROUP BY id_buoy) SELECT h.id_buoy, h.created_at, h.salinitas, h.turbidity, (h.salinitas - s.avg_sal) / NULLIF(s.std_sal, 0) as sal_z_score, (h.turbidity - s.avg_tur) / NULLIF(s.std_tur, 0) as tur_z_score FROM operation.buoy_sensor_histories h JOIN stats s ON h.id_buoy = s.id_buoy WHERE h.created_at >= NOW() - INTERVAL '7 days' AND (ABS((h.salinitas - s.avg_sal) / NULLIF(s.std_sal, 0)) > 2 OR ABS((h.turbidity - s.avg_tur) / NULLIF(s.std_tur, 0)) > 2) ORDER BY h.created_at DESC"
     return run_query(query)
 
 # --- SYSTEM SETTINGS ---

@@ -83,12 +83,14 @@ def render_environ_heatmap():
 
          # Prepare data for charts (ensure sorted by time)
          chart_df = chart_df.sort_values("latest_timestamp") if not chart_df.empty else pd.DataFrame()
+         c1, c2 = st.columns(2) 
+         with c1:
+            st.subheader("Rerata Arus (Current)")
+            render_chart(chart_df, 'latest_timestamp', 'current', 'id_buoy', None)
          
-         st.subheader("Rerata Arus (Current)")
-         render_chart(chart_df, 'latest_timestamp', 'current', 'id_buoy', None)
-         
-         st.subheader("Rerata Pasang Surut (Tide)")
-         render_chart(chart_df, 'latest_timestamp', 'tide', 'id_buoy', None)
+         with c2:
+            st.subheader("Rerata Pasang Surut (Tide)")
+            render_chart(chart_df, 'latest_timestamp', 'tide', 'id_buoy', None)
 
          st.markdown("### Densitas")
 

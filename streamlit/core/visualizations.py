@@ -5,6 +5,8 @@ from folium.plugins import TimestampedGeoJson, MarkerCluster, HeatMap
 from streamlit_folium import st_folium
 
 import folium
+import pandas as pd
+import streamlit as st
 
 def add_history_path_to_map(m, path_df, fill_color, v_id_str, show_timelapse=False):
     if path_df.empty: return
@@ -147,8 +149,13 @@ def render_map_content():
         m = folium.Map(location=center_loc, zoom_start=zoom, tiles="CartoDB Dark Matter")
         cluster = MarkerCluster().add_to(m)
         
-        if not df.empty:
-            for _, row in df.iterrows():
+        # Filter markers: Show ONLY selected vessel if one is selected
+        map_view_df = df.copy()
+        if final_selected:
+            map_view_df = df[df['code_vessel'] == final_selected]
+
+        if not map_view_df.empty:
+            for _, row in map_view_df.iterrows():
                 try:
                     # Determine color
                     v_id = row.get('code_vessel')

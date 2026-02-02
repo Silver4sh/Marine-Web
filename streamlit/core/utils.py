@@ -55,9 +55,8 @@ def create_circle_icon(fill_color, size=10):
 
 def apply_chart_style(fig, title=None):
     """Menerapkan gaya pada grafik Plotly (Dark Mode Optimized)."""
-    fig.update_layout(
+    layout_args = dict(
         template="plotly_dark",
-        title=dict(text=title, font=dict(family="Outfit", size=18, color="#FFFFFF")) if title else None,
         paper_bgcolor='rgba(0,0,0,0)', 
         plot_bgcolor='rgba(0,0,0,0)',
         font=dict(family="Outfit", color="#e2e8f0"), # Slate-200 for better contrast
@@ -65,6 +64,14 @@ def apply_chart_style(fig, title=None):
         yaxis=dict(showgrid=True, gridcolor="rgba(148, 163, 184, 0.05)", showline=False),
         legend=dict(orientation="h", y=1.02, x=1), margin=dict(t=50, l=10, r=10, b=10), hovermode="x unified"
     )
+    
+    if title:
+        layout_args["title"] = dict(text=title, font=dict(family="Outfit", size=18, color="#FFFFFF"))
+    else:
+        # Explicitly hide title to prevent "undefined" or default title
+        layout_args["title"] = dict(text="", font=dict(size=1))
+
+    fig.update_layout(**layout_args)
     return fig
 
 def render_vessel_card(row, status_color, highlighted=False):
