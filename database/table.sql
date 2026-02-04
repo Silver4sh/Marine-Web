@@ -297,7 +297,6 @@ CREATE TABLE operation.vessel_activities (
 	updated_at		timestamp,
 	deleted_at		timestamp,
 	CONSTRAINT vessel_activities_pkey			PRIMARY KEY(id),
-	CONSTRAINT vessel_activities_key			UNIQUE (seq_activity),
 	CONSTRAINT vessel_activities_id_vessel_fkey	FOREIGN KEY (id_vessel) REFERENCES operation.vessels(code_vessel) ON UPDATE CASCADE ON DELETE CASCADE,
 	CONSTRAINT vessel_activities_id_order_fkey 	FOREIGN KEY (id_order) 	REFERENCES operation.orders(code_order) ON UPDATE CASCADE ON DELETE CASCADE,
 	CONSTRAINT vessel_activities_id_task_fkey 	FOREIGN KEY (id_task) 	REFERENCES operation.order_details(code_task) ON UPDATE CASCADE ON DELETE CASCADE

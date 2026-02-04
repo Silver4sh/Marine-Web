@@ -15,7 +15,7 @@ def load_html(filename):
     except FileNotFoundError:
         return ""
 
-def render_metric_card(label, value, delta=None, color="green"):
+def render_metric_card(label, value, delta=None, color="green", help_text=None):
     """Merender kartu metrik."""
     html_template = load_html("metric_card_simple.html")
     if not html_template:
@@ -27,6 +27,35 @@ def render_metric_card(label, value, delta=None, color="green"):
                              .replace("{delta}", str(delta) if delta else "") \
                              .replace("{color}", color)
     st.markdown(card_html.replace("\n", " ").strip(), unsafe_allow_html=True)
+
+    if help_text:
+        # Hacky CSS to position the info icon top-right of the card
+        # Note: This relies on Streamlit's structure.
+        css = """
+        <style>
+        div[data-testid="column"] { position: relative; }
+        div[data-testid="column"] .stPopover {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            z-index: 10;
+        }
+        div[data-testid="column"] .stPopover button {
+            background: transparent;
+            border: none;
+            color: #64748b;
+            padding: 0.2rem;
+            font-size: 1.2rem;
+        }
+        div[data-testid="column"] .stPopover button:hover {
+            color: #38bdf8;
+            background: rgba(255,255,255,0.05);
+        }
+        </style>
+        """
+        st.markdown(css, unsafe_allow_html=True)
+        with st.popover("ℹ️", use_container_width=False):
+            st.markdown(f"**Info Metrik**\n\n{help_text}")
 
 def get_status_color(status):
     """Mengembalikan kode hex warna berdasarkan status kapal."""

@@ -4,6 +4,7 @@ import pandas as pd
 import datetime
 import plotly.express as px
 from concurrent.futures import ThreadPoolExecutor
+import random
 
 from core import (
     render_metric_card, apply_chart_style, render_vessel_list_column, get_status_color, render_vessel_card,
@@ -50,25 +51,33 @@ class AsyncDataManager:
 data_manager_async = AsyncDataManager()
 
 
-
-# --- MONITORING VIEWS ---
 def render_overview_tab(fleet, orders, financial, role):
     st.markdown("## 📊 Overview")
     c1, c2, c3, c4 = st.columns(4)
-    with c1: render_metric_card("Kapal Beroperasi", fleet.get('operating', 0), f"{fleet.get('maintenance', 0)} dalam Perawatan", "#fbbf24")
+    with c1: render_metric_card("Kapal Beroperasi", fleet.get('operating', 0), f"{fleet.get('maintenance', 0)} dalam Perawatan", "#fbbf24", help_text="Jumlah kapal yang aktif beroperasi saat ini.")
     with c2: 
         pending = orders.get('on_progress', 0) + orders.get('in_completed', 0)
-        render_metric_card("Pesanan Tertunda", pending, "Perlu Tindakan", "#f472b6")
+        render_metric_card("Pesanan Tertunda", pending, "Perlu Tindakan", "#f472b6", help_text="Total pesanan yang sedang berjalan atau belum selesai.")
     with c3:
         if role in [ROLE_ADMIN, ROLE_FINANCE, ROLE_MARCOM]:
             revenue = financial.get('total_revenue', 0)
             delta = financial.get('delta_revenue', 0.0)
             rev_str = f"Rp {revenue:,.0f}" if revenue < 1e9 else f"Rp {revenue/1e9:.1f}M"
-            render_metric_card("Pendapatan", rev_str, f"{delta:+.1f}% vs bulan lalu", "#ef4444" if delta < 0 else "#38bdf8")
+            render_metric_card("Pendapatan", rev_str, f"{delta:+.1f}% vs bulan lalu", "#ef4444" if delta < 0 else "#38bdf8", help_text="Total pendapatan kotor bulan ini dibandingkan bulan lalu.")
         else:
             maint = fleet.get('maintenance', 0)
-            render_metric_card("Kesehatan Armada", f"{100 - (maint*10)}%", "Operasional", "#38bdf8")
-    with c4: render_metric_card("Misi Selesai", orders.get('completed', 0), "Tertinggi Sepanjang Masa", "#2dd4bf")
+            render_metric_card("Kesehatan Armada", f"{100 - (maint*10)}%", "Operasional", "#38bdf8", help_text="Persentase kapal yang siap beroperasi.")
+    with c4: 
+        comp_val = orders.get('completed', 0)
+        # AI Logic for scalability
+        if comp_val > 1000: ai_msg = "🏆 Legenda Baru"
+        elif comp_val > 500: ai_msg = "🚀 Dominasi Total"
+        elif comp_val > 100: ai_msg = "🔥 Tren Eksponensial"
+        elif comp_val > 50: ai_msg = "📈 Pertumbuhan Cepat"
+        elif comp_val > 10: ai_msg = "✅ Traksi Positif"
+        else: ai_msg = "🌱 Fase Inkubasi"
+        
+        render_metric_card("Task Selesai", comp_val, ai_msg, "#2dd4bf", help_text="Total Task yang telah diselesaikan dengan sukses sepanjang masa.")
 
     st.markdown("<br>", unsafe_allow_html=True)
     
@@ -81,6 +90,18 @@ def render_overview_tab(fleet, orders, financial, role):
                  fig = px.bar(rev_df, x='month', y='revenue', title="Arus Pendapatan Bulanan", template="plotly_dark", color='revenue', color_continuous_scale=['#0f172a', '#38bdf8'])
                  apply_chart_style(fig)
                  st.plotly_chart(fig, use_container_width=True)
+                 
+                 # Revenue Insight
+                 last_month = rev_df.iloc[-1]
+                 prev_month = rev_df.iloc[-2] if len(rev_df) > 1 else last_month
+                 growth = ((last_month['revenue'] - prev_month['revenue']) / prev_month['revenue']) * 100 if prev_month['revenue'] > 0 else 0
+                 
+                 rev_insight = ""
+                 if growth > 10: rev_insight = f"📈 **Tren Positif**: Kenaikan signifikan ({growth:.1f}%) terpantau bulan ini. Strategi pasar efektif."
+                 elif growth < -10: rev_insight = f"📉 **Perhatian**: Penurunan tajam ({growth:.1f}%) dibanding periode lalu."
+                 else: rev_insight = f"➡️ **Stabil**: Pendapatan konsisten dengan fluktuasi wajar ({growth:.1f}%)."
+                 
+                 st.caption(f"🤖 {rev_insight}")
              else: st.info("Data pendapatan tidak tersedia.")
         else:
              if orders:
@@ -88,6 +109,19 @@ def render_overview_tab(fleet, orders, financial, role):
                  fig = px.pie(order_df, values='Count', names='Status', hole=0.7, title="Distribusi Pesanan", template="plotly_dark", color_discrete_sequence=['#2dd4bf', '#f472b6', '#fbbf24'])
                  apply_chart_style(fig)
                  st.plotly_chart(fig, use_container_width=True)
+                 
+                 # Order Insight
+                 completed = orders.get('completed', 0)
+                 open_orders = orders.get('open', 0)
+                 ratio = completed / (completed + open_orders) if (completed + open_orders) > 0 else 0
+                 
+                 ord_insight = ""
+                 if ratio > 0.8: ord_insight = "✅ **Efisiensi Tinggi**: Mayoritas pesanan telah diselesaikan dengan cepat."
+                 elif open_orders > completed: ord_insight = "⏳ **Bottleneck**: Jumlah pesanan terbuka melebihi kapasitas penyelesaian."
+                 else: ord_insight = "⚖️ **Seimbang**: Alur masuk dan keluar pesanan terjaga."
+                 
+                 st.caption(f"🤖 {ord_insight}")
+
 
     with c_right:
         st.subheader("⚡ Tindakan Cepat")
