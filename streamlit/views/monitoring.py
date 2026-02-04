@@ -54,19 +54,19 @@ data_manager_async = AsyncDataManager()
 def render_overview_tab(fleet, orders, financial, role):
     st.markdown("## 📊 Overview")
     c1, c2, c3, c4 = st.columns(4)
-    with c1: render_metric_card("Kapal Beroperasi", fleet.get('operating', 0), f"{fleet.get('maintenance', 0)} dalam Perawatan", "#fbbf24")
+    with c1: render_metric_card("Kapal Beroperasi", fleet.get('operating', 0), f"{fleet.get('maintenance', 0)} dalam Perawatan", "#fbbf24", help_text="Jumlah kapal yang aktif beroperasi saat ini.")
     with c2: 
         pending = orders.get('on_progress', 0) + orders.get('in_completed', 0)
-        render_metric_card("Pesanan Tertunda", pending, "Perlu Tindakan", "#f472b6")
+        render_metric_card("Pesanan Tertunda", pending, "Perlu Tindakan", "#f472b6", help_text="Total pesanan yang sedang berjalan atau belum selesai.")
     with c3:
         if role in [ROLE_ADMIN, ROLE_FINANCE, ROLE_MARCOM]:
             revenue = financial.get('total_revenue', 0)
             delta = financial.get('delta_revenue', 0.0)
             rev_str = f"Rp {revenue:,.0f}" if revenue < 1e9 else f"Rp {revenue/1e9:.1f}M"
-            render_metric_card("Pendapatan", rev_str, f"{delta:+.1f}% vs bulan lalu", "#ef4444" if delta < 0 else "#38bdf8")
+            render_metric_card("Pendapatan", rev_str, f"{delta:+.1f}% vs bulan lalu", "#ef4444" if delta < 0 else "#38bdf8", help_text="Total pendapatan kotor bulan ini dibandingkan bulan lalu.")
         else:
             maint = fleet.get('maintenance', 0)
-            render_metric_card("Kesehatan Armada", f"{100 - (maint*10)}%", "Operasional", "#38bdf8")
+            render_metric_card("Kesehatan Armada", f"{100 - (maint*10)}%", "Operasional", "#38bdf8", help_text="Persentase kapal yang siap beroperasi.")
     with c4: 
         comp_val = orders.get('completed', 0)
         # AI Logic for scalability
@@ -77,7 +77,7 @@ def render_overview_tab(fleet, orders, financial, role):
         elif comp_val > 10: ai_msg = "✅ Traksi Positif"
         else: ai_msg = "🌱 Fase Inkubasi"
         
-        render_metric_card("Task Selesai", comp_val, ai_msg, "#2dd4bf")
+        render_metric_card("Task Selesai", comp_val, ai_msg, "#2dd4bf", help_text="Total misi yang telah diselesaikan dengan sukses sepanjang masa.")
 
     st.markdown("<br>", unsafe_allow_html=True)
     
