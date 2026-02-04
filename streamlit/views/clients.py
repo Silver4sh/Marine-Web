@@ -6,7 +6,8 @@ from folium.plugins import MarkerCluster
 from streamlit_folium import st_folium
 import random
 
-from core import get_clients_summary, apply_chart_style
+from core import get_clients_summary, apply_chart_style, render_metric_card
+from core.ai_analyst import MarineAIAnalyst
 
 def enrich_client_data(df):
     if df.empty: return df
@@ -31,7 +32,8 @@ def render_growth_matrix(df):
     fig.update_layout(xaxis=dict(tickmode='linear', dtick=1), xaxis_title="Proyek Aktif", yaxis_title="Nilai Seumur Hidup (IDR)")
     return fig
 
-def render_map(df):
+@st.cache_resource
+def generate_client_map(df):
     m = folium.Map(location=[20, 10], zoom_start=2, tiles="CartoDB Dark Matter")
     marker_cluster = MarkerCluster().add_to(m)
     
@@ -55,7 +57,10 @@ def render_map(df):
             tooltip=f"{row['name']} ({row['industry']})",
             icon=folium.Icon(color=icon_color, icon="user", prefix="fa")
         ).add_to(marker_cluster)
-        
+    return m
+
+def render_map(df):
+    m = generate_client_map(df)
     st_folium(m, height=500, use_container_width=True)
 
 def render_clients_page():
@@ -68,17 +73,34 @@ def render_clients_page():
         return
         
     df = enrich_client_data(raw_df)
+
+    # --- AI Analyst Section ---
+    with st.expander("🤖 AI Strategic Analyst", expanded=True):
+        analysis = MarineAIAnalyst.analyze_clients(df)
+        
+        # Display Insights
+        if analysis['insights']:
+            cols = st.columns(len(analysis['insights']))
+            for idx, insight in enumerate(analysis['insights']):
+                with cols[idx]:
+                    st.success(f"**{insight['title']}**")
+                    st.caption(insight['desc'])
+        else:
+            st.info("AI belum menemukan pola signifikan saat ini.")
+    
+    st.markdown("---")
     
     c1, c2, c3, c4 = st.columns(4)
-    c1.metric("Total Klien", len(df), "+3% MoM")
+    with c1: render_metric_card("Total Klien", len(df), "+3% MoM", "#38bdf8", help_text="Total klien aktif dalam portofolio saat ini.")
+    
     avg_prj = df['projects_active'].mean()
-    c2.metric("Rata-rata Proyek Aktif", f"{avg_prj:.1f}", "Beban Operasional")
+    with c2: render_metric_card("Rata-rata Proyek", f"{avg_prj:.1f}", "Beban Operasional", "#fbbf24", help_text="Rata-rata jumlah proyek aktif per klien.")
     
     high_value_sum = df[df['ltv'] > 3000000000]['ltv'].sum()
-    c3.metric("Pipeline Bernilai Tinggi", f"Rp {high_value_sum/1e9:.1f}M", "Akun Utama")
+    with c3: render_metric_card("Pipeline Premium", f"Rp {high_value_sum/1e9:.1f}M", "Akun Utama", "#2dd4bf", help_text="Total nilai LTV dari klien dengan status prioritas tinggi.")
     
     at_risk = len(df[df['churn_risk'] == 'Tinggi'])
-    c4.metric("Peringatan Risiko (Aktivitas Rendah)", at_risk, "Perlu Keterlibatan", delta_color="inverse")
+    with c4: render_metric_card("Risiko Churn", at_risk, "Perlu Atensi", "#ef4444", help_text="Klien dengan aktivitas rendah yang memerlukan tindak lanjut segera.")
     
     st.markdown("---")
     

@@ -8,9 +8,20 @@ from core import (
     get_environmental_anomalies, get_logistics_performance,
     calculate_advanced_forecast, apply_chart_style
 )
+from core.ai_analyst import MarineAIAnalyst
 
 def render_analytics_page():
     st.markdown("## 📈 Pusat Analitik Lanjutan")
+
+    # AI Insight Section
+    fin_metrics = get_financial_metrics()
+    ai_fin = MarineAIAnalyst.analyze_financials(fin_metrics)
+    
+    with st.expander("🤖 AI Financial Advisor", expanded=True):
+        cols = st.columns(len(ai_fin['insights']))
+        for idx, insight in enumerate(ai_fin['insights']):
+            with cols[idx]:
+                st.info(f"**{insight['title']}**\n\n{insight['desc']}")
     
     fin = get_financial_metrics()
     rev_df = get_revenue_analysis() 

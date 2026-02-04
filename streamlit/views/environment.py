@@ -3,6 +3,7 @@ import pandas as pd
 import altair as alt
 from core import get_data_water, page_heatmap
 from core.database import get_buoy_fleet, get_buoy_history
+from core.ai_analyst import MarineAIAnalyst
 
 def render_chart(df, x_col, y_col, color_col, title):
     if df.empty or y_col not in df.columns:
@@ -48,6 +49,16 @@ def render_sparkline(df, y_col, title, color="#0ea5e9"):
 def render_environ_heatmap():
     st.markdown("## 🔥 Enviro Heatmap")
     df = get_data_water()
+    
+    # AI Analysis for Environment
+    # Mocking anomaly df check for simplicity, or we could fetch anomalies here.
+    # Assuming standard check based on df content variability if specific anomaly function isn't called here.
+    # But let's use the SLM's capability directly with a simple check.
+    ai_env = MarineAIAnalyst.analyze_environment(df[df['salinitas'] > 40] if not df.empty and 'salinitas' in df.columns else pd.DataFrame())
+    
+    with st.expander("🤖 AI Eco-Watch", expanded=True):
+        for insight in ai_env['insights']:
+            st.success(f"**{insight['title']}**\n\n{insight['desc']}")
     
     if not df.empty and 'latest_timestamp' in df.columns:
         df['latest_timestamp'] = pd.to_datetime(df['latest_timestamp'])
@@ -168,7 +179,7 @@ def render_buoy_monitoring():
     c1, c2, c3 = st.columns(3)
     with c1: st.metric("Total Buoy", total)
     with c2: st.metric("Buoy Aktif", active)
-    with c3: st.metric("Perlu Perawatan", maint)
+    with c3: st.metric("Dalam Perawatan", maint)
     
     st.markdown("### Daftar Buoy")
     

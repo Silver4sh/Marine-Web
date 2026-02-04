@@ -11,14 +11,9 @@ from core import (
     get_fleet_status, get_order_stats, get_financial_metrics, get_revenue_analysis, 
     get_clients_summary, get_system_settings
 )
+from core.ai_analyst import MarineAIAnalyst
 from core.config import ROLE_ADMIN, ROLE_FINANCE, ROLE_MARCOM, ROLE_OPERATIONS
-# Note: The original code used ROLE_ADMIN, ROLE_FINANCE, ROLE_MARCOM, ROLE_OPERATIONS,
-# apply_chart_style, render_vessel_list_column, get_order_stats, get_financial_metrics,
-# get_revenue_analysis, get_clients_summary, get_system_settings from streamlit.core.
-# These are no longer imported with the new 'from core' statement.
-# For the code to remain syntactically correct and functional, these would need to be
-# either defined elsewhere, imported from a different module, or removed if no longer needed.
-# As per the instruction, only the import statement itself is changed.
+
 
 # --- Async Data Loading ---
 class AsyncDataManager:
@@ -70,14 +65,10 @@ def render_overview_tab(fleet, orders, financial, role):
     with c4: 
         comp_val = orders.get('completed', 0)
         # AI Logic for scalability
-        if comp_val > 1000: ai_msg = "🏆 Legenda Baru"
-        elif comp_val > 500: ai_msg = "🚀 Dominasi Total"
-        elif comp_val > 100: ai_msg = "🔥 Tren Eksponensial"
-        elif comp_val > 50: ai_msg = "📈 Pertumbuhan Cepat"
-        elif comp_val > 10: ai_msg = "✅ Traksi Positif"
-        else: ai_msg = "🌱 Fase Inkubasi"
+        fleet_analysis = MarineAIAnalyst.analyze_fleet((fleet.get('operating', 0) / max(fleet.get('total_vessels', 1), 1)) * 100)
+        ai_desc = fleet_analysis['insights'][0]['desc']
         
-        render_metric_card("Task Selesai", comp_val, ai_msg, "#2dd4bf", help_text="Total Task yang telah diselesaikan dengan sukses sepanjang masa.")
+        render_metric_card("Task Selesai", comp_val, "Analisis AI Aktif", "#2dd4bf", help_text=f"Analisis AI: {ai_desc}")
 
     st.markdown("<br>", unsafe_allow_html=True)
     
@@ -96,10 +87,7 @@ def render_overview_tab(fleet, orders, financial, role):
                  prev_month = rev_df.iloc[-2] if len(rev_df) > 1 else last_month
                  growth = ((last_month['revenue'] - prev_month['revenue']) / prev_month['revenue']) * 100 if prev_month['revenue'] > 0 else 0
                  
-                 rev_insight = ""
-                 if growth > 10: rev_insight = f"📈 **Tren Positif**: Kenaikan signifikan ({growth:.1f}%) terpantau bulan ini. Strategi pasar efektif."
-                 elif growth < -10: rev_insight = f"📉 **Perhatian**: Penurunan tajam ({growth:.1f}%) dibanding periode lalu."
-                 else: rev_insight = f"➡️ **Stabil**: Pendapatan konsisten dengan fluktuasi wajar ({growth:.1f}%)."
+                 rev_insight = MarineAIAnalyst.analyze_financials({'delta_revenue': growth})['insights'][0]['desc']
                  
                  st.caption(f"🤖 {rev_insight}")
              else: st.info("Data pendapatan tidak tersedia.")
@@ -133,7 +121,6 @@ def render_overview_tab(fleet, orders, financial, role):
         
         st.markdown("### 🚢 Ringkasan Armada")
         
-        # Use explicit data source as requested
         fleet_source = get_fleet_status()
         
         fleet_data = pd.DataFrame([
@@ -163,3 +150,35 @@ def render_monitoring_view():
         data = asyncio.run(data_manager_async.get_dashboard_data(role))
     
     render_overview_tab(data['fleet'], data['orders'], data['financial'], role)
+
+    # --- AI COGNITIVE LAYER (v4.0) ---
+    # Prepare metrics for holistic analysis
+    rev_growth = data['financial'].get('delta_revenue', 0) if data['financial'] else 0
+    util = (data['fleet'].get('operating', 0) / max(data['fleet'].get('total_vessels', 1), 1)) * 100
+    # Mocking environmental anomalies (to be connected to live sensor data)
+    anomaly_count = 0 
+    
+    # Check churn risk count from client summary
+    churn_count = 0
+    if not data['clients'].empty and 'churn_risk' in data['clients'].columns:
+        churn_count = len(data['clients'][data['clients']['churn_risk'] == 'Tinggi'])
+
+    holistic_analysis = MarineAIAnalyst.analyze_holistic(
+        {'delta_revenue': rev_growth}, 
+        {'utilization': util}, 
+        anomaly_count, 
+        churn_count
+    )
+
+    if holistic_analysis['insights']:
+        st.markdown("---")
+        st.subheader("🧠 Analisis Kognitif (Cross-Domain)")
+        for insight in holistic_analysis['insights']:
+            if insight['type'] == 'critical':
+                st.error(f"**{insight['title']}**\n\n{insight['desc']}")
+            elif insight['type'] == 'warning':
+                st.warning(f"**{insight['title']}**\n\n{insight['desc']}")
+            elif insight['type'] == 'positive':
+                st.success(f"**{insight['title']}**\n\n{insight['desc']}")
+            else:
+                st.info(f"**{insight['title']}**\n\n{insight['desc']}")

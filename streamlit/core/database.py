@@ -125,7 +125,7 @@ def get_data_water():
 
 @st.cache_data(ttl=300)
 def get_clients_summary():
-    query = "SELECT c.code_client, c.name, c.industry, c.region, c.status, COUNT(DISTINCT o.id) as total_orders, COALESCE(SUM(p.total_amount), 0) as ltv FROM operation.clients c LEFT JOIN operation.orders o ON c.code_client = o.id_client LEFT JOIN operation.payments p ON o.id = p.id_order AND p.status = 'Payed' GROUP BY c.code_client, c.name, c.industry, c.region, c.status ORDER BY ltv DESC"
+    query = "SELECT c.code_client, c.name, c.industry, c.region, c.status, COUNT(DISTINCT o.id) as total_orders, COALESCE(SUM(p.total_amount), 0) as ltv FROM operation.clients c LEFT JOIN operation.orders o ON c.code_client = o.id_client LEFT JOIN operation.payments p ON o.code_order = p.id_order AND p.status = 'Completed' GROUP BY c.code_client, c.name, c.industry, c.region, c.status ORDER BY ltv DESC"
     return run_query(query)
 
 @st.cache_data(ttl=60)
@@ -224,15 +224,9 @@ def get_buoy_fleet():
     q1 = "SELECT b.code_buoy, b.status, '85%' as battery, MAX(bsh.created_at) as last_update FROM operation.buoys b LEFT JOIN operation.buoy_sensor_histories bsh ON b.code_buoy = bsh.id_buoy GROUP BY b.code_buoy, b.status"
     df1 = run_query(q1)
     
-    # 2. Fetch Maintenance Buoys (from buoy_mtc_histories)
-    # Alias id_buoy to code_buoy to match q1 and View expectations
-    q2 = "SELECT id_buoy as code_buoy, 'Maintenance' as status, '0%' as battery, NULL::timestamp as last_update FROM operation.buoy_mtc_histories"
-    df2 = run_query(q2)
-    
     # Combine results
     frames = []
     if not df1.empty: frames.append(df1)
-    if not df2.empty: frames.append(df2)
     
     if frames:
         return pd.concat(frames, ignore_index=True).sort_values('code_buoy')
@@ -320,7 +314,7 @@ def get_client_reliability_scoring():
             SUM(total_amount) as total_paid,
             MAX(payment_date) as last_payment_date
         FROM operation.payments
-        WHERE status = 'Payed'
+        WHERE status = 'Completed'
         GROUP BY 1
     ),
     client_metrics AS (
@@ -332,7 +326,7 @@ def get_client_reliability_scoring():
             AVG(EXTRACT(DAY FROM (ps.last_payment_date - o.order_date))) as avg_payment_delay_days
         FROM operation.clients c
         JOIN operation.orders o ON c.code_client = o.id_client
-        JOIN payment_stats ps ON CAST(o.id AS VARCHAR) = ps.id_order
+        JOIN payment_stats ps ON o.code_order = ps.id_order
         GROUP BY 1, 2
     )
     SELECT 
