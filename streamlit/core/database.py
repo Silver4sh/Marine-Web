@@ -39,7 +39,7 @@ def run_query(query, params=None):
 # --- FLEET QUERIES ---
 @st.cache_data(ttl=60)
 def get_fleet_status():
-    query = "SELECT COUNT(*) as total_vessels, SUM(CASE WHEN LOWER(status) = 'operating' THEN 1 ELSE 0 END) as operating, SUM(CASE WHEN LOWER(status) IN ('maintenance', 'mtc') THEN 1 ELSE 0 END) as maintenance, SUM(CASE WHEN LOWER(status) = 'idle' THEN 1 ELSE 0 END) as idle FROM operation.vessels"
+    query = "SELECT COUNT(*) as total_vessels, SUM(CASE WHEN LOWER(va.status) = 'operating' THEN 1 ELSE 0 END) as operating, SUM(CASE WHEN LOWER(va.status) IN ('maintenance', 'mtc') THEN 1 ELSE 0 END) as maintenance, SUM(CASE WHEN LOWER(va.status) = 'idle' THEN 1 ELSE 0 END) as idle FROM operation.vessels v join operation.vessel_activities va on v.code_vessel = va.id_vessel where va.seq_activity in (select max(vva.seq_activity) from operation.vessels vv join operation.vessel_activities vva on vv.code_vessel = vva.id_vessel group by vva.id_vessel)"
     df = run_query(query)
     if df.empty: return {"total_vessels": 0, "operating": 0, "maintenance": 0, "idle": 0}
     return df.astype(int).iloc[0].to_dict()

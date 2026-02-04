@@ -77,7 +77,7 @@ def render_overview_tab(fleet, orders, financial, role):
         elif comp_val > 10: ai_msg = "✅ Traksi Positif"
         else: ai_msg = "🌱 Fase Inkubasi"
         
-        render_metric_card("Task Selesai", comp_val, ai_msg, "#2dd4bf", help_text="Total misi yang telah diselesaikan dengan sukses sepanjang masa.")
+        render_metric_card("Task Selesai", comp_val, ai_msg, "#2dd4bf", help_text="Total Task yang telah diselesaikan dengan sukses sepanjang masa.")
 
     st.markdown("<br>", unsafe_allow_html=True)
     
