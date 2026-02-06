@@ -2,6 +2,7 @@ CREATE SCHEMA operation 	AUTHORIZATION postgres;
 CREATE SCHEMA log 			AUTHORIZATION postgres;
 CREATE SCHEMA audit 		AUTHORIZATION postgres;
 CREATE SCHEMA rockworks 	AUTHORIZATION postgres;
+CREATE SCHEMA survey		AUTHORIZATION postgres;
 
 --- Table
 -- al
@@ -1290,6 +1291,41 @@ CREATE TABLE rockworks.wellpick (
 	CONSTRAINT log_sys_pk_11970 PRIMARY KEY (wellpickid),
 	CONSTRAINT log_wellpick_fk_locationwellpick FOREIGN KEY (bhid) REFERENCES rockworks."location"(bhid)
 );
+
+CREATE TABLE survey.daily_report_survey_activity (
+	id serial4 	NOT NULL,
+	project_name	varchar(255) NOT NULL,
+	code_report		varchar(255) NOT NULL,
+	id_site			varchar(255) NOT NULL,
+	id_vessel		varchar(255) NOT NULL,
+	id_user			varchar(255) NOT NULL,
+	comment			varchar(255) NOT NULL
+);
+
+CREATE TABLE survey.daily_report_survey_activity_details (
+	id serial4 		NOT NULL,
+	id_report		varchar(255) NOT NULL,
+	survey_date		varchar(255) NOT NULL,
+	coordinate_bt	varchar(255) NOT NULL,
+	coordinate_lu	varchar(255) NOT NULL,
+	start_time		varchar(255) NOT NULL,
+	end_time		varchar(255) NOT NULL,
+	description		varchar(255) NOT NULL
+);
+
+CREATE TABLE survey.daily_report_survey_activity_weather (
+	id serial4 		NOT NULL,
+	id_report		varchar(255) NOT NULL,
+	survey_date		varchar(255) NOT NULL,
+	coordinate_bt	varchar(255) NOT NULL,
+	coordinate_lu	varchar(255) NOT NULL,
+	time			varchar(255) NOT NULL,
+	weather			varchar(255) NOT NULL,
+	wind_speed		varchar(255) NOT NULL,
+	wave			varchar(255) NOT NULL
+);
+
+
 --- INDEX
 -- Log
 CREATE INDEX idx_surveis_search							ON log.surveis 							USING btree (code_survey, doc_no, core_no);
