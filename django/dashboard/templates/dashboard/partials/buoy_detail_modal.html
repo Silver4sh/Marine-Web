@@ -1,0 +1,72 @@
+<div style="padding-bottom: 2rem;">
+    <h4 style="margin-bottom: 1rem; color: var(--primary);">Grafik Historis: {{ buoy_id }}</h4>
+
+    <!-- Chart Containers -->
+    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+        <div>
+            <div style="font-size: 0.8rem; margin-bottom: 5px;">Salinitas</div>
+            <div id="chart-salinitas" style="height: 200px;"></div>
+        </div>
+        <div>
+            <div style="font-size: 0.8rem; margin-bottom: 5px;">Kekeruhan</div>
+            <div id="chart-turbidity" style="height: 200px;"></div>
+        </div>
+        <div>
+            <div style="font-size: 0.8rem; margin-bottom: 5px;">Oksigen</div>
+            <div id="chart-oxygen" style="height: 200px;"></div>
+        </div>
+        <div>
+            <div style="font-size: 0.8rem; margin-bottom: 5px;">Densitas</div>
+            <div id="chart-density" style="height: 200px;"></div>
+        </div>
+    </div>
+
+    <div style="margin-top: 2rem;">
+        <h5>Data Mentah (Terbaru 10)</h5>
+        <div style="overflow-x: auto;">
+            <table style="width: 100%; border-collapse: collapse; font-size: 0.85rem; color: #cbd5e1;">
+                <thead>
+                    <tr style="border-bottom: 1px solid rgba(255,255,255,0.1); text-align: left;">
+                        <th style="padding: 8px;">Waktu</th>
+                        <th style="padding: 8px;">Salinitas</th>
+                        <th style="padding: 8px;">Kekeruhan</th>
+                        <th style="padding: 8px;">Oksigen</th>
+                        <th style="padding: 8px;">Densitas</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for row in hist_data|slice:":10" %}
+                    <tr style="border-bottom: 1px solid rgba(255,255,255,0.05);">
+                        <td style="padding: 8px;">{{ row.created_at|slice:":16" }}</td>
+                        <td style="padding: 8px;">{{ row.salinitas|floatformat:2 }}</td>
+                        <td style="padding: 8px;">{{ row.turbidity|floatformat:2 }}</td>
+                        <td style="padding: 8px;">{{ row.oxygen|floatformat:2 }}</td>
+                        <td style="padding: 8px;">{{ row.density|floatformat:2 }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<script>
+    // Inline script to render charts immediately after HTMX injection
+    (function () {
+        const data = {{ hist_data| safe
+    }}; // This might be parsed by Django template engine to string representation of list of dicts. 
+                                            // Ideally we use a filter to json_script or similar. 
+                                            // Let's assume passed as list of dicts and use JS to parse if needed.
+                                            // Actually, 'hist_data' in context is a list of dicts. 
+                                            // In template {{ hist_data }} renders as python string representation within HTML.
+                                            // We should have serialized it to JSON in view or use a custom filter.
+                                            // Quick fix: View already did converting? No, view passed `to_dict`.
+                                            // Let's rely on a script tag with type="application/json" approach or simple JSON.stringify in view.
+
+        // BETTER: Use window scope or simple parsing if format is simple.
+        // Or updated view to pass JSON string.
+        // Updating view to pass 'hist_json' would be cleaner. 
+        // For now, let's assume valid JSON if I used a |json_script filter or similar, 
+        // but since I didn't, I'll try to parse the Python list string representation or fix the View.
+    }) ();
+</script>

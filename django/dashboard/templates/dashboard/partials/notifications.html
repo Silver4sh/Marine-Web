@@ -1,0 +1,16 @@
+{% if notifications %}
+{% for n in notifications %}
+<div style="padding: 12px; border-bottom: 1px solid rgba(255,255,255,0.05);">
+    <div style="display:flex; justify-content:space-between; margin-bottom:4px;">
+        <strong style="color: {% if n.category == 'FLEET' %}#ef4444{% else %}#f59e0b{% endif %}">{{ n.category
+            }}</strong>
+        <small style="color:var(--text-secondary)">{{ n.time }}</small>
+    </div>
+    <div style="font-size:0.9rem; color:var(--text-primary);">{{ n.message }}</div>
+</div>
+{% endfor %}
+{% else %}
+<div style="padding: 1rem; text-align: center; color: var(--text-secondary);">
+    Tidak ada notifikasi baru.
+</div>
+{% endif %}
