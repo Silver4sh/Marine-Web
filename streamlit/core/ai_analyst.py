@@ -359,3 +359,37 @@ class MarineAIAnalyst:
         count = users_summary.get('new_users', 0)
         txt = MarineAIAnalyst.slm.generate("admin_summary", {"count": count})
         return {"insights": [{"title": "Ringkasan Sistem", "desc": txt, "type": "info"}]}
+
+    @staticmethod
+    def analyze_correlations(corr_matrix):
+        insights = []
+        if corr_matrix.empty: return {"insights": []}
+        
+        # Find strong correlations (> 0.7 or < -0.7)
+        strong_pairs = []
+        for i in range(len(corr_matrix.columns)):
+            for j in range(i+1, len(corr_matrix.columns)):
+                val = corr_matrix.iloc[i, j]
+                if abs(val) >= 0.7:
+                    c1 = corr_matrix.columns[i]
+                    c2 = corr_matrix.columns[j]
+                    strong_pairs.append((c1, c2, val))
+        
+        if strong_pairs:
+            # Sort by strength
+            strong_pairs.sort(key=lambda x: abs(x[2]), reverse=True)
+            top = strong_pairs[0]
+            
+            relation = "Positif Kuat" if top[2] > 0 else "Negatif Kuat"
+            desc = f"Terdeteksi hubungan **{relation}** ({top[2]}) antara **{top[0]}** dan **{top[1]}**. "
+            
+            if top[2] > 0:
+                desc += "Kenaikan pada satu variabel cenderung diikuti kenaikan variabel lainnya. Sinergi ini dapat dimanfaatkan untuk optimasi."
+            else:
+                desc += "Kenaikan salah satu variabel menekan variabel lainnya. Waspadai trade-off ini dalam strategi operasional."
+                
+            insights.append({"title": "🔗 Korelasi Dominan", "desc": desc, "type": "critical"})
+        else:
+             insights.append({"title": "🔗 Pola Tersebar", "desc": "Tidak ditemukan korelasi linear yang kuat antar variabel utama. Data menunjukkan independensi yang tinggi.", "type": "info"})
+             
+        return {"insights": insights}

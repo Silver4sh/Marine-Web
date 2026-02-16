@@ -21,7 +21,8 @@ from .database import (
 )
 
 from .analysis import (
-    get_notification_id, generate_insights, calculate_advanced_forecast
+    get_notification_id, generate_insights, calculate_advanced_forecast,
+    calculate_correlation
 )
 
 from .visualizations import (

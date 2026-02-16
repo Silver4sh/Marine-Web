@@ -20,5 +20,5 @@ def load_css(file_name):
 
 def inject_custom_css():
     """Menyematkan gaya CSS global untuk dasbor."""
-    css = load_css("global.css")
+    css = load_css("style.css")
     if css: st.markdown(f"<style>{css}</style>", unsafe_allow_html=True)

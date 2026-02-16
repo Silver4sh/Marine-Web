@@ -1,0 +1,11 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="text-center py-5">
+    <h1 class="display-4">Welcome to MarineOps</h1>
+    <p class="lead">Operational dashboard for vessel tracking and management.</p>
+    <hr class="my-4">
+    <p>View real-time statistics and insights from your fleet.</p>
+    <a class="btn btn-primary btn-lg" href="{% url 'dashboard' %}" role="button">Go to Dashboard</a>
+</div>
+{% endblock %}

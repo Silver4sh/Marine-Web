@@ -23,6 +23,7 @@ from views.analytics import render_analytics_page
 from views.clients import render_clients_page
 from views.admin import render_admin_page
 from views.environment import render_environment_page
+from views.survey import render_survey_page
 from core import render_map_content, inject_custom_css, ROLE_ADMIN, ROLE_OPERATIONS, ROLE_MARCOM, ROLE_FINANCE
 
 # Memuat Gaya Global
@@ -57,7 +58,7 @@ def sidebar_nav():
         menu = ["🏠 Monitoring", "🌊 Lingkungan"]
         
         if role in [ROLE_ADMIN, ROLE_OPERATIONS]:
-            menu.extend(["🗺️ Peta Kapal"])
+            menu.extend(["🗺️ Peta Kapal", "📋 Survey"])
             
         if role in [ROLE_ADMIN, ROLE_MARCOM, ROLE_FINANCE]:
              menu.extend(["👥 Klien", "📈 Analitik"])
@@ -104,6 +105,9 @@ def main_app():
 
     elif page == "👨‍💼 Admin":
         render_admin_page()
+
+    elif page == "📋 Survey":
+        render_survey_page()
 
 def main():
     if not st.session_state.logged_in:

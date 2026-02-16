@@ -83,24 +83,72 @@ def create_circle_icon(fill_color, size=10):
     return folium.DivIcon(html=svg, icon_size=(d, d), icon_anchor=(d/2, d/2))
 
 def apply_chart_style(fig, title=None):
-    """Menerapkan gaya pada grafik Plotly (Dark Mode Optimized)."""
+    """
+    Menerapkan tema 'Professional Analyst' pada grafik Plotly.
+    Optimized for Dark Mode with Vibrant/Neon palette.
+    """
+    # Vibrant Neon Palette (Cyan, Violet, Hot Pink, Lime, Amber)
+    colors = ["#22d3ee", "#a78bfa", "#f472b6", "#a3e635", "#fbbf24"]
+    
     layout_args = dict(
         template="plotly_dark",
         paper_bgcolor='rgba(0,0,0,0)', 
         plot_bgcolor='rgba(0,0,0,0)',
-        font=dict(family="Outfit", color="#e2e8f0"), # Slate-200 for better contrast
-        xaxis=dict(showgrid=False, showline=True, linecolor="rgba(148, 163, 184, 0.2)"),
-        yaxis=dict(showgrid=True, gridcolor="rgba(148, 163, 184, 0.05)", showline=False),
-        legend=dict(orientation="h", y=1.02, x=1), margin=dict(t=50, l=10, r=10, b=10), hovermode="x unified"
+        font=dict(family="Plus Jakarta Sans", size=12, color="#94a3b8"), # Slate-400
+        
+        # Consistent Axis Styling
+        xaxis=dict(
+            showgrid=False, 
+            showline=True, 
+            linecolor="rgba(255, 255, 255, 0.1)",
+            tickfont=dict(family="Plus Jakarta Sans", size=11, color="#cbd5e1")
+        ),
+        yaxis=dict(
+            showgrid=True, 
+            gridcolor="rgba(255, 255, 255, 0.05)", 
+            gridwidth=1,
+            showline=False,
+            zeroline=False,
+            tickfont=dict(family="Plus Jakarta Sans", size=11, color="#cbd5e1")
+        ),
+        
+        # Polished Legend
+        legend=dict(
+            orientation="h", 
+            y=1.1, 
+            x=0, 
+            xanchor="left",
+            font=dict(family="Plus Jakarta Sans", size=11, color="#cbd5e1"),
+            bgcolor="rgba(0,0,0,0)"
+        ),
+        
+        # Spacing & Colorway
+        margin=dict(t=60, l=10, r=10, b=10), 
+        hovermode="x unified",
+        colorway=colors
     )
     
     if title:
-        layout_args["title"] = dict(text=title, font=dict(family="Outfit", size=18, color="#FFFFFF"))
+        layout_args["title"] = dict(
+            text=title, 
+            font=dict(family="Outfit", size=18, weight=600, color="#f8fafc"),
+            x=0,
+            xanchor="left"
+        )
     else:
-        # Explicitly hide title to prevent "undefined" or default title
         layout_args["title"] = dict(text="", font=dict(size=1))
 
     fig.update_layout(**layout_args)
+    
+    # Update traces for better hover interactions
+    fig.update_traces(
+        hoverlabel=dict(
+            bgcolor="rgba(15, 23, 42, 0.9)",
+            bordercolor="rgba(148, 163, 184, 0.2)",
+            font=dict(family="Plus Jakarta Sans", color="#ffffff")
+        )
+    )
+    
     return fig
 
 def render_vessel_card(row, status_color, highlighted=False):
