@@ -118,7 +118,7 @@ def render_map_content():
     
     with c_left:
         from core.utils import render_vessel_list_column
-        render_vessel_list_column("Maintenance", maint_df, "🛠️")
+        render_vessel_list_column("Active", active_df, "⚓")
 
         
     with c_center:
@@ -198,7 +198,7 @@ def render_map_content():
 
     with c_right:
         from core.utils import render_vessel_list_column
-        render_vessel_list_column("Active", active_df, "⚓")
+        render_vessel_list_column("Maintenance", maint_df, "🛠️")
 
 def page_heatmap(df, indikator):
     if df.empty or indikator not in df.columns: return

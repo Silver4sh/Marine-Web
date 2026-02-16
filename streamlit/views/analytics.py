@@ -224,9 +224,9 @@ def render_analytics_page():
         log_df = get_logistics_performance()
         if not log_df.empty:
             st.dataframe(
-                log_df[['route_name', 'avg_delay_hours']],
+                log_df[['destination', 'avg_delay_hours']],
                 column_config={
-                    "route_name": "Rute",
+                    "destination": "Rute / Tujuan",
                     "avg_delay_hours": st.column_config.NumberColumn("Delay (Jam)", format="%.1f")
                 },
                 hide_index=True,

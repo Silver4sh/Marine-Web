@@ -1,6 +1,7 @@
 import streamlit as st
 import sys
 import os
+import time
 
 # Konfigurasi Halaman (Harus di awal)
 st.set_page_config(
@@ -87,27 +88,65 @@ def main_app():
     sidebar_nav()
     page = st.session_state.current_page
     
-    if page == "🏠 Monitoring":
-        render_monitoring_view()
-
-    elif page == "🌊 Lingkungan":
-        render_environment_page()
+    # --- Loading Buffer Logic ---
+    # Only show loader if the page has changed (navigation) or it's the first load.
+    # We use session state to track the previous page.
     
-    elif page == "🗺️ Peta Kapal" or page == "🗺️ Peta Kapal_DIRECT":
-        if page == "🗺️ Peta Kapal_DIRECT": st.session_state.current_page = "🗺️ Peta Kapal"
-        render_map_content()
+    if "last_page" not in st.session_state:
+        st.session_state.last_page = None
         
-    elif page == "📈 Analitik":
-        render_analytics_page()
+    should_show_loader = False
+    if st.session_state.last_page != page:
+        should_show_loader = True
+        st.session_state.last_page = page
+    
+    loader_placeholder = st.empty()
+    
+    if should_show_loader:
+        # Display Loader HTML only on page transition
+        loader_placeholder.markdown("""
+            <div class="fullscreen-loader">
+                <div class="sonar-wrapper">
+                    <div class="sonar-emitter"></div>
+                    <div class="sonar-wave"></div>
+                    <div class="sonar-wave"></div>
+                    <div class="sonar-wave"></div>
+                </div>
+                <div class="loader-text">Memuat Sistem...</div>
+            </div>
+        """, unsafe_allow_html=True)
+    
+    try:
+        if page == "🏠 Monitoring":
+            render_monitoring_view()
+
+        elif page == "🌊 Lingkungan":
+            render_environment_page()
         
-    elif page == "👥 Klien":
-        render_clients_page()
+        elif page == "🗺️ Peta Kapal" or page == "🗺️ Peta Kapal_DIRECT":
+            if page == "🗺️ Peta Kapal_DIRECT": st.session_state.current_page = "🗺️ Peta Kapal"
+            render_map_content()
+            
+        elif page == "📈 Analitik":
+            render_analytics_page()
+            
+        elif page == "👥 Klien":
+            render_clients_page()
 
-    elif page == "👨‍💼 Admin":
-        render_admin_page()
+        elif page == "👨‍💼 Admin":
+            render_admin_page()
 
-    elif page == "📋 Survey":
-        render_survey_page()
+        elif page == "📋 Survey":
+            render_survey_page()
+            
+    except Exception as e:
+        st.error(f"Error loading page: {e}")
+        
+    finally:
+        # Only sleep if we actually showed the loader
+        if should_show_loader:
+            time.sleep(1.5)
+            loader_placeholder.empty()
 
 def main():
     if not st.session_state.logged_in:

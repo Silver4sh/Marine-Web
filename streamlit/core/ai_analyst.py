@@ -12,55 +12,55 @@ class MarineSLM:
     """
     
     def __init__(self):
-        # --- KNOWLEDGE BASE / VOCABULARY ---
+        # --- KNOWLEDGE BASE / VOCABULARY (SIMPLIFIED v5.0) ---
         self.vocab = {
             "openers_positive": [
-                "Indikator kinerja maritim menunjukkan", "Analisis data operasional memperlihatkan", "Secara keseluruhan,",
-                "Tren saat ini mengindikasikan", "Pemantauan sistem mendeteksi", "Laporan intelijen mencatat",
-                "Evaluasi kuartal ini mengonfirmasi", "Data real-time mengonfirmasi"
+                "Kabar baik,", "Data menunjukkan hal positif:", "Secara umum,",
+                "Terlihat tren bagus:", "Sistem memantau:", "Laporan terbaru mencatat:",
+                "Hasil evaluasi menunjukan:", "Pantauan langsung mengonfirmasi:"
             ],
             "openers_negative": [
-                "Perhatian khusus diperlukan karena", "Sistem mendeteksi anomali operasional:", "Peringatan dini:",
-                "Analisis risiko menunjukkan", "Terdapat indikasi friksi pada", "Perlu evaluasi segera:",
-                "Penyimpangan data terdeteksi:"
+                "Perlu perhatian:", "Ada yang tidak beres:", "Peringatan dini:",
+                "Hati-hati, ada risiko:", "Terdeteksi masalah pada:", "Segera cek bagian ini:",
+                "Data menunjukkan penurunan:"
             ],
             "adjectives_strong": [
-                "signifikan", "masif", "kuat", "dominan", "luar biasa", "impresif", "substansial", "kokoh"
+                "sangat besar", "besar sekali", "kuat", "utama", "hebat", "keren", "banyak", "kokoh"
             ],
             "adjectives_steady": [
-                "stabil", "konsisten", "berkelanjutan", "terjaga", "solid", "resilien", "seimbang"
+                "stabil", "lancar", "aman", "terjaga", "bagus", "tahan banting", "seimbang"
             ],
             "adjectives_worrying": [
-                "kritikal", "mengkhawatirkan", "cukup tajam", "berisiko", "tidak stabil", "volatil", "rentan"
+                "gawat", "mengkhawatirkan", "cukup tajam", "berisiko", "tidak stabil", "naik turun", "rawan"
             ],
             "verbs_growth": [
-                "melonjak", "meningkat", "tumbuh", "menguat", "berakselerasi", "meroket", "terakselerasi"
+                "naik tinggi", "meningkat", "tumbuh", "semakin kuat", "melaju kencang", "meroket", "makin cepat"
             ],
             "verbs_decline": [
-                "terkoreksi", "menurun", "menyusut", "melambat", "melemah", "tergerus", "stagnan"
+                "turun", "merosot", "berkurang", "melambat", "melemah", "hilang", "jalan di tempat"
             ],
             "connectors": [
-                "yang mencerminkan", "sebagai akibat dari", "menandakan", "mengonfirmasi", "sejalan dengan",
-                "berkorelasi positif dengan", "didorong oleh", "yang dipicu oleh"
+                "yang artinya", "gara-gara", "menandakan", "memastikan", "sejalan dengan",
+                "berhubungan erat dengan", "didorong oleh", "yang disebabkan oleh"
             ],
             "contrast_connectors": [
-                "namun", "meskipun demikian", "berlawanan dengan", "kontradiktif dengan", 
-                "sementara di sisi lain", "ironisnya"
+                "tapi", "meskipun begitu", "kebalikan dari", "beda dengan", 
+                "padahal di sisi lain", "anehnya"
             ],
-            # --- MARITIME & ANALYTICS TERMS ---
+            # --- MARITIME & ANALYTICS TERMS (SIMPLIFIED) ---
             "maritime_terms": [
-                "efisiensi logistik", "turnaround time", "dwelling time", "utilisasi aset", 
-                "ketersediaan armada", "produktivitas bongkar muat", "siklus pendapatan"
+                "kelancaran logistik", "waktu sandar", "waktu tunggu", "pemakaian kapal", 
+                "kesiapan armada", "kecepatan bongkar muat", "siklus uang masuk"
             ],
             "actions_retention": [
-                "lakukan kunjungan bisnis", "tawarkan insentif volume", "jadwalkan rapat strategis",
-                "berikan prioritas layanan", "evaluasi kontrak kerjasama"
+                "kunjungi mereka", "kasih diskon khusus", "ajak meeting santai",
+                "prioritaskan layanan mereka", "cek lagi kontraknya"
             ],
             "env_terms": [
-                "kualitas air", "ekosistem perairan", "stabilitas parameter", "kesehatan lingkungan"
+                "kualitas air", "keadaan laut", "kestabilan sensor", "kesehatan lingkungan"
             ],
              "admin_terms": [
-                "integritas sistem", "protokol keamanan", "aktivitas pengguna", "jejak audit"
+                "keamanan sistem", "aturan akses", "kegiatan user", "rekam jejak"
             ]
         }
 
@@ -75,9 +75,9 @@ class MarineSLM:
         if intent == "cognitive_inefficiency":
             # High Fleet Activity BUT Low Revenue
             templates = [
-                "{opener} disonansi antara aktivitas armada ({util}%) dan hasil finansial. {conn} pendapatan {verb}. Indikasi inefisiensi biaya.",
-                "Utilisasi aset sangat tinggi ({util}%) {contrast} kinerja revenue yang {verb}. Waspadai kebocoran margin operasional.",
-                "Armada bekerja keras namun produktivitas finansial {verb}. Perlu audit pada struktur biaya logistik."
+                "{opener} kapal sibuk ({util}%) tapi uang yang masuk {verb}. Sepertinya ada biaya yang bocor.",
+                "Pemakaian kapal tinggi ({util}%) {contrast} pendapatan malah {verb}. Cek lagi pengeluaran operasional.",
+                "Armada kerja keras tapi hasilnya {verb}. Perlu audit biaya logistik."
             ]
             opener = random.choice(self.vocab["openers_negative"])
             conn = random.choice(self.vocab["connectors"])
@@ -88,9 +88,9 @@ class MarineSLM:
         elif intent == "cognitive_hazard":
             # High Activity + Bad Weather
             templates = [
-                "PERINGATAN KESELAMATAN: Tingkat operasional tinggi ({util}%) terdeteksi saat kondisi lingkungan {adj}. Risiko insiden meningkat.",
-                "{opener} paparan risiko aset. Armada beroperasi penuh di tengah anomali cuaca. Protokol keselamatan harus diperketat.",
-                "Kombinasi cuaca {adj} dan lalu lintas padat memerlukan pengawasan ekstra dari menara kontrol."
+                "BAHAYA: Kapal sibuk banget ({util}%) padahal cuaca {adj}. Risiko kecelakaan meningkat.",
+                "{opener} bahaya buat aset. Kapal jalan terus di tengah cuaca buruk. Tolong perketat aturan keselamatan.",
+                "Gabungan cuaca {adj} dan lalu lintas padat butuh pengawasan ekstra."
             ]
             opener = random.choice(self.vocab["openers_negative"])
             adj = random.choice(self.vocab["adjectives_worrying"])
@@ -99,12 +99,12 @@ class MarineSLM:
         elif intent == "cognitive_compounding_crisis":
             # Churn Risk + Revenue Drop
             templates = [
-                "SITUASI KRITIS: Penurunan pendapatan ({growth}%) {conn} risiko churn pada klien utama. Potensi dampak jangka panjang {adj}.",
-                "{opener} efek domino negatif. Koreksi finansial {contrast} ancaman retensi klien. Diperlukan 'Crisis Management' segera.",
-                "Kesehatan bisnis terganggu ganda: Arus kas {verb} dan basis klien {adj}. Fokuskan sumber daya pada stabilitas."
+                "GAWAT: Pendapatan turun ({growth}%) {conn} risiko klien kabur. Dampaknya bisa {adj}.",
+                "{opener} efek domino buruk. Uang seret {contrast} klien mau pergi. Butuh penanganan segera.",
+                "Bisnis lagi sakit: Arus kas {verb} dan klien {adj}. Fokus dulu ke kestabilan."
             ]
             conn = "diperparah oleh"
-            contrast = "berimpitan dengan"
+            contrast = "bersamaan dengan"
             adj = random.choice(self.vocab["adjectives_worrying"])
             opener = random.choice(self.vocab["openers_negative"])
             verb = random.choice(self.vocab["verbs_decline"])
@@ -113,22 +113,22 @@ class MarineSLM:
         elif intent == "cognitive_optimal":
             # High Rev + High Util + Stable Env
             templates = [
-                "PERFORMA PUNCAK: Keselarasan sempurna antara operasional ({util}%), finansial, dan lingkungan. Pertahankan momentum {adj} ini.",
-                "Sistem berjalan dalam efisiensi maksimum. Semua indikator (Fleet, Fin, Env) menunjukkan status 'HIJAU'.",
-                "{opener} sinergi positif antar departemen. Profitabilitas dan produktivitas tumbuh {conn}."
+                "PERFORMA PUNCAK: Kapal ({util}%), keuangan, dan lingkungan aman semua. Pertahankan kondisi {adj} ini.",
+                "Sistem berjalan sangat efisien. Semua indikator (Kapal, Uang, Alam) statusnya 'HIJAU'.",
+                "{opener} kerja sama tim yang bagus. Untung dan produktivitas naik {conn}."
             ]
             adj = random.choice(self.vocab["adjectives_strong"])
             opener = random.choice(self.vocab["openers_positive"])
-            conn = "beriringan"
+            conn = "bersamaan"
             result = random.choice(templates).format(util=context.get('util', '0'), adj=adj, opener=opener, conn=conn)
 
         # --- EXISTING INTENTS (Base v3.0) ---
         elif intent == "whale_detected":
             templates = [
-                "Terdeteksi {count} mitra strategis (Whales) yang memegang peran {adj} dalam {term} perusahaan.",
-                "Analisis portofolio mengidentifikasi {count} klien kunci dengan kontribusi LTV yang {adj}. Disarankan untuk {action}.",
-                "Fokuskan retensi pada {count} klien 'Whale' ini; mereka menunjukkan pola transaksi {adj} yang vital bagi {term}.",
-                "{opener} {count} akun prioritas mendominasi revenue stream. Perlakuan khusus wajib diberikan."
+                "Ada {count} mitra besar (Paus) yang punya peran {adj} dalam {term} kita.",
+                "Analisis menemukan {count} klien kunci yang kontribusinya {adj}. Sebaiknya {action}.",
+                "Fokus jaga {count} klien besar ini; pola transaksi mereka {adj} banget buat {term}.",
+                "{opener} {count} akun prioritas menguasai pendapatan. Harus dilayani spesial."
             ]
             term = random.choice(self.vocab["maritime_terms"])
             action = random.choice(self.vocab["actions_retention"])
@@ -142,10 +142,10 @@ class MarineSLM:
             
         elif intent == "churn_risk":
             templates = [
-                "{opener} adanya {count} klien dengan probabilitas churn tinggi. Aktivitas {term} mereka {verb} drastis.",
-                "Risiko retensi terdeteksi pada {count} akun. Pola pesanan terlihat {adj} dibandingkan periode lalu.",
-                "Diperlukan intervensi untuk {count} klien berisiko. Tren keterlibatan sedang {verb}, segera {action}.",
-                "Anomali pada {term} terdeteksi di {count} akun klien. Status: {adj}."
+                "{opener} ada {count} klien yang mungkin mau kabur. {term} mereka {verb} drastis.",
+                "Risiko kehilangan {count} akun. Pola pesanan terlihat {adj} dibanding dulu.",
+                "Perlu tindakan buat {count} klien ini. Orderan lagi {verb}, segera {action}.",
+                "Ada yang aneh pada {term} di {count} akun klien. Status: {adj}."
             ]
             opener = random.choice(self.vocab["openers_negative"])
             verb = random.choice(self.vocab["verbs_decline"])
@@ -160,9 +160,9 @@ class MarineSLM:
             
         elif intent == "high_utilization":
             templates = [
-                "Efisiensi armada {verb} mencapai {val}%. Ini adalah performa {adj} untuk standar industri.",
-                "{opener} tingkat utilisasi kapal sangat {adj} ({val}%), {conn} manajemen {term} yang optimal.",
-                "Operasional armada berjalan {adj} dengan tingkat pemakaian {val}%. Waspadai kelelahan kru & mesin."
+                "Efisiensi armada {verb} sampai {val}%. Ini performa yang {adj} banget.",
+                "{opener} pemakaian kapal sangat {adj} ({val}%), {conn} manajemen {term} yang oke.",
+                "Kapal beroperasi {adj} dengan tingkat pemakaian {val}%. Awas kru & mesin capek."
             ]
             verb = random.choice(self.vocab["verbs_growth"])
             adj = random.choice(self.vocab["adjectives_strong"])
@@ -177,9 +177,9 @@ class MarineSLM:
         
         elif intent == "revenue_positive":
             templates = [
-                "Pendapatan {verb} secara {adj} bulan ini, {conn} strategi komersial yang efektif.",
-                "{opener} arus kas positif. Pertumbuhan tercatat {adj} dan konsisten di seluruh lini bisnis.",
-                "Performa finansial {verb}, menunjukkan traksi bisnis yang {adj}."
+                "Pendapatan {verb} secara {adj} bulan ini, {conn} strategi jualan yang pas.",
+                "{opener} arus kas positif. Pertumbuhan terlihat {adj} dan konsisten.",
+                "Keuangan {verb}, tandanya bisnis lagi {adj}."
             ]
             verb = random.choice(self.vocab["verbs_growth"])
             adj = random.choice(self.vocab["adjectives_strong"])
@@ -189,9 +189,9 @@ class MarineSLM:
 
         elif intent == "revenue_negative":
             templates = [
-                "Pendapatan {verb} cukup {adj}. Evaluasi ulang strategi pricing atau tagihan tertunda.",
-                "{opener} kontraksi pada arus kas. Tren finansial sedang {adj}.",
-                "Kesehatan finansial {verb}. Diperlukan mitigasi risiko segera."
+                "Pendapatan {verb} cukup {adj}. Cek lagi harga atau tagihan yang macet.",
+                "{opener} uang masuk berkurang. Tren keuangan lagi {adj}.",
+                "Kesehatan keuangan {verb}. Harus segera dicegah risikonya."
             ]
             verb = random.choice(self.vocab["verbs_decline"])
             adj = random.choice(self.vocab["adjectives_worrying"])
@@ -200,9 +200,9 @@ class MarineSLM:
             
         elif intent == "forecast_insight":
             templates = [
-                "Model prediksi memperkirakan tren yang {adj} hingga akhir kuartal, {conn} data historis terkini.",
-                "Outlook masa depan terlihat {adj}. {opener} potensi pertumbuhan berkelanjutan.",
-                "Prakiraan menunjukkan stabilitas yang {adj}, namun waspadai volatilitas pasar."
+                "Prediksi menunjukkan tren yang {adj} sampai akhir kuartal, {conn} data historis.",
+                "Masa depan terlihat {adj}. {opener} ada potensi tumbuh terus.",
+                "Ramalan menunjukkan kondisi {adj}, tapi tetap waspada pasar berubah."
             ]
             adj = random.choice(self.vocab["adjectives_steady"] + self.vocab["adjectives_strong"])
             conn = random.choice(self.vocab["connectors"])
@@ -211,9 +211,9 @@ class MarineSLM:
 
         elif intent == "env_stable":
             templates = [
-                "Kualitas perairan dalam kondisi {adj}. Parameter sensor menunjukkan pola yang {adj2}.",
-                "{opener} kesehatan ekosistem terpantau {adj}. Tidak ada anomali mayor.",
-                "Monitoring lingkungan menunjukkan status {adj}, mendukung operasional yang aman."
+                "Kualitas air dalam kondisi {adj}. Sensor menunjukkan angka yang {adj2}.",
+                "{opener} kesehatan laut terpantau {adj}. Tidak ada masalah besar.",
+                "Pantauan lingkungan statusnya {adj}, aman buat operasional."
             ]
             adj = random.choice(self.vocab["adjectives_steady"])
             adj2 = random.choice(self.vocab["adjectives_strong"] + ["normal"])
@@ -222,9 +222,9 @@ class MarineSLM:
 
         elif intent == "env_anomaly":
             templates = [
-                "{opener} deteksi parameter ekstrem pada {count} buoy. Waspadai dampak terhadap {term}.",
-                "Anomali kualitas air teridentifikasi. Fluktuasi nilai sensor terlihat {adj}.",
-                "Kondisi lingkungan {verb} secara lokal. Perlu inspeksi fisik pada titik pantau."
+                "{opener} ada nilai aneh di {count} buoy. Awas dampaknya ke {term}.",
+                "Ada masalah kualitas air. Nilai sensor terlihat {adj}.",
+                "Kondisi lingkungan {verb} di lokasi. Perlu cek langsung ke sana."
             ]
             opener = random.choice(self.vocab["openers_negative"])
             term = random.choice(self.vocab["env_terms"])
@@ -234,9 +234,9 @@ class MarineSLM:
 
         elif intent == "admin_summary":
             templates = [
-                "Administrasi sistem berjalan {adj}. {count} pengguna baru telah ditambahkan minggu ini.",
-                "{opener} aktivitas pengguna dalam batas wajar. {count} entri log baru tercatat.",
-                "Manajemen akses pengguna terpantau {adj}. Sistem beroperasi optimal."
+                "Sistem berjalan {adj}. {count} user baru masuk minggu ini.",
+                "{opener} kegiatan user terlihat wajar. {count} log baru tercatat.",
+                "Akses user terpantau {adj}. Sistem aman."
             ]
             adj = random.choice(self.vocab["adjectives_steady"])
             opener = random.choice(self.vocab["openers_positive"])
@@ -365,31 +365,55 @@ class MarineAIAnalyst:
         insights = []
         if corr_matrix.empty: return {"insights": []}
         
-        # Find strong correlations (> 0.7 or < -0.7)
-        strong_pairs = []
-        for i in range(len(corr_matrix.columns)):
-            for j in range(i+1, len(corr_matrix.columns)):
+        # Find correlations (Threshold lowered to 0.4 for more sensitivity)
+        pairs = []
+        columns = corr_matrix.columns
+        for i in range(len(columns)):
+            for j in range(i+1, len(columns)):
                 val = corr_matrix.iloc[i, j]
-                if abs(val) >= 0.7:
-                    c1 = corr_matrix.columns[i]
-                    c2 = corr_matrix.columns[j]
-                    strong_pairs.append((c1, c2, val))
+                if abs(val) >= 0.4:
+                    c1 = columns[i]
+                    c2 = columns[j]
+                    pairs.append((c1, c2, val))
         
-        if strong_pairs:
-            # Sort by strength
-            strong_pairs.sort(key=lambda x: abs(x[2]), reverse=True)
-            top = strong_pairs[0]
+        if pairs:
+            # Sort by absolute strength
+            pairs.sort(key=lambda x: abs(x[2]), reverse=True)
             
-            relation = "Positif Kuat" if top[2] > 0 else "Negatif Kuat"
-            desc = f"Terdeteksi hubungan **{relation}** ({top[2]}) antara **{top[0]}** dan **{top[1]}**. "
+            # Take top 3
+            top_pairs = pairs[:3]
             
-            if top[2] > 0:
-                desc += "Kenaikan pada satu variabel cenderung diikuti kenaikan variabel lainnya. Sinergi ini dapat dimanfaatkan untuk optimasi."
-            else:
-                desc += "Kenaikan salah satu variabel menekan variabel lainnya. Waspadai trade-off ini dalam strategi operasional."
+            for p in top_pairs:
+                c1, c2, val = p
+                direction = "Positif" if val > 0 else "Negatif"
+                strength = "Sangat Erat" if abs(val) > 0.8 else ("Erat" if abs(val) > 0.6 else "Cukup Terlihat")
                 
-            insights.append({"title": "🔗 Korelasi Dominan", "desc": desc, "type": "critical"})
+                # Contextual Description (Simplified Language)
+                desc = f"Hubungan **{direction} {strength}** ({val:.2f}) terlihat antara **{c1}** dan **{c2}**."
+                
+                if "Pendapatan" in [c1, c2]:
+                    if val > 0: desc += " Artinya: Jika satu naik, kemungkinan besar pendapatan juga ikut naik."
+                    else: desc += " Artinya: Hati-hati, jika faktor ini naik, pendapatan justru bisa turun."
+                elif "Hari Bayar" in [c1, c2]:
+                    if val > 0: desc += " Ini bisa membuat uang masuk menjadi lebih lambat."
+                    else: desc += " Ini bagus karena bisa mempercepat penerimaan uang tunai."
+                else:
+                    if val > 0: desc += " Keduanya cenderung naik atau turun bersamaan."
+                    else: desc += " Jika satu naik, yang lain biasanya turun."
+                
+                # Determine alert type based on strength
+                alert_type = "critical" if abs(val) > 0.8 else ("warning" if abs(val) > 0.6 else "info")
+                
+                insights.append({
+                    "title": f"🔗 Hubungan: {c1} & {c2}", 
+                    "desc": desc, 
+                    "type": alert_type
+                })
         else:
-             insights.append({"title": "🔗 Pola Tersebar", "desc": "Tidak ditemukan korelasi linear yang kuat antar variabel utama. Data menunjukkan independensi yang tinggi.", "type": "info"})
+             insights.append({
+                 "title": "🔗 Data Berdiri Sendiri", 
+                 "desc": "Belum terlihat hubungan yang jelas antar data. Saat ini, setiap faktor bergerak sendiri-sendiri.", 
+                 "type": "info"
+             })
              
         return {"insights": insights}
