@@ -45,25 +45,30 @@ def check_login_working(username: str, password: str):
 
 
 def render_login_page():
-    st.title("Dasbor MarineOS")
-    st.markdown("---")
+    # Centered Layout
+    c1, c2, c3 = st.columns([1, 2, 1])
+    
+    with c2:
+        st.markdown("<div class='login-header' style='text-align: center; margin-bottom: 2rem;'><h1>⚓ MarineOS</h1></div>", unsafe_allow_html=True)
+        
+        with st.form("login_form"):
+            st.markdown("### Masuk ke Dashboard")
+            username = st.text_input("Nama Pengguna", placeholder="Masukkan nama pengguna")
+            password = st.text_input("Kata Sandi", type="password", placeholder="Masukkan kata sandi")
+            
+            st.markdown("<br>", unsafe_allow_html=True)
+            submit_button = st.form_submit_button("Masuk", type="primary", use_container_width=True)
 
-    with st.form("login_form"):
-        st.subheader("Masuk")
-        username = st.text_input("Nama Pengguna", placeholder="Masukkan nama pengguna")
-        password = st.text_input("Kata Sandi", type="password", placeholder="Masukkan kata sandi")
-        submit_button = st.form_submit_button("Masuk")
+            if submit_button:
+                if username and password:
+                    with st.spinner("Memeriksa kredensial..."):
+                        is_valid, user_role = check_login_working(username, password)
 
-        if submit_button:
-            if username and password:
-                with st.spinner("Memeriksa kredensial..."):
-                    is_valid, user_role = check_login_working(username, password)
-
-                if is_valid and user_role:
-                    st.session_state.logged_in = True
-                    st.session_state.username = username
-                    st.session_state.user_role = user_role
-                    st.success(f"Selamat datang {username}!")
-                    st.rerun()
-            else:
-                st.warning("Harap masukkan nama pengguna dan kata sandi")
+                    if is_valid and user_role:
+                        st.session_state.logged_in = True
+                        st.session_state.username = username
+                        st.session_state.user_role = user_role
+                        st.success(f"Selamat datang {username}!")
+                        st.rerun()
+                else:
+                    st.warning("Harap masukkan nama pengguna dan kata sandi")

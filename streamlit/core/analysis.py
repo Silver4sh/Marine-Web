@@ -53,3 +53,20 @@ def calculate_advanced_forecast(df, months=6):
         'lower_bound': forecast_values * (1 - uncert), 'upper_bound': forecast_values * (1 + uncert),
         'model_name': best_model['name']
     })
+
+def calculate_correlation(df, numeric_cols=None):
+    """
+    Computes Pearson correlation matrix for specified numeric columns.
+    Returns a formatted dataframe suitable for heatmap visualization.
+    """
+    if df.empty: return pd.DataFrame()
+    
+    if numeric_cols:
+        df = df[numeric_cols]
+    else:
+        df = df.select_dtypes(include=[np.number])
+        
+    if df.shape[1] < 2: return pd.DataFrame()
+    
+    corr_matrix = df.corr(method='pearson').round(2)
+    return corr_matrix

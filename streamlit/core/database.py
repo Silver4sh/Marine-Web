@@ -125,7 +125,7 @@ def get_data_water():
 
 @st.cache_data(ttl=300)
 def get_clients_summary():
-    query = "SELECT c.code_client, c.name, c.industry, c.region, c.status, COUNT(DISTINCT o.id) as total_orders, COALESCE(SUM(p.total_amount), 0) as ltv FROM operation.clients c LEFT JOIN operation.orders o ON c.code_client = o.id_client LEFT JOIN operation.payments p ON o.id = p.id_order AND p.status = 'Payed' GROUP BY c.code_client, c.name, c.industry, c.region, c.status ORDER BY ltv DESC"
+    query = "SELECT c.code_client, c.name, c.industry, c.region, c.status, COUNT(DISTINCT o.id) as total_orders, COALESCE(SUM(p.total_amount), 0) as ltv FROM operation.clients c LEFT JOIN operation.orders o ON c.code_client = o.id_client LEFT JOIN operation.payments p ON o.code_order = p.id_order AND p.status = 'Completed' GROUP BY c.code_client, c.name, c.industry, c.region, c.status ORDER BY ltv DESC"
     return run_query(query)
 
 @st.cache_data(ttl=60)
@@ -224,15 +224,9 @@ def get_buoy_fleet():
     q1 = "SELECT b.code_buoy, b.status, '85%' as battery, MAX(bsh.created_at) as last_update FROM operation.buoys b LEFT JOIN operation.buoy_sensor_histories bsh ON b.code_buoy = bsh.id_buoy GROUP BY b.code_buoy, b.status"
     df1 = run_query(q1)
     
-    # 2. Fetch Maintenance Buoys (from buoy_mtc_histories)
-    # Alias id_buoy to code_buoy to match q1 and View expectations
-    q2 = "SELECT id_buoy as code_buoy, 'Maintenance' as status, '0%' as battery, NULL::timestamp as last_update FROM operation.buoy_mtc_histories"
-    df2 = run_query(q2)
-    
     # Combine results
     frames = []
     if not df1.empty: frames.append(df1)
-    if not df2.empty: frames.append(df2)
     
     if frames:
         return pd.concat(frames, ignore_index=True).sort_values('code_buoy')
@@ -320,7 +314,7 @@ def get_client_reliability_scoring():
             SUM(total_amount) as total_paid,
             MAX(payment_date) as last_payment_date
         FROM operation.payments
-        WHERE status = 'Payed'
+        WHERE status = 'Completed'
         GROUP BY 1
     ),
     client_metrics AS (
@@ -332,7 +326,7 @@ def get_client_reliability_scoring():
             AVG(EXTRACT(DAY FROM (ps.last_payment_date - o.order_date))) as avg_payment_delay_days
         FROM operation.clients c
         JOIN operation.orders o ON c.code_client = o.id_client
-        JOIN payment_stats ps ON CAST(o.id AS VARCHAR) = ps.id_order
+        JOIN payment_stats ps ON o.code_order = ps.id_order
         GROUP BY 1, 2
     )
     SELECT 
@@ -349,4 +343,48 @@ def get_client_reliability_scoring():
     ORDER BY reliability_score DESC
     """
     return run_query(query)
+
+# --- SURVEY QUERIES ---
+@st.cache_data(ttl=60)
+def get_all_surveys():
+    query = """
+    SELECT 
+        s.id,
+        s.code_report,
+        s.project_name,
+        s.date_survey,
+        si.code_site as site_name,
+        v.name as vessel_name,
+        u.name as surveyor_name,
+        s.comment
+    FROM survey.daily_report_survey_activity s
+    LEFT JOIN operation.sites si ON s.id_site = si.code_site
+    LEFT JOIN operation.vessels v ON s.id_vessel = v.code_vessel
+    LEFT JOIN operation.users u ON s.id_user = u.code_user
+    ORDER BY s.date_survey DESC
+    """
+    return run_query(query)
+
+def create_survey_report(data):
+    try:
+        with get_engine().begin() as conn:
+            # 1. Insert Main Report
+            stmt = text("""
+                INSERT INTO survey.daily_report_survey_activity 
+                (project_name, code_report, id_site, id_vessel, id_user, date_survey, comment)
+                VALUES (:project, :code, :site, :vessel, :user, :date, :comment)
+                RETURNING id
+            """)
+            conn.execute(stmt, {
+                "project": data['project_name'],
+                "code": data['code_report'],
+                "site": data['id_site'],
+                "vessel": data['id_vessel'],
+                "user": data['id_user'],
+                "date": data['date_survey'],
+                "comment": data['comment']
+            })
+            return True, "Laporan berhasil dibuat."
+    except Exception as e:
+        return False, str(e)
 

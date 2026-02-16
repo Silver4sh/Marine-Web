@@ -1,0 +1,65 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<h2 class="mb-4">Operational Dashboard</h2>
+
+<div class="row mb-4">
+    <div class="col-md-4">
+        <div class="card text-white bg-primary mb-3">
+            <div class="card-header">Vessels</div>
+            <div class="card-body">
+                <h5 class="card-title">{{ active_vessels }} / {{ total_vessels }}</h5>
+                <p class="card-text">Active Vessels</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card text-white bg-success mb-3">
+            <div class="card-header">Orders</div>
+            <div class="card-body">
+                <h5 class="card-title">{{ active_orders }} / {{ total_orders }}</h5>
+                <p class="card-text">Active Orders</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card text-white bg-info mb-3">
+            <div class="card-header">Sites</div>
+            <div class="card-body">
+                <h5 class="card-title">{{ total_sites }}</h5>
+                <p class="card-text">Total Sites Managed</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<h3 class="mb-3">Recent Activity Logs</h3>
+<div class="card">
+    <div class="card-body">
+        <table class="table table-striped">
+            <thead>
+                <tr>
+                    <th>Action</th>
+                    <th>Table</th>
+                    <th>Changed By</th>
+                    <th>Date</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for log in recent_logs %}
+                <tr>
+                    <td>{{ log.action }}</td>
+                    <td>{{ log.table_name }}</td>
+                    <td>{{ log.changed_by }}</td>
+                    <td>{{ log.changed_at }}</td>
+                </tr>
+                {% empty %}
+                <tr>
+                    <td colspan="4">No recent logs found.</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}

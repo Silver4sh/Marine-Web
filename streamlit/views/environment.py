@@ -1,8 +1,9 @@
 import streamlit as st
 import pandas as pd
 import altair as alt
-from core import get_data_water, page_heatmap
+from core import get_data_water, page_heatmap, load_html
 from core.database import get_buoy_fleet, get_buoy_history
+from core.ai_analyst import MarineAIAnalyst
 
 def render_chart(df, x_col, y_col, color_col, title):
     if df.empty or y_col not in df.columns:
@@ -48,6 +49,16 @@ def render_sparkline(df, y_col, title, color="#0ea5e9"):
 def render_environ_heatmap():
     st.markdown("## 🔥 Enviro Heatmap")
     df = get_data_water()
+    
+    # AI Analysis for Environment
+    # Mocking anomaly df check for simplicity, or we could fetch anomalies here.
+    # Assuming standard check based on df content variability if specific anomaly function isn't called here.
+    # But let's use the SLM's capability directly with a simple check.
+    ai_env = MarineAIAnalyst.analyze_environment(df[df['salinitas'] > 40] if not df.empty and 'salinitas' in df.columns else pd.DataFrame())
+    
+    with st.expander("🤖 AI Eco-Watch", expanded=True):
+        for insight in ai_env['insights']:
+            st.success(f"**{insight['title']}**\n\n{insight['desc']}")
     
     if not df.empty and 'latest_timestamp' in df.columns:
         df['latest_timestamp'] = pd.to_datetime(df['latest_timestamp'])
@@ -168,7 +179,7 @@ def render_buoy_monitoring():
     c1, c2, c3 = st.columns(3)
     with c1: st.metric("Total Buoy", total)
     with c2: st.metric("Buoy Aktif", active)
-    with c3: st.metric("Perlu Perawatan", maint)
+    with c3: st.metric("Dalam Perawatan", maint)
     
     st.markdown("### Daftar Buoy")
     
@@ -180,25 +191,46 @@ def render_buoy_monitoring():
         cols = st.columns(cols_per_row)
         for col, (_, buoy) in zip(cols, row.iterrows()):
             with col:
-                with st.container(border=True):
-                    b_id = buoy['code_buoy']
-                    loc = buoy.get('location') or 'Lokasi ?'
-                    status = buoy['status']
-                    batt = buoy.get('battery', '-')
-                    last_up = buoy.get('last_update')
-                    
-                    # Formatting
-                    fmt_update = last_up.strftime("%d %b %H:%M") if pd.notnull(last_up) else "-"
-                    status_hex = "#22c55e" if status == "Active" else "#f97316" if status == "Maintenance" else "#9ca3af"
-                    
-                    # Centered Layout using HTML with specific Sizes
-                    st.markdown(f"<div style='text-align: center; font-size: 18px; font-weight: bold; margin-bottom: 2px;'>{b_id}</div>", unsafe_allow_html=True)
-                    st.markdown(f"<div style='text-align: center; color: gray; font-size: 12px; margin-bottom: 8px;'>{loc}</div>", unsafe_allow_html=True)
-                    st.markdown(f"<div style='text-align: center; font-size: 14px; font-weight: bold; color: {status_hex}; margin-bottom: 12px;'>● {status}</div>", unsafe_allow_html=True)
-                    st.markdown(f"<div style='text-align: center; font-size: 11px; color: #555; margin-bottom: 10px;'>🔋 {batt} | 🕒 {fmt_update}</div>", unsafe_allow_html=True)
-                    
-                    if st.button("Detail 🔍", key=f"btn_detail_{b_id}", use_container_width=True):
-                        view_buoy_detail(b_id, f"Buoy {b_id} - {loc}")
+                b_id = buoy['code_buoy']
+                loc = buoy.get('location') or 'Lokasi ?'
+                status = buoy['status']
+                batt = buoy.get('battery', '-')
+                last_up = buoy.get('last_update')
+                
+                # Formatting
+                fmt_update = last_up.strftime("%d %b %H:%M") if pd.notnull(last_up) else "-"
+
+                # Status Styling Logic
+                status_color = "#22c55e" # Default Green
+                if status == "Maintenance":
+                    status_color = "#f59e0b" # Amber/Orange
+                    bg_gradient = "linear-gradient(145deg, rgba(245, 158, 11, 0.15) 0%, rgba(15, 23, 42, 0.6) 100%)"
+                    border_color = "rgba(245, 158, 11, 0.3)"
+                elif status == "Active":
+                    status_color = "#22c55e" # Green
+                    bg_gradient = "linear-gradient(145deg, rgba(34, 197, 94, 0.1) 0%, rgba(15, 23, 42, 0.6) 100%)"
+                    border_color = "rgba(34, 197, 94, 0.3)"
+                else: 
+                    status_color = "#94a3b8" # Slate
+                    bg_gradient = "linear-gradient(145deg, rgba(148, 163, 184, 0.1) 0%, rgba(15, 23, 42, 0.6) 100%)"
+                    border_color = "rgba(148, 163, 184, 0.2)"
+
+                html_template = load_html("buoy_card.html")
+                if html_template:
+                    card_html = html_template.replace("{b_id}", str(b_id))\
+                        .replace("{loc}", str(loc))\
+                        .replace("{status}", str(status))\
+                        .replace("{status_color}", status_color)\
+                        .replace("{bg_gradient}", bg_gradient)\
+                        .replace("{border_color}", border_color)\
+                        .replace("{batt}", str(batt))\
+                        .replace("{fmt_update}", str(fmt_update))
+                    st.markdown(card_html, unsafe_allow_html=True)
+                else:
+                    st.error("Template buoy_card.html missing")
+
+                if st.button("Detail 🔍", key=f"btn_detail_{b_id}", use_container_width=True):
+                    view_buoy_detail(b_id, f"Buoy {b_id} - {loc}")
                 
 
 

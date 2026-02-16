@@ -2,6 +2,7 @@ CREATE SCHEMA operation 	AUTHORIZATION postgres;
 CREATE SCHEMA log 			AUTHORIZATION postgres;
 CREATE SCHEMA audit 		AUTHORIZATION postgres;
 CREATE SCHEMA rockworks 	AUTHORIZATION postgres;
+CREATE SCHEMA survey		AUTHORIZATION postgres;
 
 --- Table
 -- al
@@ -311,7 +312,7 @@ CREATE TABLE operation.vessel_positions (
 	latitude		double precision 	NOT NULL,
 	speed 			int4,
 	heading			int4, 
-	note 			text 		NOT NULL,
+	note 			text 				NOT NULL,
 	created_at 		timestamp 			DEFAULT NOW(),
 	CONSTRAINT vessel_positions_pkey 				PRIMARY KEY (id),
 	CONSTRAINT vessel_positions_id_vessel_fkey 		FOREIGN KEY (id_vessel) REFERENCES operation.vessels(code_vessel) ON UPDATE CASCADE ON DELETE CASCADE,
@@ -1290,6 +1291,88 @@ CREATE TABLE rockworks.wellpick (
 	CONSTRAINT log_sys_pk_11970 PRIMARY KEY (wellpickid),
 	CONSTRAINT log_wellpick_fk_locationwellpick FOREIGN KEY (bhid) REFERENCES rockworks."location"(bhid)
 );
+--- Belum
+CREATE TABLE survey.daily_report_survey_activity (
+	id 				serial4 	 	NOT NULL,
+	project_name	varchar(255) 	NOT NULL,
+	code_report		varchar(20) 	NOT NULL,
+	id_site			varchar(20) 	NOT NULL,
+	id_vessel		varchar(20) 	NOT NULL,
+	id_user			varchar(20) 	NOT NULL,
+	date_survey		timestamp 		NOT NULL,
+	comment			varchar(255) 	NOT NULL,
+	CONSTRAINT survey_daily_report_survey_activity_pk 			PRIMARY KEY (id),
+	CONSTRAINT survey_daily_report_survey_activity_key 			UNIQUE (code_report),
+	CONSTRAINT survey_daily_report_survey_activity_fk_vessel 	FOREIGN KEY (id_vessel) REFERENCES operation.vessel(id_vessel),
+	CONSTRAINT survey_daily_report_survey_activity_fk_user 		FOREIGN KEY (id_user) REFERENCES operation.user(id_user),
+	CONSTRAINT survey_daily_report_survey_activity_fk_site 		FOREIGN KEY (id_site) REFERENCES operation.site(id_site)
+);
+
+CREATE TABLE survey.daily_report_survey_activity_details (
+	id 				serial4 	 		NOT NULL,
+	id_report		varchar(20) 		NOT NULL,
+	survey_date		timestamp 			NOT NULL,
+	longitude		double precision 	NOT NULL,
+	latitude		double precision 	NOT NULL,
+	start_time		timestamp 			NOT NULL,
+	end_time		timestamp 			NOT NULL,
+	description		varchar(255) 		NOT NULL,
+	CONSTRAINT survey_daily_report_survey_activity_details_pk 			PRIMARY KEY (id),
+	CONSTRAINT survey_daily_report_survey_activity_details_fk_report 	FOREIGN KEY (id_report) REFERENCES survey.daily_report_survey_activity(code_report)
+);
+
+CREATE TABLE survey.daily_report_survey_activity_weather (
+	id 				serial4		 		NOT NULL,
+	id_report		varchar(20) 		NOT NULL,
+	survey_date		timestamp 			NOT NULL,
+	longitude		double precision 	NOT NULL,
+	latitude		double precision 	NOT NULL,
+	time			timestamp	 		NOT NULL,
+	weather			int4		 		NOT NULL,
+	wind_speed		int4 				NOT NULL,
+	wave			int4 				NOT NULL,
+	CONSTRAINT survey_daily_report_survey_activity_weather_pk 			PRIMARY KEY (id),
+	CONSTRAINT survey_daily_report_survey_activity_weather_fk_report 	FOREIGN KEY (id_report) REFERENCES survey.daily_report_survey_activity(code_report)
+);
+
+CREATE TABLE survey.daily_report_vibrocore (
+	id						serial4		 	NOT NULL,
+	project_name			varchar(255) 	NOT NULL,
+	code_report				varchar(20) 	NOT NULL,
+	id_site					varchar(20) 	NOT NULL,
+	id_vessel				varchar(20) 	NOT NULL,
+	id_sample				varchar(20) 	NOT NULL,
+	day_survey				varchar(20) 	NOT NULL,
+	date_survey				timestamp 		NOT NULL,
+	rig_type				varchar(20) 	NOT NULL,
+	barrel_size				int4 			NOT NULL,
+	wellsite				varchar(20) 	NOT NULL,
+	total_coreing			int4 			NOT NULL,
+	total_depth_coring		int4 			NOT NULL,
+	total_depth_logging		int4 			NOT NULL,
+	comment					varchar(255) 	NOT NULL,
+	CONSTRAINT survey_daily_report_vibrocore_pk			PRIMARY KEY (id),
+	CONSTRAINT survey_daily_report_vibrocore_key		UNIQUE (code_report),
+	CONSTRAINT survey_daily_report_vibrocore_fk_site	FOREIGN KEY (id_site) REFERENCES operation.site(id_site),
+	CONSTRAINT survey_daily_report_vibrocore_fk_vessel	FOREIGN KEY (id_vessel) REFERENCES operation.vessel(id_vessel),
+	CONSTRAINT survey_daily_report_vibrocore_fk_sample	FOREIGN KEY (id_sample) REFERENCES operation.sample(id_sample)
+);
+
+CREATE TABLE survey.daily_report_vibrocore_detail (
+	id				serial4		 		NOT NULL,
+	id_report		varchar(20) 		NOT NULL,
+	hole_id			varchar(20) 		NOT NULL,
+	longitude		double precision 	NOT NULL,
+	latitude		double precision 	NOT NULL,
+	from_depth		int4 				NOT NULL,
+	to_depth		int4 				NOT NULL,
+	core_length		int4 				NOT NULL,
+	recovery_rate	int4 				NOT NULL,
+	description		varchar(255) 		NOT NULL,
+	CONSTRAINT survey_daily_report_vibrocore_detail_pk			PRIMARY KEY (id),
+	CONSTRAINT survey_daily_report_vibrocore_detail_fk_report	FOREIGN KEY (id_report) REFERENCES survey.daily_report_vibrocore(code_report)
+);
+
 --- INDEX
 -- Log
 CREATE INDEX idx_surveis_search							ON log.surveis 							USING btree (code_survey, doc_no, core_no);
@@ -1300,8 +1383,6 @@ CREATE INDEX idx_vibrocore_log_search 					ON log.vibrocore_logs 					USING btre
 CREATE INDEX idx_vibrocore_logs_site 					ON log.vibrocore_logs 					USING btree (id_site);
 CREATE INDEX idx_vibrocore_details_litho 				ON log.vibrocore_log_details 			USING btree (code_lithology);
 CREATE INDEX idx_sample_details_litho 					ON log.sample_log_details 				USING btree (id_lithology);
-
--- al
 CREATE INDEX idx_vessel_activities_search 				ON operation.vessel_activities 			USING btree (id_vessel, id_order, id_task, seq_activity);
 CREATE INDEX idx_vessel_positions_search 				ON operation.vessel_positions 			USING btree (id_vessel, seq_activity);
 CREATE INDEX idx_client_deposit_histories_search 		ON operation.client_deposit_histories 	USING btree (id_client);
@@ -1312,7 +1393,6 @@ CREATE INDEX idx_partner_search 						ON operation.partners 					USING btree (st
 CREATE INDEX idx_clients_region_search 					ON operation.clients 						USING btree (region, status);
 CREATE INDEX idx_users_search 							ON operation.users 						USING btree (organs, role);
 CREATE INDEX idx_buoy_sensor_histories_search 			ON operation.buoy_sensor_histories 		USING btree (created_at);
-
 
 
 -- Audit
@@ -1409,6 +1489,7 @@ CREATE INDEX rockworks_sys_idx_wellconstruction_fk_locationwellconstruction_1247
 CREATE INDEX rockworks_sys_idx_wellconstruction_fk_wellconstructiontypewellconstru ON rockworks.wellconstruction USING btree (wellconsttypeid);
 CREATE INDEX rockworks_wellconstruction_depth_ix ON rockworks.wellconstruction USING btree (bhid, depth1, depth2);
 CREATE INDEX rockworks_sys_idx_wellpick_fk_locationwellpick_12505 ON rockworks.wellpick USING btree (bhid);
+
 CREATE UNIQUE INDEX rockworks_sys_idx_strattype_name_ix_11721 ON rockworks.strattype USING btree (name);
 CREATE UNIQUE INDEX rockworks_sys_idx_tmintervaltype_name_ix_11824 ON rockworks.tmintervaltype USING btree (name);
 CREATE UNIQUE INDEX rockworks_sys_idx_wellconstructiontype_name_ix_11949 ON rockworks.wellconstructiontype USING btree (name);
@@ -1423,6 +1504,22 @@ CREATE UNIQUE INDEX rockworks_sys_idx_projecttables_typename_ix_11671 ON rockwor
 CREATE UNIQUE INDEX rockworks_sys_idx_hydrostrattype_name_ix_11471 ON rockworks.hydrostrattype USING btree (name);
 CREATE UNIQUE INDEX rockworks_sys_idx_intervaltype_name_ix_11494 ON rockworks.intervaltype USING btree (name);
 CREATE UNIQUE INDEX rockworks_sys_idx_aquifertype_name_ix_11406 ON rockworks.aquifertype USING btree (name);
+
+-- Survey
+CREATE INDEX idx_daily_report_survey_activity_search 			ON survey.daily_report_survey_activity 				USING btree (code_report);
+CREATE INDEX idx_daily_report_survey_activity_site 				ON survey.daily_report_survey_activity 				USING btree (id_site);
+CREATE INDEX idx_daily_report_survey_activity_vessel 			ON survey.daily_report_survey_activity 				USING btree (id_vessel);
+CREATE INDEX idx_daily_report_survey_activity_user 				ON survey.daily_report_survey_activity 				USING btree (id_user);
+
+CREATE INDEX idx_daily_report_survey_activity_details_search 	ON survey.daily_report_survey_activity_details 		USING btree (id_report);
+
+CREATE INDEX idx_daily_report_survey_activity_weather_search 	ON survey.daily_report_survey_activity_weather 		USING btree (id_report);
+
+CREATE INDEX idx_daily_report_vibrocore_search 					ON survey.daily_report_vibrocore 					USING btree (code_report);
+CREATE INDEX idx_daily_report_vibrocore_site 					ON survey.daily_report_vibrocore 					USING btree (id_site);
+CREATE INDEX idx_daily_report_vibrocore_vessel 					ON survey.daily_report_vibrocore 					USING btree (id_vessel);
+
+CREATE INDEX idx_daily_report_vibrocore_detail_search 			ON survey.daily_report_vibrocore_detail 			USING btree (id_report); 
 
 -- Optimization Indexes for Foreign Keys (Fast Joins)
 CREATE INDEX idx_buoys_site 					ON operation.buoys (id_site);
@@ -1451,9 +1548,6 @@ CREATE SEQUENCE log.seq_lithology_code;
 CREATE SEQUENCE log.seq_survey_code;
 
 -- Auto-generation Function
-
-
--- Refined Function to handle specific columns directly
 CREATE OR REPLACE FUNCTION operation.generate_code_auto()
 RETURNS TRIGGER AS $$
 DECLARE

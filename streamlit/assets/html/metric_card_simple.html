@@ -1,20 +1,22 @@
-<div class="metric-card">
-    <div style="display: flex; justify-content: space-between; align-items: start; margin-bottom: 8px;">
+<div class="metric-card" style="height: 100%; display: flex; flex-direction: column; justify-content: space-between;">
+    <div style="display: flex; justify-content: space-between; align-items: start; margin-bottom: 12px;">
         <span
-            style="font-size: 0.85rem; color: #94a3b8; font-weight: 500; letter-spacing: 0.5px; text-transform: uppercase;">
+            style="font-family: var(--font-heading); font-size: 0.875rem; color: var(--text-secondary); font-weight: 600; letter-spacing: 0.05em; text-transform: uppercase;">
             {label}
         </span>
         <div
-            style="width: 8px; height: 8px; border-radius: 50%; background-color: {color}; box-shadow: 0 0 10px {color};">
+            style="width: 8px; height: 8px; border-radius: 50%; background-color: {color}; box-shadow: 0 0 12px {color}; opacity: 0.8;">
         </div>
     </div>
+
     <div
-        style="font-size: 2.2rem; font-weight: 700; color: #e2e8f0; font-family: 'Inter', sans-serif; margin-bottom: 4px;">
+        style="font-family: var(--font-heading); font-size: 2.25rem; font-weight: 700; color: var(--text-primary); letter-spacing: -0.02em; line-height: 1.1;">
         {value}
     </div>
-    <div style="font-size: 0.85rem; display: flex; align-items: center; gap: 6px; color: #94a3b8;">
+
+    <div style="margin-top: 12px; display: flex; align-items: center; gap: 8px;">
         <span
-            style="color: {color}; background: rgba(255,255,255,0.05); padding: 2px 8px; border-radius: 6px; font-weight: 600; font-family: monospace;">
+            style="font-family: var(--font-body); font-size: 0.8rem; font-weight: 600; color: {color}; background: rgba(255,255,255,0.05); padding: 4px 8px; border-radius: 50px; border: 1px solid rgba(255,255,255,0.05);">
             {delta}
         </span>
     </div>

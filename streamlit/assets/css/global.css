@@ -1,65 +1,118 @@
 /* Global Font & Theme */
-@import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&family=Inter:wght@400;500;600&display=swap');
 
-html,
-body,
-[class*="css"] {
-    font-family: 'Outfit', sans-serif;
+html, body, [class*="css"] {
+    font-family: 'Inter', sans-serif; /* Body text */
+    color: #e2e8f0;
+    background-color: #0f172a; /* Slate 900 */
+}
+
+h1, h2, h3, h4, h5, h6 {
+    font-family: 'Outfit', sans-serif; /* Headings */
+    font-weight: 600;
+    letter-spacing: -0.02em;
 }
 
 /* Remove default Streamlit padding */
 .block-container {
-    padding-top: 2rem !important;
+    padding-top: 1.5rem !important;
     padding-bottom: 3rem !important;
+    max-width: 95% !important;
 }
 
 /* --- Premium UI Components --- */
 
 /* Glassmorphism Cards */
-div.stMetric,
-div[data-testid="stMetricValue"] {
-    background: rgba(255, 255, 255, 0.03);
-    border: 1px solid rgba(255, 255, 255, 0.05);
-    padding: 15px;
-    border-radius: 12px;
-    backdrop-filter: blur(10px);
-    transition: transform 0.2s ease;
+div.stMetric, div[data-testid="stMetricValue"], .metric-card {
+    background: rgba(30, 41, 59, 0.7); /* Slate 800 with opacity */
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    padding: 20px;
+    border-radius: 16px;
+    backdrop-filter: blur(12px);
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
-div.stMetric:hover {
-    transform: translateY(-2px);
-    border-color: rgba(56, 189, 248, 0.3);
-    /* Sky blue glow */
+div.stMetric:hover, .metric-card:hover {
+    transform: translateY(-4px);
+    border-color: rgba(56, 189, 248, 0.4); /* Sky 400 */
+    box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.2), 0 4px 6px -2px rgba(0, 0, 0, 0.1);
 }
 
 /* Tabs Styling */
 button[data-baseweb="tab"] {
+    background-color: transparent !important;
+    border: none !important;
+    font-family: 'Outfit', sans-serif;
     font-weight: 500;
-    font-size: 14px;
+    font-size: 15px;
+    color: #94a3b8 !important; /* Slate 400 */
+    padding: 10px 20px !important;
+    transition: color 0.2s;
+}
+
+button[data-baseweb="tab"][aria-selected="true"] {
+    color: #38bdf8 !important; /* Sky 400 */
+    border-bottom: 2px solid #38bdf8 !important;
 }
 
 /* Dataframe Styling */
 div[data-testid="stDataFrame"] {
     border: 1px solid rgba(255, 255, 255, 0.1);
-    border-radius: 8px;
+    border-radius: 12px;
     overflow: hidden;
+    box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1);
+}
+
+div[data-testid="stDataFrame"] div[class*="ColumnHeaders"] {
+    background-color: rgba(30, 41, 59, 1);
+    font-family: 'Outfit', sans-serif;
+    font-weight: 600;
+    text-transform: uppercase;
+    font-size: 0.85rem;
+    letter-spacing: 0.05em;
+    color: #cbd5e1;
+}
+
+/* Primary Button */
+button[kind="primary"] {
+    background: linear-gradient(135deg, #0ea5e9 0%, #0284c7 100%);
+    border: none;
+    font-family: 'Outfit', sans-serif;
+    font-weight: 600;
+    box-shadow: 0 4px 6px -1px rgba(14, 165, 233, 0.3);
+    transition: all 0.2s;
+}
+
+button[kind="primary"]:hover {
+    box-shadow: 0 10px 15px -3px rgba(14, 165, 233, 0.5);
+    transform: translateY(-1px);
+}
+
+/* Expander */
+.streamlit-expanderHeader {
+    background-color: rgba(30, 41, 59, 0.4);
+    border-radius: 8px;
+    border: 1px solid rgba(255, 255, 255, 0.05);
+    font-family: 'Outfit', sans-serif;
+    font-weight: 500;
 }
 
 /* Custom Scrollbar */
 ::-webkit-scrollbar {
-    width: 6px;
-    height: 6px;
+    width: 8px;
+    height: 8px;
 }
 
 ::-webkit-scrollbar-track {
-    background: rgba(255, 255, 255, 0.02);
+    background: rgba(15, 23, 42, 1);
 }
 
 ::-webkit-scrollbar-thumb {
-    background: #475569;
-    border-radius: 3px;
+    background: #334155;
+    border-radius: 4px;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-    background: #64748b;
+    background: #475569;
 }

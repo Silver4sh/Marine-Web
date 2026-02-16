@@ -1,17 +1,24 @@
-<div class="vessel-card" style="background: {bg_color}; border: 1px solid {border_color}; border-radius: 12px; padding: 12px; margin-bottom: 8px; box-shadow: {box_shadow}; backdrop-filter: blur(8px); transition: all 0.3s ease;">
+<div class="vessel-card"
+    style="background: {bg_color}; border: 1px solid {border_color}; border-radius: 20px; padding: 16px; margin-bottom: 12px; box-shadow: {box_shadow}; backdrop-filter: blur(12px); transition: all 0.3s ease;">
     <div style="display: flex; justify-content: space-between; align-items: start; margin-bottom: 8px;">
         <div style="overflow: hidden; white-space: nowrap; text-overflow: ellipsis; max-width: 65%;">
-            <div style="font-weight: 700; color: #f8fafc; font-size: 0.9rem; margin-bottom: 2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; letter-spacing: 0.5px;">{v_id}</div>
-            <div style="font-size: 0.7rem; color: #cbd5e1;">{v_name}</div>
+            <div
+                style="font-weight: 700; color: var(--text-primary); font-family: var(--font-heading); font-size: 1rem; margin-bottom: 2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; letter-spacing: 0.5px;">
+                {v_id}</div>
+            <div style="font-size: 0.75rem; color: var(--text-secondary); font-family: var(--font-body);">{v_name}</div>
         </div>
         <div style="text-align: right; flex-shrink: 0;">
-            <span style="background: {status_bg}; color: {status_color}; padding: 3px 8px; border-radius: 6px; font-size: 0.6rem; font-weight: 700; border: 1px solid {status_color}40; letter-spacing: 0.5px;">{status_text}</span>
+            <span
+                style="background: {status_bg}; color: {status_color}; padding: 4px 10px; border-radius: 50px; font-size: 0.7rem; font-weight: 700; border: 1px solid {status_color}40; letter-spacing: 0.5px; font-family: var(--font-heading);">{status_text}</span>
         </div>
     </div>
-    <div style="display: flex; justify-content: space-between; align-items: center; background: rgba(0,0,0,0.2); padding: 6px 10px; border-radius: 8px;">
-        <div style="display: flex; align-items: center; gap: 6px;">
-            <span style="font-size: 0.8rem;">🚀</span>
-            <span style="font-size: 0.8rem; color: #e2e8f0; font-family: monospace; font-weight: 600;">{v_speed} kn</span>
+    <div
+        style="display: flex; justify-content: space-between; align-items: center; background: rgba(0,0,0,0.2); padding: 8px 12px; border-radius: 12px;">
+        <div style="display: flex; align-items: center; gap: 8px;">
+            <span style="font-size: 0.9rem;">🚀</span>
+            <span
+                style="font-size: 0.9rem; color: var(--text-primary); font-family: var(--font-mono); font-weight: 600;">{v_speed}
+                kn</span>
         </div>
     </div>
 </div>

@@ -1,4 +1,5 @@
 from core.utils import get_status_color, create_google_arrow_icon
+import numpy as np
 from core.database import get_vessel_position
 from core.config import inject_custom_css
 from folium.plugins import TimestampedGeoJson, MarkerCluster, HeatMap
@@ -12,12 +13,85 @@ def add_history_path_to_map(m, path_df, fill_color, v_id_str, show_timelapse=Fal
     if path_df.empty: return
     
     # 2. Marker Akhir (Last Position) - Static
+    # 2. Marker Akhir (Last Position) - Static
     last_row = path_df.iloc[0]
+    
+    # 2b. Garis Histori (Static Track Line)
+    # Ensure points are ordered by time (ascending) for the line to be drawn correctly
+    path_sorted = path_df.sort_values("created_at")
+    path_points = path_sorted[['latitude', 'longitude']].values.tolist()
+    
+    folium.PolyLine(
+        path_points,
+        color=fill_color,
+        weight=3,
+        opacity=0.7,
+        tooltip=f"Jalur {v_id_str}"
+    ).add_to(m)
+
     folium.Marker(
         [last_row['latitude'], last_row['longitude']],
         icon=create_google_arrow_icon(last_row.get('heading', 0), fill_color),
         popup=f"Posisi Terakhir: {last_row['created_at']}"
     ).add_to(m)
+
+    if show_timelapse and len(path_df) > 1:
+        # --- Smooth Animation Logic ---
+        # Interpolate points to create a smooth path
+        path_df = path_df.sort_values("created_at") # Ensure sorted by time
+        
+        features = []
+        for i in range(len(path_df) - 1):
+            start = path_df.iloc[i]
+            end = path_df.iloc[i+1]
+            
+            # Create reduced number of interpolated steps for performance, but enough for smoothness
+            # Calculate distance to determine steps? Or just fixed steps.
+            # Let's use fixed steps for simplicity first, or time based.
+            # Using fixed steps per segment (e.g., 10 steps)
+            steps = 10 
+            
+            lats = np.linspace(start['latitude'], end['latitude'], steps)
+            lons = np.linspace(start['longitude'], end['longitude'], steps)
+            
+            # Simple linear time interpolation
+            start_time = start['created_at'].timestamp() * 1000 # ms
+            end_time = end['created_at'].timestamp() * 1000 # ms
+            times = np.linspace(start_time, end_time, steps)
+            
+            for j in range(steps):
+                feature = {
+                    'type': 'Feature',
+                    'geometry': {
+                        'type': 'Point',
+                        'coordinates': [lons[j], lats[j]], 
+                    },
+                    'properties': {
+                        'time': int(times[j]),
+                        'style': {'color': fill_color},
+                        'icon': 'circle',
+                        'iconstyle': {
+                            'fillColor': fill_color,
+                            'fillOpacity': 1,
+                            'stroke': 'true',
+                            'radius': 5
+                        }
+                    }
+                }
+                features.append(feature)
+                
+        TimestampedGeoJson(
+            {'type': 'FeatureCollection', 'features': features},
+            period='PT1S',
+            duration='PT1M', # Trail duration
+            add_last_point=False,
+            auto_play=True,
+            loop=False,
+            max_speed=1,
+            loop_button=True,
+            date_options='YYYY/MM/DD HH:mm:ss',
+            time_slider_drag_update=True
+        ).add_to(m)
 
 def render_map_content():
     st.title("🗺️ Peta Posisi Kapal")
@@ -44,7 +118,7 @@ def render_map_content():
     
     with c_left:
         from core.utils import render_vessel_list_column
-        render_vessel_list_column("Maintenance", maint_df, "🛠️")
+        render_vessel_list_column("Active", active_df, "⚓")
 
         
     with c_center:
@@ -124,7 +198,7 @@ def render_map_content():
 
     with c_right:
         from core.utils import render_vessel_list_column
-        render_vessel_list_column("Active", active_df, "⚓")
+        render_vessel_list_column("Maintenance", maint_df, "🛠️")
 
 def page_heatmap(df, indikator):
     if df.empty or indikator not in df.columns: return
