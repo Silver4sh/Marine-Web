@@ -3,6 +3,7 @@ CREATE SCHEMA log 			AUTHORIZATION postgres;
 CREATE SCHEMA audit 		AUTHORIZATION postgres;
 CREATE SCHEMA rockworks 	AUTHORIZATION postgres;
 CREATE SCHEMA survey		AUTHORIZATION postgres;
+CREATE SCHEMA buoy		 	AUTHORIZATION postgres;
 
 --- Table
 -- al
@@ -58,49 +59,6 @@ CREATE TABLE operation.sites (
 	deleted_at 		timestamp,
 	CONSTRAINT sites_pkey 			PRIMARY KEY (id),
 	CONSTRAINT sites_id_site_key 	UNIQUE (code_site)
-);
-
-CREATE TABLE operation.buoys (
-	id 			serial4				NOT NULL,
-	id_site 	varchar(20) 		NOT NULL,
-	code_buoy 	varchar(20) 		NOT NULL,
-	longitude 	double precision 	NOT NULL,
-	latitude 	double precision 	NOT NULL,
-	status 		varchar(20),  -- Active, Inactinve, MTC
-	last_mtc 	timestamp,
-	created_at 	timestamp 			DEFAULT NOW(),
-	updated_at 	timestamp,
-	deleted_at 	timestamp,
-	CONSTRAINT buoys_pkey 			PRIMARY KEY (id),
-	CONSTRAINT buoys_id_buoy_key 	UNIQUE (code_buoy),
-	CONSTRAINT buoys_id_site_fkey 	FOREIGN KEY (id_site) REFERENCES operation.sites(code_site) ON UPDATE CASCADE ON DELETE CASCADE
-);
-
-CREATE TABLE operation.buoy_sensor_histories (
-	id 			serial4		NOT NULL,
-	id_buoy 	varchar(20) NOT NULL,
-	salinitas 	int4,
-	turbidity 	int4,
-	current 	int4,
-	oxygen 		int4,
-	tide 		int4,
-	density 	int4,
-	created_at 	timestamp 	DEFAULT NOW(),
-	CONSTRAINT buoy_sensor_histories_pkey 			PRIMARY KEY (id),
-	CONSTRAINT buoy_sensor_histories_id_site_fkey 	FOREIGN KEY (id_buoy) REFERENCES operation.buoys(code_buoy) ON UPDATE CASCADE ON DELETE CASCADE
-);
-
-CREATE TABLE operation.buoy_mtc_histories (
-	id				serial4		NOT NULL,
-	id_buoy			varchar(20)	NOT NULL,
-	start_date		timestamp	NOT NULL,
-	end_date		timestamp	NOT NULL,
-	note			text,
-	created_at		timestamp	NOT NULL,
-	updated_at		timestamp,
-	deleted_at		timestamp,
-	CONSTRAINT buoy_mtc_histories_pkey			PRIMARY KEY (id),
-	CONSTRAINT buoy_mtc_histories_id_buoy_fkey	FOREIGN KEY (id_buoy) REFERENCES operation.buoys(code_buoy) ON UPDATE CASCADE ON DELETE CASCADE
 );
 
 CREATE TABLE operation.users (
@@ -166,7 +124,7 @@ CREATE TABLE operation.orders (
 	destination		 		varchar(20) 		NOT NULL,
 	destination_longitude	double precision 	NOT NULL,
 	destination_latitude 	double precision 	NOT NULL,
-	status 					varchar(20), -- Open, On Progress, On Payment, Complited
+	status 					varchar(20), -- Open, On Progress, On Payment, Completed
 	created_at 				timestamp 			DEFAULT NOW(),
 	updated_at 				timestamp,
 	deleted_at 				timestamp,
@@ -184,7 +142,7 @@ CREATE TABLE operation.payments (
 	total_amount 	numeric(12,2) 	NOT NULL,
 	payment_date 	timestamp		NOT NULL,
 	payment_number 	varchar(20) 	NOT NULL,
-	status 			varchar(20) 	NOT NULL, -- Hold, Complited, Failed
+	status 			varchar(20) 	NOT NULL, -- Hold, Completed, Failed
 	created_at 		timestamp 		DEFAULT NOW(),
 	updated_at 		timestamp,
 	CONSTRAINT payment_pkey 				PRIMARY KEY (id),
@@ -261,7 +219,7 @@ CREATE TABLE operation.order_details (
 	code_task 		varchar(20) NOT NULL,
 	sand_quantity 	int4,
 	clay_quantity 	int4,
-	status			varchar(20),  -- Open, On Progres, Deliver, Complited
+	status			varchar(20),  -- Open, On Progres, Deliver, Completed
 	created_at 		timestamp 	DEFAULT NOW(),
 	updated_at 		timestamp,
 	CONSTRAINT order_details_pkey 			PRIMARY KEY (id),
@@ -286,6 +244,7 @@ CREATE TABLE operation.vessel_crews (
 
 CREATE TABLE operation.vessel_activities (
 	id				serial4			NOT NULL,
+	code_activity varchar(20)		NOT NULL,
 	id_vessel		varchar(20)		NOT NULL,
 	id_order		varchar(20),
 	id_task			varchar(20),
@@ -298,16 +257,16 @@ CREATE TABLE operation.vessel_activities (
 	updated_at		timestamp,
 	deleted_at		timestamp,
 	CONSTRAINT vessel_activities_pkey			PRIMARY KEY(id),
+	CONSTRAINT vessel_activities_code_activity_key UNIQUE (code_activity),
 	CONSTRAINT vessel_activities_id_vessel_fkey	FOREIGN KEY (id_vessel) REFERENCES operation.vessels(code_vessel) ON UPDATE CASCADE ON DELETE CASCADE,
 	CONSTRAINT vessel_activities_id_order_fkey 	FOREIGN KEY (id_order) 	REFERENCES operation.orders(code_order) ON UPDATE CASCADE ON DELETE CASCADE,
 	CONSTRAINT vessel_activities_id_task_fkey 	FOREIGN KEY (id_task) 	REFERENCES operation.order_details(code_task) ON UPDATE CASCADE ON DELETE CASCADE
-
 );
 
 CREATE TABLE operation.vessel_positions (
 	id 				serial4 			NOT NULL,
 	id_vessel		varchar(20)			NOT NULL,
-	seq_activity	varchar(20)			NOT NULL,
+	id_activity		varchar(20)			NOT NULL,
 	longitude 		double precision 	NOT NULL,
 	latitude		double precision 	NOT NULL,
 	speed 			int4,
@@ -316,9 +275,23 @@ CREATE TABLE operation.vessel_positions (
 	created_at 		timestamp 			DEFAULT NOW(),
 	CONSTRAINT vessel_positions_pkey 				PRIMARY KEY (id),
 	CONSTRAINT vessel_positions_id_vessel_fkey 		FOREIGN KEY (id_vessel) REFERENCES operation.vessels(code_vessel) ON UPDATE CASCADE ON DELETE CASCADE,
-	CONSTRAINT vessel_positions_id_activity_fkey 	FOREIGN KEY (seq_activity) 	REFERENCES operation.vessel_activities(seq_activity) ON UPDATE CASCADE ON DELETE CASCADE
+	CONSTRAINT vessel_positions_id_activity_fkey 	FOREIGN KEY (id_activity) 	REFERENCES operation.vessel_activities(code_activity) ON UPDATE CASCADE ON DELETE CASCADE
 );
 
+CREATE TABLE operation.user_managements (
+	id			serial4			NOT NULL,
+	id_user		varchar(20)		NOT NULL,
+	password	varchar(20)		NOT NULL,
+	status		varchar(20)		NOT NULL, -- Active, Inactive
+	last_login	timestamp,
+	created_at	timestamp 		DEFAULT NOW(),
+	updated_at	timestamp,
+	deleted_at	timestamp,
+	CONSTRAINT user_managements_pkey			PRIMARY KEY (id),
+	CONSTRAINT user_managements_id_user_fkey	FOREIGN KEY (id_user) REFERENCES operation.users(code_user) ON UPDATE CASCADE ON DELETE CASCADE
+);
+
+--audit
 CREATE TABLE audit.audit_logs (
   	id 			serial4 		NOT NULL,
   	action 		varchar(20) 	NOT NULL,
@@ -334,17 +307,48 @@ CREATE TABLE audit.audit_logs (
 
 CREATE TABLE audit.audit_logs_default PARTITION OF audit.audit_logs DEFAULT; -- Default partition for unmatched dates
 
-CREATE TABLE operation.user_managements (
-	id			serial4			NOT NULL,
-	id_user		varchar(20)		NOT NULL,
-	password	varchar(20)		NOT NULL,
-	status		varchar(20)		NOT NULL, -- Active, Inactive
-	last_login	timestamp,
-	created_at	timestamp 		DEFAULT NOW(),
-	updated_at	timestamp,
-	deleted_at	timestamp,
-	CONSTRAINT user_managements_pkey			PRIMARY KEY (id),
-	CONSTRAINT user_managements_id_user_fkey	FOREIGN KEY (id_user) REFERENCES operation.users(code_user) ON UPDATE CASCADE ON DELETE CASCADE
+-- buoy
+CREATE TABLE buoy.buoys (
+	id 			serial4				NOT NULL,
+	id_site 	varchar(20) 		NOT NULL,
+	code_buoy 	varchar(20) 		NOT NULL,
+	longitude 	double precision 	NOT NULL,
+	latitude 	double precision 	NOT NULL,
+	status 		varchar(20),  -- Active, Inactive, MTC
+	last_mtc 	timestamp,
+	created_at 	timestamp 			DEFAULT NOW(),
+	updated_at 	timestamp,
+	deleted_at 	timestamp,
+	CONSTRAINT buoys_pkey 			PRIMARY KEY (id),
+	CONSTRAINT buoys_id_buoy_key 	UNIQUE (code_buoy),
+	CONSTRAINT buoys_id_site_fkey 	FOREIGN KEY (id_site) REFERENCES operation.sites(code_site) ON UPDATE CASCADE ON DELETE CASCADE
+);
+
+CREATE TABLE buoy.buoy_sensor_histories (
+	id 			serial4		NOT NULL,
+	id_buoy 	varchar(20) NOT NULL,
+	salinitas 	int4,
+	turbidity 	int4,
+	current 	int4,
+	oxygen 		int4,
+	tide 		int4,
+	density 	int4,
+	created_at 	timestamp 	DEFAULT NOW(),
+	CONSTRAINT buoy_sensor_histories_pkey 			PRIMARY KEY (id),
+	CONSTRAINT buoy_sensor_histories_id_site_fkey 	FOREIGN KEY (id_buoy) REFERENCES buoy.buoys(code_buoy) ON UPDATE CASCADE ON DELETE CASCADE
+);
+
+CREATE TABLE buoy.buoy_mtc_histories (
+	id				serial4		NOT NULL,
+	id_buoy			varchar(20)	NOT NULL,
+	start_date		timestamp	NOT NULL,
+	end_date		timestamp	NOT NULL,
+	note			text,
+	created_at		timestamp	NOT NULL,
+	updated_at		timestamp,
+	deleted_at		timestamp,
+	CONSTRAINT buoy_mtc_histories_pkey			PRIMARY KEY (id),
+	CONSTRAINT buoy_mtc_histories_id_buoy_fkey	FOREIGN KEY (id_buoy) REFERENCES buoy.buoys(code_buoy) ON UPDATE CASCADE ON DELETE CASCADE
 );
 
 -- log
@@ -1303,9 +1307,9 @@ CREATE TABLE survey.daily_report_survey_activity (
 	comment			varchar(255) 	NOT NULL,
 	CONSTRAINT survey_daily_report_survey_activity_pk 			PRIMARY KEY (id),
 	CONSTRAINT survey_daily_report_survey_activity_key 			UNIQUE (code_report),
-	CONSTRAINT survey_daily_report_survey_activity_fk_vessel 	FOREIGN KEY (id_vessel) REFERENCES operation.vessel(id_vessel),
-	CONSTRAINT survey_daily_report_survey_activity_fk_user 		FOREIGN KEY (id_user) REFERENCES operation.user(id_user),
-	CONSTRAINT survey_daily_report_survey_activity_fk_site 		FOREIGN KEY (id_site) REFERENCES operation.site(id_site)
+	CONSTRAINT survey_daily_report_survey_activity_fk_vessel 	FOREIGN KEY (id_vessel) REFERENCES operation.vessels(code_vessel),
+	CONSTRAINT survey_daily_report_survey_activity_fk_user 		FOREIGN KEY (id_user) REFERENCES operation.users(code_user),
+	CONSTRAINT survey_daily_report_survey_activity_fk_site 		FOREIGN KEY (id_site) REFERENCES operation.sites(code_site)
 );
 
 CREATE TABLE survey.daily_report_survey_activity_details (
@@ -1353,9 +1357,8 @@ CREATE TABLE survey.daily_report_vibrocore (
 	comment					varchar(255) 	NOT NULL,
 	CONSTRAINT survey_daily_report_vibrocore_pk			PRIMARY KEY (id),
 	CONSTRAINT survey_daily_report_vibrocore_key		UNIQUE (code_report),
-	CONSTRAINT survey_daily_report_vibrocore_fk_site	FOREIGN KEY (id_site) REFERENCES operation.site(id_site),
-	CONSTRAINT survey_daily_report_vibrocore_fk_vessel	FOREIGN KEY (id_vessel) REFERENCES operation.vessel(id_vessel),
-	CONSTRAINT survey_daily_report_vibrocore_fk_sample	FOREIGN KEY (id_sample) REFERENCES operation.sample(id_sample)
+	CONSTRAINT survey_daily_report_vibrocore_fk_site	FOREIGN KEY (id_site) REFERENCES operation.sites(code_site),
+	CONSTRAINT survey_daily_report_vibrocore_fk_vessel	FOREIGN KEY (id_vessel) REFERENCES operation.vessels(code_vessel)
 );
 
 CREATE TABLE survey.daily_report_vibrocore_detail (
@@ -1383,8 +1386,10 @@ CREATE INDEX idx_vibrocore_log_search 					ON log.vibrocore_logs 					USING btre
 CREATE INDEX idx_vibrocore_logs_site 					ON log.vibrocore_logs 					USING btree (id_site);
 CREATE INDEX idx_vibrocore_details_litho 				ON log.vibrocore_log_details 			USING btree (code_lithology);
 CREATE INDEX idx_sample_details_litho 					ON log.sample_log_details 				USING btree (id_lithology);
-CREATE INDEX idx_vessel_activities_search 				ON operation.vessel_activities 			USING btree (id_vessel, id_order, id_task, seq_activity);
-CREATE INDEX idx_vessel_positions_search 				ON operation.vessel_positions 			USING btree (id_vessel, seq_activity);
+
+--operation
+CREATE INDEX idx_vessel_activities_search 				ON operation.vessel_activities 			USING btree (id_vessel, id_order, id_task, code_activity);
+CREATE INDEX idx_vessel_positions_search 				ON operation.vessel_positions 			USING btree (id_vessel, id_activity);
 CREATE INDEX idx_client_deposit_histories_search 		ON operation.client_deposit_histories 	USING btree (id_client);
 CREATE INDEX idx_payment_details_search 				ON operation.payment_details 				USING btree (id_payment, doc_no);
 CREATE INDEX idx_payment_search 						ON operation.payments 					USING btree (id_client, status);
@@ -1392,7 +1397,10 @@ CREATE INDEX idx_order_search 							ON operation.orders 						USING btree (id_c
 CREATE INDEX idx_partner_search 						ON operation.partners 					USING btree (status);
 CREATE INDEX idx_clients_region_search 					ON operation.clients 						USING btree (region, status);
 CREATE INDEX idx_users_search 							ON operation.users 						USING btree (organs, role);
-CREATE INDEX idx_buoy_sensor_histories_search 			ON operation.buoy_sensor_histories 		USING btree (created_at);
+
+--buoy
+CREATE INDEX idx_buoy_sensor_histories_search 			ON buoy.buoy_sensor_histories 		USING btree (created_at);
+CREATE INDEX idx_buoy_mtc_histories_search 				ON buoy.buoy_mtc_histories 			USING btree (id_buoy, start_date);
 
 
 -- Audit
@@ -1510,19 +1518,17 @@ CREATE INDEX idx_daily_report_survey_activity_search 			ON survey.daily_report_s
 CREATE INDEX idx_daily_report_survey_activity_site 				ON survey.daily_report_survey_activity 				USING btree (id_site);
 CREATE INDEX idx_daily_report_survey_activity_vessel 			ON survey.daily_report_survey_activity 				USING btree (id_vessel);
 CREATE INDEX idx_daily_report_survey_activity_user 				ON survey.daily_report_survey_activity 				USING btree (id_user);
-
 CREATE INDEX idx_daily_report_survey_activity_details_search 	ON survey.daily_report_survey_activity_details 		USING btree (id_report);
-
 CREATE INDEX idx_daily_report_survey_activity_weather_search 	ON survey.daily_report_survey_activity_weather 		USING btree (id_report);
-
 CREATE INDEX idx_daily_report_vibrocore_search 					ON survey.daily_report_vibrocore 					USING btree (code_report);
 CREATE INDEX idx_daily_report_vibrocore_site 					ON survey.daily_report_vibrocore 					USING btree (id_site);
 CREATE INDEX idx_daily_report_vibrocore_vessel 					ON survey.daily_report_vibrocore 					USING btree (id_vessel);
-
 CREATE INDEX idx_daily_report_vibrocore_detail_search 			ON survey.daily_report_vibrocore_detail 			USING btree (id_report); 
 
--- Optimization Indexes for Foreign Keys (Fast Joins)
-CREATE INDEX idx_buoys_site 					ON operation.buoys (id_site);
+-- buoy
+CREATE INDEX idx_buoys_site 					ON buoy.buoys (id_site);
+
+-- operation
 CREATE INDEX idx_clients_contact 				ON operation.clients (id_contact);
 CREATE INDEX idx_partners_contact 				ON operation.partners (id_contact);
 CREATE INDEX idx_vessels_partner 				ON operation.vessels (id_partner);
@@ -1531,11 +1537,11 @@ CREATE INDEX idx_order_details_vessel 			ON operation.order_details (id_vessel);
 CREATE INDEX idx_vessel_crews_vessel 			ON operation.vessel_crews (id_vessel);
 CREATE INDEX idx_vessel_crews_user 				ON operation.vessel_crews (id_user);
 
--- Auto-generation Sequences
+--- Sequence
+-- operation
 CREATE SEQUENCE operation.seq_contact_code;
 CREATE SEQUENCE operation.seq_methodpay_code;
 CREATE SEQUENCE operation.seq_site_code;
-CREATE SEQUENCE operation.seq_buoy_code;
 CREATE SEQUENCE operation.seq_user_code;
 CREATE SEQUENCE operation.seq_client_code;
 CREATE SEQUENCE operation.seq_partner_code;
@@ -1543,11 +1549,16 @@ CREATE SEQUENCE operation.seq_order_code;
 CREATE SEQUENCE operation.seq_payment_code;
 CREATE SEQUENCE operation.seq_vessel_code;
 CREATE SEQUENCE operation.seq_task_code;
+
+-- buoy
+CREATE SEQUENCE buoy.seq_buoy_code;
+
+-- log
 CREATE SEQUENCE log.seq_term_code;
 CREATE SEQUENCE log.seq_lithology_code;
 CREATE SEQUENCE log.seq_survey_code;
 
--- Auto-generation Function
+-- Function
 CREATE OR REPLACE FUNCTION operation.generate_code_auto()
 RETURNS TRIGGER AS $$
 DECLARE
@@ -1560,7 +1571,7 @@ BEGIN
     IF TG_TABLE_NAME = 'contacts' THEN prefix := 'CT'; seq_name := 'operation.seq_contact_code';
     ELSIF TG_TABLE_NAME = 'method_payments' THEN prefix := 'MP'; seq_name := 'operation.seq_methodpay_code';
     ELSIF TG_TABLE_NAME = 'sites' THEN prefix := 'ST'; seq_name := 'operation.seq_site_code';
-    ELSIF TG_TABLE_NAME = 'buoys' THEN prefix := 'BY'; seq_name := 'operation.seq_buoy_code';
+    ELSIF TG_TABLE_NAME = 'buoys' THEN prefix := 'BY'; seq_name := 'buoy.seq_buoy_code';
     ELSIF TG_TABLE_NAME = 'users' THEN prefix := 'USR'; seq_name := 'operation.seq_user_code';
     ELSIF TG_TABLE_NAME = 'clients' THEN prefix := 'CL'; seq_name := 'operation.seq_client_code';
     ELSIF TG_TABLE_NAME = 'partners' THEN prefix := 'PT'; seq_name := 'operation.seq_partner_code';
@@ -1606,7 +1617,7 @@ $$ LANGUAGE plpgsql;
 CREATE TRIGGER trg_generate_code_contacts BEFORE INSERT ON operation.contacts FOR EACH ROW WHEN (NEW.code_contact IS NULL) EXECUTE FUNCTION operation.generate_code_auto();
 CREATE TRIGGER trg_generate_code_methodpay BEFORE INSERT ON operation.method_payments FOR EACH ROW WHEN (NEW.code_methodpay IS NULL) EXECUTE FUNCTION operation.generate_code_auto();
 CREATE TRIGGER trg_generate_code_sites BEFORE INSERT ON operation.sites FOR EACH ROW WHEN (NEW.code_site IS NULL) EXECUTE FUNCTION operation.generate_code_auto();
-CREATE TRIGGER trg_generate_code_buoys BEFORE INSERT ON operation.buoys FOR EACH ROW WHEN (NEW.code_buoy IS NULL) EXECUTE FUNCTION operation.generate_code_auto();
+CREATE TRIGGER trg_generate_code_buoys BEFORE INSERT ON buoy.buoys FOR EACH ROW WHEN (NEW.code_buoy IS NULL) EXECUTE FUNCTION operation.generate_code_auto();
 CREATE TRIGGER trg_generate_code_users BEFORE INSERT ON operation.users FOR EACH ROW WHEN (NEW.code_user IS NULL) EXECUTE FUNCTION operation.generate_code_auto();
 CREATE TRIGGER trg_generate_code_clients BEFORE INSERT ON operation.clients FOR EACH ROW WHEN (NEW.code_client IS NULL) EXECUTE FUNCTION operation.generate_code_auto();
 CREATE TRIGGER trg_generate_code_partners BEFORE INSERT ON operation.partners FOR EACH ROW WHEN (NEW.code_partner IS NULL) EXECUTE FUNCTION operation.generate_code_auto();
