@@ -1,0 +1,121 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="id">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}MarineOS Dashboard{% endblock %}</title>
+
+    <!-- CSS -->
+    <link rel="stylesheet" href="{% static 'dashboard/css/style.css' %}">
+
+    <!-- Icons (Phosphor) -->
+    <script src="https://unpkg.com/@phosphor-icons/web"></script>
+
+    <!-- HTMX -->
+    <script src="https://unpkg.com/htmx.org@1.9.10"></script>
+
+    <!-- Plotly -->
+    <script src="https://cdn.plot.ly/plotly-2.27.0.min.js"></script>
+
+    {% block extra_head %}{% endblock %}
+</head>
+
+<body>
+
+    <div class="app-container">
+        <!-- Sidebar -->
+        <aside class="sidebar">
+            <div class="sidebar-header">
+                <div class="brand">
+                    <i class="ph-fill ph-waves"></i>
+                    <span class="brand-text">MarineOS</span>
+                </div>
+                <button class="btn-icon sidebar-toggle" onclick="toggleSidebar()">
+                    <i class="ph ph-list"></i>
+                </button>
+            </div>
+
+            <nav class="nav-menu">
+                <a href="{% url 'dashboard' %}"
+                    class="nav-item {% if request.resolver_match.url_name == 'dashboard' %}active{% endif %}"
+                    data-title="Monitoring">
+                    <i class="ph ph-monitor"></i>
+                    <span class="nav-text">Monitoring</span>
+                </a>
+                <a href="#" class="nav-item" data-title="Peta Kapal">
+                    <i class="ph ph-map-trifold"></i>
+                    <span class="nav-text">Peta Kapal</span>
+                </a>
+                <a href="{% url 'analytics' %}"
+                    class="nav-item {% if request.resolver_match.url_name == 'analytics' %}active{% endif %}"
+                    data-title="Analytics">
+                    <i class="ph ph-chart-line-up"></i>
+                    <span class="nav-text">Analytics</span>
+                </a>
+                <a href="{% url 'environment' %}" class="nav-item" data-title="Lingkungan">
+                    <i class="ph ph-drop"></i>
+                    <span class="nav-text">Lingkungan</span>
+                </a>
+                <a href="{% url 'survey_list' %}" class="nav-item" data-title="Survey">
+                    <i class="ph ph-clipboard-text"></i>
+                    <span class="nav-text">Survey</span>
+                </a>
+                <a href="{% url 'clients' %}" class="nav-item" data-title="Clients">
+                    <i class="ph ph-users"></i>
+                    <span class="nav-text">Clients</span>
+                </a>
+                <div style="flex:1"></div>
+                <a href="{% url 'admin_panel' %}" class="nav-item" data-title="Settings & Admin">
+                    <i class="ph ph-gear"></i>
+                    <span class="nav-text">Settings & Admin</span>
+                </a>
+                <a href="{% url 'logout' %}" class="nav-item" style="color: var(--danger)" data-title="Logout">
+                    <i class="ph ph-sign-out"></i>
+                    <span class="nav-text">Logout</span>
+                </a>
+            </nav>
+        </aside>
+
+        <!-- Main Content -->
+        <main class="main-content">
+            <!-- Topbar for Mobile/Notifications -->
+            <div class="topbar">
+                <div style="flex:1"></div> <!-- Spacer to push notif to right -->
+
+                <div style="position:relative;">
+                    <button class="btn-icon" hx-get="{% url 'notifications' %}" hx-target="#notif-panel"
+                        hx-trigger="click" onclick="toggleNotif()">
+                        <i class="ph ph-bell" style="font-size:1.2rem;"></i>
+                    </button>
+                    <!-- Notification Panel -->
+                    <div id="notif-panel-container"
+                        style="display:none; position:absolute; right:0; top:3rem; width:300px; background:#0f172a; border:1px solid #334155; border-radius:12px; z-index:100; box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.5);">
+                        <div style="padding:1rem; border-bottom:1px solid #334155;"><strong>Notifikasi</strong></div>
+                        <div id="notif-panel">Loading...</div>
+                    </div>
+                </div>
+            </div>
+
+            <script>
+                function toggleNotif() {
+                    const el = document.getElementById('notif-panel-container');
+                    el.style.display = el.style.display === 'none' ? 'block' : 'none';
+                }
+
+                function toggleSidebar() {
+                    document.body.classList.toggle('sidebar-collapsed');
+                }
+            </script>
+
+            {% block content %}
+            <!-- Content goes here -->
+            {% endblock %}
+        </main>
+    </div>
+
+    {% block scripts %}{% endblock %}
+</body>
+
+</html>

@@ -1,0 +1,181 @@
+{% extends 'dashboard/base.html' %}
+
+{% block extra_head %}
+<!-- Leaflet CSS & JS -->
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+    integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="" />
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
+    integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
+<style>
+    #map {
+        height: 100%;
+        width: 100%;
+        border-radius: 12px;
+        z-index: 1;
+    }
+
+    .leaflet-popup-content-wrapper {
+        background: rgba(15, 23, 42, 0.9);
+        backdrop-filter: blur(10px);
+        color: white;
+        border: 1px solid var(--primary);
+        border-radius: 12px;
+    }
+
+    .leaflet-popup-tip {
+        background: rgba(15, 23, 42, 0.9);
+    }
+</style>
+{% endblock %}
+
+{% block title %}Monitoring - MarineOS{% endblock %}
+
+{% block content %}
+<div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem;">
+    <div>
+        <h1 class="text-gradient">Operational Overview</h1>
+        <p>Real-time monitoring of fleet and port operations.</p>
+    </div>
+    <div class="stStatusWidget">
+        <!-- Placeholder for clock or status -->
+        <div style="padding: 0.5rem 1rem; font-weight: 600; display: flex; align-items: center; gap: 0.5rem;">
+            <div
+                style="width: 8px; height: 8px; background-color: var(--success); border-radius: 50%; box-shadow: 0 0 10px var(--success);">
+            </div>
+            SYSTEM ONLINE
+        </div>
+    </div>
+</div>
+
+<!-- Metric Grid -->
+<div class="metric-grid">
+    <div class="metric-card">
+        <div class="metric-label">Total Vessels</div>
+        <div class="metric-value">{{ total_vessels }}</div>
+        <div style="color: var(--success); font-size: 0.85rem;">
+            <i class="ph-bold ph-trend-up"></i> {{ active_vessels }} Active
+        </div>
+    </div>
+
+    <div class="metric-card">
+        <div class="metric-label">Total Orders</div>
+        <div class="metric-value">{{ total_orders }}</div>
+        <div style="color: var(--warning); font-size: 0.85rem;">
+            <i class="ph-bold ph-hourglass"></i> {{ active_orders }} In Progress
+        </div>
+    </div>
+
+    <div class="metric-card">
+        <div class="metric-label">Active Sites</div>
+        <div class="metric-value">{{ total_sites }}</div>
+        <div style="color: var(--primary); font-size: 0.85rem;">
+            Operational
+        </div>
+    </div>
+
+    <div class="metric-card">
+        <div class="metric-label">System Health</div>
+        <div class="metric-value">98.5%</div>
+        <div style="color: var(--success); font-size: 0.85rem;">
+            Stable
+        </div>
+    </div>
+</div>
+
+<!-- Recent Activity & Map Placeholder -->
+<div style="display: grid; grid-template-columns: 2fr 1fr; gap: 1.5rem;">
+    <div class="card">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
+            <h3><i class="ph ph-map-pin"></i> Fleet & Site Distribution</h3>
+            <button class="btn-primary" style="padding: 0.4rem 1rem; font-size: 0.8rem;" onclick="location.reload()">
+                <i class="ph-bold ph-arrows-clockwise"></i> Refresh
+            </button>
+        </div>
+        <div style="height: 400px; background: rgba(0,0,0,0.2); border-radius: 12px; position: relative;">
+            <div id="map"></div>
+        </div>
+    </div>
+
+    <div class="card">
+        <h3><i class="ph ph-list-dashes"></i> Recent Activity</h3>
+        <div
+            style="display: flex; flex-direction: column; gap: 1rem; margin-top: 1rem; overflow-y: auto; max-height: 400px; padding-right: 5px;">
+            {% for log in recent_logs %}
+            <div
+                style="background: rgba(255,255,255,0.03); padding: 0.75rem; border-radius: 8px; border-left: 2px solid var(--primary);">
+                <div style="font-size: 0.9rem; font-weight: 600;">{{ log.action }} on {{ log.table_name }}</div>
+                <div style="font-size: 0.8rem; color: var(--text-secondary);">
+                    {{ log.changed_by }} &bull; {{ log.changed_at|timesince }} ago
+                </div>
+            </div>
+            {% empty %}
+            <div style="color: var(--text-secondary); text-align: center; padding: 2rem;">
+                No recent activity.
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        // Initialize Map (Centered on a generic location, e.g., Indonesia, will update with data)
+        var map = L.map('map').setView([-2.5489, 118.0149], 5);
+
+        // Dark Matter Tiles
+        L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
+            attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>',
+            subdomains: 'abcd',
+            maxZoom: 20
+        }).addTo(map);
+
+        // Custom Icons
+        var siteIcon = L.divIcon({
+            className: 'custom-div-icon',
+            html: "<div style='background-color:var(--primary); width:12px; height:12px; border-radius:50%; box-shadow:0 0 10px var(--primary); border:2px solid white;'></div>",
+            iconSize: [15, 15],
+            iconAnchor: [7, 7]
+        });
+
+        var buoyIcon = L.divIcon({
+            className: 'custom-div-icon',
+            html: "<div style='background-color:var(--warning); width:10px; height:10px; border-radius:50%; box-shadow:0 0 10px var(--warning); border:1px solid white;'></div>",
+            iconSize: [12, 12],
+            iconAnchor: [6, 6]
+        });
+
+        // Fetch Data
+        fetch('/api/map-data/')
+            .then(response => response.json())
+            .then(data => {
+                var bounds = L.latLngBounds();
+
+                // Plot Sites
+                data.sites.forEach(site => {
+                    if (site.latitude && site.longitude) {
+                        var marker = L.marker([site.latitude, site.longitude], { icon: siteIcon }).addTo(map);
+                        marker.bindPopup(`<b>${site.name}</b><br>Code: ${site.code_site}<br>Status: ${site.status}<br>Type: ${site.type}`);
+                        bounds.extend([site.latitude, site.longitude]);
+                    }
+                });
+
+                // Plot Buoys
+                data.buoys.forEach(buoy => {
+                    if (buoy.latitude && buoy.longitude) {
+                        var marker = L.marker([buoy.latitude, buoy.longitude], { icon: buoyIcon }).addTo(map);
+                        marker.bindPopup(`<b>Buoy: ${buoy.code_buoy}</b><br>Status: ${buoy.status}`);
+                        bounds.extend([buoy.latitude, buoy.longitude]);
+                    }
+                });
+
+                // Fit map to bounds if valid
+                if (bounds.isValid()) {
+                    map.fitBounds(bounds, { padding: [50, 50] });
+                }
+            })
+            .catch(error => console.error('Error loading map data:', error));
+    });
+</script>
+{% endblock %}

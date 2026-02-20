@@ -1,0 +1,331 @@
+{% extends 'dashboard/base.html' %}
+
+{% block title %}Clients - MarineOS{% endblock %}
+
+{% block extra_head %}
+<!-- Leaflet CSS -->
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+<style>
+    .Matrix-container {
+        background: rgba(15, 23, 42, 0.6);
+        border: 1px solid rgba(56, 189, 248, 0.2);
+        border-radius: 16px;
+        padding: 1.5rem;
+        margin-bottom: 2rem;
+        backdrop-filter: blur(10px);
+    }
+
+    .status-pill {
+        padding: 4px 12px;
+        border-radius: 20px;
+        font-size: 0.85rem;
+        font-weight: 500;
+    }
+
+    .status-High {
+        background: rgba(239, 68, 68, 0.1);
+        color: #ef4444;
+        border: 1px solid rgba(239, 68, 68, 0.2);
+    }
+
+    .status-Medium {
+        background: rgba(245, 158, 11, 0.1);
+        color: #f59e0b;
+        border: 1px solid rgba(245, 158, 11, 0.2);
+    }
+
+    .status-Low {
+        background: rgba(34, 197, 94, 0.1);
+        color: #22c55e;
+        border: 1px solid rgba(34, 197, 94, 0.2);
+    }
+
+    .nav-tabs {
+        display: flex;
+        gap: 1rem;
+        margin-bottom: 1.5rem;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    }
+
+    .nav-tab {
+        padding: 0.75rem 1.5rem;
+        background: transparent;
+        border: none;
+        color: var(--text-secondary);
+        cursor: pointer;
+        border-bottom: 2px solid transparent;
+        transition: all 0.3s ease;
+    }
+
+    .nav-tab.active {
+        color: var(--primary);
+        border-bottom-color: var(--primary);
+    }
+
+    .tab-content {
+        display: none;
+    }
+
+    .tab-content.active {
+        display: block;
+        animation: fadeIn 0.3s ease;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div style="margin-bottom: 2rem;">
+    <h1 class="text-gradient">Portofolio Klien Strategis</h1>
+    <p class="text-secondary">Analisis & Distribusi CRM Tingkat Lanjut</p>
+</div>
+
+<!-- AI Analyst -->
+{% if ai_insights %}
+<div class="grid-3" style="margin-bottom: 2rem;">
+    {% for insight in ai_insights %}
+    <div class="card text-glow">
+        <div style="display:flex; gap:10px; align-items:center;">
+            <i class="ph-duotone ph-brain" style="font-size:1.5rem; color:var(--primary);"></i>
+            <h4>{{ insight.title }}</h4>
+        </div>
+        <p style="font-size:0.9rem; margin-top:0.5rem; color:var(--text-secondary);">{{ insight.desc }}</p>
+    </div>
+    {% endfor %}
+</div>
+{% endif %}
+
+<!-- Metrics Row -->
+<div class="grid-4">
+    <div class="metric-card">
+        <div class="metric-title">Total Klien</div>
+        <div class="metric-value">{{ total_clients }}</div>
+        <div class="metric-delta positive">+3% MoM</div>
+    </div>
+    <div class="metric-card">
+        <div class="metric-title">Rata-rata Proyek</div>
+        <div class="metric-value">{{ avg_projects|floatformat:1 }}</div>
+        <div class="metric-delta" style="color:#fbbf24">Beban Operasional</div>
+    </div>
+    <div class="metric-card">
+        <div class="metric-title">Pipeline Premium</div>
+        <div class="metric-value">Rp {{ high_value_sum|floatformat:1 }}M</div>
+        <div class="metric-delta" style="color:#2dd4bf">Akun Utama</div>
+    </div>
+    <div class="metric-card">
+        <div class="metric-title">Risiko Churn</div>
+        <div class="metric-value">{{ at_risk_count }}</div>
+        <div class="metric-delta negative">Perlu Atensi</div>
+    </div>
+</div>
+
+<div style="margin-top: 2rem;">
+    <div class="nav-tabs">
+        <button class="nav-tab active" onclick="switchTab('matrix')">🚀 Matriks Nilai</button>
+        <button class="nav-tab" onclick="switchTab('map')">🌍 Kehadiran Geografis</button>
+        <button class="nav-tab" onclick="switchTab('list')">📋 Direktori</button>
+    </div>
+
+    <!-- Matrix Tab -->
+    <div id="matrix" class="tab-content active">
+        <div class="Matrix-container">
+            <div id="growthMatrix" style="width:100%; height:500px;"></div>
+        </div>
+        <div class="grid-2">
+            <div class="card">
+                <h4><i class="ph ph-lightbulb"></i> Audit Strategi</h4>
+                <ul style="margin-top:1rem; padding-left:1.5rem; color:var(--text-secondary);">
+                    <li><strong>Mitra Kunci:</strong> Klien dengan proyek aktif dan LTV tinggi.</li>
+                    <li><strong>Potensi Upsell:</strong> Klien dengan LTV tinggi tetapi sedikit proyek aktif.</li>
+                    <li><strong>Risiko:</strong> Klien dengan aktivitas rendah.</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+
+    <!-- Map Tab -->
+    <div id="map" class="tab-content">
+        <div class="card" style="padding:0; overflow:hidden;">
+            <div id="clientMap" style="height: 500px; width: 100%;"></div>
+        </div>
+    </div>
+
+    <!-- List Tab -->
+    <div id="list" class="tab-content">
+        <div class="card">
+            <div style="display:flex; justify-content:space-between; margin-bottom:1rem;">
+                <input type="text" id="clientSearch" class="form-input" placeholder="Cari Klien..." style="width:300px;"
+                    onkeyup="filterTable()">
+                <select id="clientSort" class="form-select" style="width:200px;" onchange="sortTable()">
+                    <option value="name">Nama (A-Z)</option>
+                    <option value="ltv">LTV (Tinggi-Rendah)</option>
+                    <option value="projects">Proyek (Tinggi-Rendah)</option>
+                </select>
+            </div>
+
+            <div style="overflow-x:auto;">
+                <table class="table" id="clientTable">
+                    <thead>
+                        <tr>
+                            <th>Nama Klien</th>
+                            <th>Industri</th>
+                            <th>Wilayah</th>
+                            <th>Proyek Aktif</th>
+                            <th>LTV (IDR)</th>
+                            <th>Risiko Churn</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for client in clients %}
+                        <tr>
+                            <td class="client-name">{{ client.name }}</td>
+                            <td>{{ client.industry }}</td>
+                            <td>{{ client.region }}</td>
+                            <td class="client-projects" data-val="{{ client.total_orders }}">{{ client.total_orders }}
+                            </td>
+                            <td class="client-ltv" data-val="{{ client.ltv }}">Rp {{ client.ltv|floatformat:0 }}</td>
+                            <td><span class="status-pill status-{{ client.churn_risk }}">{{ client.churn_risk }}</span>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% endblock %}
+
+{% block scripts %}
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script>
+    // Tab Switching
+    function switchTab(tabId) {
+        document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
+        document.querySelectorAll('.nav-tab').forEach(el => el.classList.remove('active'));
+
+        document.getElementById(tabId).classList.add('active');
+        event.target.classList.add('active');
+
+        // Resize visuals
+        if (tabId === 'matrix') Plotly.relayout('growthMatrix', { autosize: true });
+        if (tabId === 'map') setTimeout(() => map.invalidateSize(), 200);
+    }
+
+    // Data from Django
+    const clientsData = {{ clients_json| safe }};
+
+    // --- PLOTLY MATRIX ---
+    const trace = {
+        x: clientsData.map(c => c.total_orders),
+        y: clientsData.map(c => c.ltv),
+        text: clientsData.map(c => c.name),
+        mode: 'markers',
+        marker: {
+            size: clientsData.map(c => Math.max(10, Math.sqrt(c.ltv) / 1000)), // dynamic size
+            color: clientsData.map(c => {
+                if (c.churn_risk === 'Tinggi') return '#ef4444';
+                if (c.churn_risk === 'Menengah') return '#f59e0b';
+                return '#22c55e';
+            }),
+            opacity: 0.8
+        },
+        type: 'scatter'
+    };
+
+    const layout = {
+        title: { text: null },
+        paper_bgcolor: 'rgba(0,0,0,0)',
+        plot_bgcolor: 'rgba(0,0,0,0)',
+        font: { color: '#94a3b8', family: "'Outfit', sans-serif" },
+        xaxis: { title: 'Proyek Aktif', gridcolor: 'rgba(255,255,255,0.1)' },
+        yaxis: { title: 'Nilai Seumur Hidup (IDR)', gridcolor: 'rgba(255,255,255,0.1)' },
+        hovermode: 'closest'
+    };
+
+    Plotly.newPlot('growthMatrix', [trace], layout, { responsive: true, displayModeBar: false });
+
+    // --- LEAFLET MAP ---
+    const map = L.map('clientMap').setView([20, 10], 2);
+    L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
+        attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>'
+    }).addTo(map);
+
+    // Region Centers (Approx)
+    const regions = {
+        "Asia Pacific": [-2.5, 120], "Europe": [48, 10], "North America": [40, -100],
+        "Middle East": [25, 45], "SE Asia": [3, 101], "Africa": [0, 20], "South America": [-15, -60]
+    };
+
+    clientsData.forEach(c => {
+        let center = regions[c.region] || regions["Asia Pacific"];
+        // Add jitter
+        let lat = center[0] + (Math.random() - 0.5) * 10;
+        let lng = center[1] + (Math.random() - 0.5) * 10;
+
+        let color = '#38bdf8';
+        if (c.churn_risk === 'Tinggi') color = '#ef4444';
+
+        L.circleMarker([lat, lng], {
+            radius: 8,
+            fillColor: color,
+            color: "#fff",
+            weight: 1,
+            opacity: 1,
+            fillOpacity: 0.8
+        }).bindPopup(`<b>${c.name}</b><br>${c.industry}<br>LTV: Rp ${parseInt(c.ltv).toLocaleString()}`).addTo(map);
+    });
+
+    // --- TABLE SEARCH & SORT ---
+    function filterTable() {
+        let input = document.getElementById("clientSearch");
+        let filter = input.value.toUpperCase();
+        let table = document.getElementById("clientTable");
+        let tr = table.getElementsByTagName("tr");
+        for (let i = 1; i < tr.length; i++) {
+            let td = tr[i].getElementsByTagName("td")[0];
+            if (td) {
+                let txtValue = td.textContent || td.innerText;
+                if (txtValue.toUpperCase().indexOf(filter) > -1) {
+                    tr[i].style.display = "";
+                } else {
+                    tr[i].style.display = "none";
+                }
+            }
+        }
+    }
+
+    function sortTable() {
+        let table, rows, switching, i, x, y, shouldSwitch;
+        table = document.getElementById("clientTable");
+        switching = true;
+        let criteria = document.getElementById("clientSort").value;
+
+        while (switching) {
+            switching = false;
+            rows = table.rows;
+            for (i = 1; i < (rows.length - 1); i++) {
+                shouldSwitch = false;
+
+                if (criteria === 'name') {
+                    x = rows[i].getElementsByClassName("client-name")[0].textContent;
+                    y = rows[i + 1].getElementsByClassName("client-name")[0].textContent;
+                    if (x.toLowerCase() > y.toLowerCase()) { shouldSwitch = true; break; }
+                } else if (criteria === 'ltv') {
+                    x = parseFloat(rows[i].getElementsByClassName("client-ltv")[0].getAttribute('data-val'));
+                    y = parseFloat(rows[i + 1].getElementsByClassName("client-ltv")[0].getAttribute('data-val'));
+                    if (x < y) { shouldSwitch = true; break; }
+                } else if (criteria === 'projects') {
+                    x = parseFloat(rows[i].getElementsByClassName("client-projects")[0].getAttribute('data-val'));
+                    y = parseFloat(rows[i + 1].getElementsByClassName("client-projects")[0].getAttribute('data-val'));
+                    if (x < y) { shouldSwitch = true; break; }
+                }
+            }
+            if (shouldSwitch) {
+                rows[i].parentNode.insertBefore(rows[i + 1], rows[i]);
+                switching = true;
+            }
+        }
+    }
+</script>
+{% endblock %}

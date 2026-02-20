@@ -1,0 +1,218 @@
+{% extends 'dashboard/base.html' %}
+
+{% block title %}Environment - MarineOS{% endblock %}
+
+{% block content %}
+<div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem;">
+    <div>
+        <h1 class="text-gradient">Enviro Control</h1>
+        <p>Pemantauan kualitas air dan kesehatan lingkungan laut.</p>
+    </div>
+</div>
+
+<!-- Tabs -->
+<div class="tabs"
+    style="display: flex; gap: 1rem; margin-bottom: 1.5rem; border-bottom: 1px solid rgba(255,255,255,0.1);">
+    <button class="tab-btn active" onclick="openTab(event, 'heatmap')"><i class="ph ph-fire"></i> Grafik
+        Heatmap</button>
+    <button class="tab-btn" onclick="openTab(event, 'buoys')"><i class="ph ph-broadcast"></i> Pemantauan Buoy</button>
+</div>
+
+<!-- Tab Content: Heatmap -->
+<div id="heatmap" class="tab-content">
+    {% if ai_insights %}
+    <div style="background: linear-gradient(90deg, rgba(34, 197, 94, 0.1) 0%, rgba(15, 23, 42, 0) 100%); 
+                border: 1px solid rgba(34, 197, 94, 0.2); border-radius: 12px; padding: 16px; margin-bottom: 24px;">
+        <div style="display: flex; gap: 12px; align-items: start;">
+            <div style="font-size: 1.5rem;">🤖</div>
+            <div>
+                <div style="font-weight: 600; color: #dcfce7; margin-bottom: 4px;">{{ ai_insights.0.title }}</div>
+                <div style="color: #94a3b8; font-size: 0.95rem; line-height: 1.5;">{{ ai_insights.0.desc }}</div>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+
+    <div class="card">
+        <div style="display: flex; justify-content: space-between; margin-bottom: 1rem;">
+            <h3>Kualitas Air (7 Hari Terakhir)</h3>
+            <select id="paramSelect" class="form-select" style="width: 150px;" onchange="updateHeatmap()">
+                <option value="salinitas">Salinitas</option>
+                <option value="turbidity">Kekeruhan</option>
+                <option value="oxygen">Oksigen</option>
+                <option value="temp">Suhu</option>
+            </select>
+        </div>
+        <div id="env-heatmap" style="height: 400px;"></div>
+    </div>
+</div>
+
+<!-- Tab Content: Buoys -->
+<div id="buoys" class="tab-content" style="display: none;">
+    <!-- Buoy Metrics -->
+    <div class="metric-grid" style="grid-template-columns: repeat(3, 1fr); margin-bottom: 2rem;">
+        <div class="metric-card">
+            <div class="metric-label">Total Buoy</div>
+            <div class="metric-value">{{ total_buoys }}</div>
+        </div>
+        <div class="metric-card">
+            <div class="metric-label">Buoy Aktif</div>
+            <div class="metric-value">{{ active_buoys }}</div>
+            <div style="color: var(--success); font-size: 0.8rem;">Online</div>
+        </div>
+        <div class="metric-card">
+            <div class="metric-label">Dalam Perawatan</div>
+            <div class="metric-value">{{ maint_buoys }}</div>
+            <div style="color: var(--warning); font-size: 0.8rem;">Maintenance</div>
+        </div>
+    </div>
+
+    <!-- Buoy Grid -->
+    <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 1.5rem;">
+        {% for buoy in buoy_list %}
+        <div class="card"
+            style="padding: 1.25rem; border: 1px solid {% if buoy.status == 'Active' %}rgba(34, 197, 94, 0.3){% else %}rgba(245, 158, 11, 0.3){% endif %}; 
+                    background: {% if buoy.status == 'Active' %}linear-gradient(145deg, rgba(34, 197, 94, 0.05) 0%, rgba(15, 23, 42, 0.6) 100%){% else %}linear-gradient(145deg, rgba(245, 158, 11, 0.05) 0%, rgba(15, 23, 42, 0.6) 100%){% endif %};">
+            <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 1rem;">
+                <div>
+                    <div style="font-weight: 700; font-size: 1.1rem; color: #f8fafc;">{{ buoy.code_buoy }}</div>
+                    <div style="font-size: 0.85rem; color: #94a3b8; margin-top: 2px;">
+                        <i class="ph-fill ph-map-pin"></i> {{ buoy.location|default:"Lokasi ?" }}
+                    </div>
+                </div>
+                <div
+                    class="status-badge {% if buoy.status == 'Active' %}status-active{% else %}status-warning{% endif %}">
+                    {{ buoy.status }}
+                </div>
+            </div>
+
+            <div
+                style="display: flex; justify-content: space-between; align-items: center; margin-top: 1rem; padding-top: 1rem; border-top: 1px solid rgba(255,255,255,0.05);">
+                <div style="font-size: 0.8rem; color: #64748b;">
+                    <i class="ph-bold ph-battery-charging"></i> {{ buoy.battery }}
+                </div>
+                <div style="font-size: 0.8rem; color: #64748b;">
+                    <i class="ph-bold ph-clock"></i> {{ buoy.last_update|date:"d M H:i"|default:"-" }}
+                </div>
+            </div>
+
+            <button class="btn-primary"
+                style="width: 100%; margin-top: 1rem; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1);"
+                hx-get="{% url 'buoy_detail' buoy.code_buoy %}" hx-target="#modal-content" hx-trigger="click"
+                onclick="document.getElementById('modal').style.display='flex'">
+                Detail 🔍
+            </button>
+        </div>
+        {% endfor %}
+    </div>
+</div>
+
+<!-- Modal -->
+<div id="modal"
+    style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); z-index: 1000; justify-content: center; align-items: center; backdrop-filter: blur(5px);">
+    {% endfor %}
+    {% else %}
+    <div style="color: var(--text-secondary); font-style: italic;">All environmental parameters within normal ranges.
+    </div>
+    {% endif %}
+</div>
+</div>
+</div>
+</div>
+
+<!-- 3. Trend Chart -->
+<div class="card">
+    <h3 class="card-title"><i class="ph ph-trend-up"></i> Tren Kualitas Air (7 Hari Terakhir)</h3>
+    <div id="trend-chart" style="height: 350px;"></div>
+</div>
+
+<!-- 4. Buoy List -->
+<div class="card">
+    <h3 class="card-title"><i class="ph ph-list-dashes"></i> Daftar Buoy Aktif</h3>
+    <div class="table-responsive">
+        <table class="table">
+            <thead>
+                <tr>
+                    <th>ID Buoy</th>
+                    <th>Status</th>
+                    <th>Baterai</th>
+                    <th>Update Terakhir</th>
+                    <th>Aksi</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for buoy in buoy_list %}
+                <tr>
+                    <td><strong>{{ buoy.code_buoy }}</strong></td>
+                    <td>
+                        <span class="status-badge status-{{ buoy.status|lower }}">
+                            {{ buoy.status }}
+                        </span>
+                    </td>
+                    <td>
+                        <div style="display: flex; align-items: center; gap: 0.5rem;">
+                            <i class="ph-fill ph-battery-high" style="color: var(--success);"></i>
+                            {{ buoy.battery }}
+                        </div>
+                    </td>
+                    <td>{{ buoy.last_update|date:"d M H:i" }}</td>
+                    <td>
+                        <button class="btn-icon" onclick="openBuoyModal('{{ buoy.code_buoy }}')">
+                            <i class="ph ph-chart-line"></i>
+                        </button>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<!-- Buoy Detail Modal -->
+<div id="buoy-modal" class="modal">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h3>Detail Buoy</h3>
+            <button class="btn-icon" onclick="closeBuoyModal()"><i class="ph ph-x"></i></button>
+        </div>
+        <div id="buoy-modal-body">
+            Loading...
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<!-- Map Scripts -->
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script src="https://cdn.plot.ly/plotly-2.27.0.min.js"></script>
+
+<style>
+    .tab-pill {
+        background: rgba(255, 255, 255, 0.05);
+        border-radius: 20px;
+        padding: 4px;
+        display: inline-flex;
+    }
+
+    .tab-pill button {
+        background: transparent;
+        border: none;
+        color: var(--text-secondary);
+        padding: 0.5rem 1rem;
+        cursor: pointer;
+        border-bottom: 2px solid transparent;
+        transition: all 0.3s;
+    }
+
+    .tab-btn.active {
+        color: var(--primary);
+        border-bottom-color: var(--primary);
+    }
+
+    .tab-btn:hover {
+        color: white;
+    }
+</style>
+{% endblock %}
