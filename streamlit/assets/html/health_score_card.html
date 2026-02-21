@@ -1,14 +1,76 @@
-<div
-    style="background: rgba(255,255,255,0.03); border: 1px solid var(--border-color); border-radius: 16px; padding: 20px; text-align: center;">
-    <div
-        style="font-size: 0.9rem; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 1px; margin-bottom: 8px;">
-        Health Score</div>
-    <div
-        style="font-size: 3.5rem; font-weight: 800; color: {status_color}; text-shadow: 0 0 20px {status_color}; font-family: var(--font-heading); margin: 0;">
-        {health_score}
+<!-- Health Score Card with circular SVG ring.
+     Template placeholders:
+       {health_score}  - numeric, 0-100
+       {status_color}  - hex color
+       {status_text}   - e.g. "Sangat Baik"
+     NOTE: dash_value is computed in Python as: round(health_score * 2.89, 1)
+           (circumference of r=46 circle = 2*pi*46 ≈ 289)
+-->
+<div style="
+    background: linear-gradient(145deg, rgba(22,34,56,0.75), rgba(10,16,32,0.65));
+    border: 1px solid rgba(255,255,255,0.08);
+    border-radius: 24px;
+    padding: 28px 20px;
+    text-align: center;
+    position: relative;
+    overflow: hidden;
+    box-shadow: 0 8px 32px rgba(0,0,0,0.28);
+    backdrop-filter: blur(16px);
+    transition: all 0.3s ease;
+">
+    <!-- Top glow accent -->
+    <div style="
+        position: absolute; top: 0; left: 50%; transform: translateX(-50%);
+        width: 80%; height: 2px;
+        background: linear-gradient(90deg, transparent, {status_color}, transparent);
+        box-shadow: 0 0 20px {status_color};
+    "></div>
+
+    <!-- Label -->
+    <div style="
+        font-size: 0.72rem; color: #8ba3c0;
+        text-transform: uppercase; letter-spacing: 0.12em;
+        font-family: 'Outfit', sans-serif; font-weight: 700;
+        margin-bottom: 16px;
+    ">Health Score</div>
+
+    <!-- Score ring wrapper -->
+    <div style="
+        position: relative;
+        width: 110px; height: 110px;
+        margin: 0 auto 16px auto;
+    ">
+        <!-- SVG Ring -->
+        <svg viewBox="0 0 110 110" style="width:110px; height:110px; transform: rotate(-90deg);">
+            <!-- Track -->
+            <circle cx="55" cy="55" r="46" fill="none" stroke="rgba(255,255,255,0.06)" stroke-width="8" />
+            <!-- Progress: dasharray = health_score * 289/100 -->
+            <circle cx="55" cy="55" r="46" fill="none" stroke="{status_color}" stroke-width="8" stroke-linecap="round"
+                stroke-dasharray="{dash_value} 289"
+                style="filter: drop-shadow(0 0 8px {status_color}); transition: stroke-dasharray 1s ease;" />
+        </svg>
+        <!-- Score label inside ring -->
+        <div style="
+            position: absolute; inset: 0;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 1.9rem; font-weight: 900;
+            color: {status_color};
+            font-family: 'Outfit', sans-serif;
+            text-shadow: 0 0 20px {status_color};
+        ">{health_score}</div>
     </div>
-    <div
-        style="font-size: 1.1rem; color: {status_color}; font-weight: 600; margin-top: 4px; padding: 4px 12px; background: rgba(255,255,255,0.05); border-radius: 20px; display: inline-block;">
-        {status_text}
-    </div>
+
+    <!-- Status badge -->
+    <div style="
+        display: inline-block;
+        font-size: 0.82rem; color: {status_color};
+        font-weight: 700;
+        padding: 5px 16px;
+        background: rgba(255,255,255,0.05);
+        border: 1px solid {status_color}40;
+        border-radius: 50px;
+        font-family: 'Outfit', sans-serif;
+        letter-spacing: 0.04em;
+        box-shadow: 0 0 12px {status_color}25;
+    ">{status_text}</div>
 </div>

@@ -6,20 +6,34 @@ from sqlalchemy import create_engine, text
 from sqlalchemy.engine import Engine
 from sqlalchemy.exc import SQLAlchemyError
 
-load_dotenv()
-DB_USER = os.getenv("DB_USER")
-DB_PASS = os.getenv("DB_PASS")
-DB_HOST = os.getenv("DB_HOST")
-DB_PORT = os.getenv("DB_PORT")
-DB_NAME = os.getenv("DB_NAME")
-DB_URL = f"postgresql+psycopg2://{DB_USER}:{DB_PASS}@{DB_HOST}:{DB_PORT}/{DB_NAME}"
+# Load .env from the streamlit project root (one level above core/)
+_BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+load_dotenv(os.path.join(_BASE_DIR, ".env"))
+
+DB_USER = os.getenv("DB_USER", "postgres")
+DB_PASS = os.getenv("DB_PASS", "")
+DB_HOST = os.getenv("DB_HOST", "localhost")
+DB_PORT = os.getenv("DB_PORT", "5432")
+DB_NAME = os.getenv("DB_NAME", "marine_db")
+
+DB_URL = f"postgresql+psycopg2://{DB_USER}:{DB_PASS}@{DB_HOST}:{int(DB_PORT)}/{DB_NAME}"
+
 
 @st.cache_resource
 def get_engine() -> Engine:
+    missing = [k for k, v in {"DB_USER": DB_USER, "DB_HOST": DB_HOST,
+                               "DB_PORT": DB_PORT, "DB_NAME": DB_NAME}.items() if not v]
+    if missing:
+        st.error(f"❌ Konfigurasi database tidak lengkap. Cek file .env — kolom kosong: {', '.join(missing)}")
+        return None
     try:
-        return create_engine(DB_URL, echo=False, pool_pre_ping=True, pool_size=10, max_overflow=20, pool_recycle=1800)
+        return create_engine(
+            DB_URL, echo=False, pool_pre_ping=True,
+            pool_size=10, max_overflow=20, pool_recycle=1800
+        )
     except Exception as e:
-        st.error(f"Gagal membuat engine database: {e}"); return None
+        st.error(f"Gagal membuat engine database: {e}")
+        return None
 
 def get_connection():
     engine = get_engine()
@@ -28,13 +42,23 @@ def get_connection():
     except SQLAlchemyError as e: st.error(f"Kesalahan koneksi database: {e}"); return None
 
 def run_query(query, params=None):
+    """Execute a SQL query and return results as a DataFrame.
+    Uses SQLAlchemy 2.x + Pandas 2.x compatible conn.execute() pattern.
+    """
     engine = get_engine()
-    if engine is None: return pd.DataFrame()
+    if engine is None:
+        return pd.DataFrame()
     try:
         with engine.connect() as conn:
-            if params: return pd.read_sql(text(query), conn, params=params)
-            else: return pd.read_sql(text(query), conn)
-    except Exception as e: print(f"Query error: {e}"); return pd.DataFrame()
+            stmt = text(query) if isinstance(query, str) else query
+            result = conn.execute(stmt, params or {})
+            rows = result.fetchall()
+            if not rows:
+                return pd.DataFrame()
+            return pd.DataFrame(rows, columns=list(result.keys()))
+    except Exception as e:
+        print(f"Query error: {e}")
+        return pd.DataFrame()
 
 # --- FLEET QUERIES ---
 @st.cache_data(ttl=60)
@@ -120,7 +144,13 @@ def get_revenue_cycle_metrics():
 # --- ENVIRONMENTAL & OTHER QUERIES ---
 @st.cache_data(ttl=60)
 def get_data_water():
-    query = "SELECT bsh.id_buoy, s.latitude, s.longitude, bsh.salinitas as salinitas, bsh.turbidity as turbidity, bsh.current as current, bsh.oxygen as oxygen, bsh.tide as tide, bsh.density as density, bsh.created_at as latest_timestamp FROM operation.buoy_sensor_histories bsh JOIN operation.buoys b ON b.code_buoy = bsh.id_buoy JOIN operation.sites s ON s.code_site = b.id_site ORDER BY bsh.created_at DESC"
+    query = """SELECT bsh.id_buoy, s.latitude, s.longitude,
+        bsh.salinitas, bsh.turbidity, bsh.current,
+        bsh.oxygen, bsh.tide, bsh.density, bsh.created_at as latest_timestamp
+        FROM buoy.buoy_sensor_histories bsh
+        JOIN buoy.buoys b ON b.code_buoy = bsh.id_buoy
+        JOIN operation.sites s ON s.code_site = b.id_site
+        ORDER BY bsh.created_at DESC"""
     return run_query(query)
 
 @st.cache_data(ttl=300)
@@ -130,12 +160,28 @@ def get_clients_summary():
 
 @st.cache_data(ttl=60)
 def get_logs():
-    query = "SELECT changed_by, table_name, \"action\", old_data, new_data, changed_at FROM audit.audit_logs WHERE created_at <= NOW() - interval '7 days' ORDER BY created_at desc"
+    query = "SELECT changed_by, table_name, \"action\", old_data, new_data, changed_at FROM audit.audit_logs WHERE changed_at >= NOW() - interval '7 days' ORDER BY changed_at desc"
     return run_query(query)
 
 @st.cache_data(ttl=60)
 def get_environmental_anomalies():
-    query = "WITH stats AS (SELECT id_buoy, AVG(salinitas) as avg_sal, STDDEV(salinitas) as std_sal, AVG(turbidity) as avg_tur, STDDEV(turbidity) as std_tur FROM operation.buoy_sensor_histories WHERE created_at >= NOW() - INTERVAL '30 days' GROUP BY id_buoy) SELECT h.id_buoy, h.created_at, h.salinitas, h.turbidity, (h.salinitas - s.avg_sal) / NULLIF(s.std_sal, 0) as sal_z_score, (h.turbidity - s.avg_tur) / NULLIF(s.std_tur, 0) as tur_z_score FROM operation.buoy_sensor_histories h JOIN stats s ON h.id_buoy = s.id_buoy WHERE h.created_at >= NOW() - INTERVAL '7 days' AND (ABS((h.salinitas - s.avg_sal) / NULLIF(s.std_sal, 0)) > 2 OR ABS((h.turbidity - s.avg_tur) / NULLIF(s.std_tur, 0)) > 2) ORDER BY h.created_at DESC"
+    query = """WITH stats AS (
+        SELECT id_buoy,
+            AVG(salinitas) as avg_sal, STDDEV(salinitas) as std_sal,
+            AVG(turbidity) as avg_tur, STDDEV(turbidity) as std_tur
+        FROM buoy.buoy_sensor_histories
+        WHERE created_at >= NOW() - INTERVAL '30 days'
+        GROUP BY id_buoy
+    )
+    SELECT h.id_buoy, h.created_at, h.salinitas, h.turbidity,
+        (h.salinitas - s.avg_sal) / NULLIF(s.std_sal, 0) as sal_z_score,
+        (h.turbidity - s.avg_tur) / NULLIF(s.std_tur, 0) as tur_z_score
+    FROM buoy.buoy_sensor_histories h
+    JOIN stats s ON h.id_buoy = s.id_buoy
+    WHERE h.created_at >= NOW() - INTERVAL '7 days'
+      AND (ABS((h.salinitas - s.avg_sal) / NULLIF(s.std_sal, 0)) > 2
+        OR ABS((h.turbidity - s.avg_tur) / NULLIF(s.std_tur, 0)) > 2)
+    ORDER BY h.created_at DESC"""
     return run_query(query)
 
 # --- SYSTEM SETTINGS ---
@@ -220,21 +266,29 @@ def update_password(username, old_pass, new_pass):
 
 @st.cache_data(ttl=57)
 def get_buoy_fleet():
-    # 1. Fetch Active Buoys (User removed location, that's fine, View handles it)
-    q1 = "SELECT b.code_buoy, b.status, '85%' as battery, MAX(bsh.created_at) as last_update FROM operation.buoys b LEFT JOIN operation.buoy_sensor_histories bsh ON b.code_buoy = bsh.id_buoy GROUP BY b.code_buoy, b.status"
-    df1 = run_query(q1)
-    
-    # Combine results
-    frames = []
-    if not df1.empty: frames.append(df1)
-    
-    if frames:
-        return pd.concat(frames, ignore_index=True).sort_values('code_buoy')
+    q1 = """
+        SELECT
+            b.code_buoy,
+            b.status,
+            s.location,
+            '85%' as battery,
+            MAX(bsh.created_at) as last_update
+        FROM buoy.buoys b
+        LEFT JOIN buoy.buoy_sensor_histories bsh ON b.code_buoy = bsh.id_buoy
+        LEFT JOIN operation.sites s ON b.id_site = s.code_site
+        GROUP BY b.code_buoy, b.status, s.location
+    """
+    df = run_query(q1)
+    if not df.empty:
+        return df.sort_values('code_buoy')
     return pd.DataFrame()
 
 @st.cache_data(ttl=60)
 def get_buoy_history(buoy_id):
-    query = "SELECT id_buoy, created_at, salinitas, turbidity, oxygen, density, current, tide FROM operation.buoy_sensor_histories WHERE id_buoy = :buoy_id ORDER BY created_at ASC"
+    query = """SELECT id_buoy, created_at, salinitas, turbidity,
+        oxygen, density, current, tide
+        FROM buoy.buoy_sensor_histories
+        WHERE id_buoy = :buoy_id ORDER BY created_at ASC"""
     df = run_query(query, params={"buoy_id": buoy_id})
     return df
 

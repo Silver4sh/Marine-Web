@@ -1,24 +1,79 @@
-<div class="buoy-card"
-    style="background: {bg_gradient}; border: 1px solid {border_color}; border-radius: 16px; padding: 16px; margin-bottom: 8px; position: relative; overflow: hidden; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1); backdrop-filter: blur(10px); transition: transform 0.2s;">
-    <div
-        style="position: absolute; top: 0; left: 0; right: 0; height: 3px; background: {status_color}; box-shadow: 0 0 10px {status_color};">
+<div style="
+    background: {bg_gradient};
+    border: 1px solid {border_color};
+    border-radius: 20px;
+    padding: 18px;
+    margin-bottom: 10px;
+    position: relative;
+    overflow: hidden;
+    box-shadow: 0 4px 16px rgba(0,0,0,0.2);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    transition: all 0.28s cubic-bezier(0.4, 0, 0.2, 1);
+">
+    <!-- Top status bar -->
+    <div style="
+        position: absolute; top: 0; left: 0; right: 0; height: 3px;
+        background: {status_color};
+        box-shadow: 0 0 12px {status_color}, 0 0 4px {status_color};
+    "></div>
+
+    <!-- Animated ping dot (top right) for Active status -->
+    <div style="
+        position: absolute; top: 12px; right: 14px;
+        width: 9px; height: 9px; border-radius: 50%;
+        background: {status_color};
+        box-shadow: 0 0 8px {status_color};
+        animation: emitterPulse 2s ease-in-out infinite;
+    "></div>
+
+    <!-- Buoy ID + Location -->
+    <div style="text-align: center; margin-bottom: 14px; margin-top: 6px; padding-right: 20px;">
+        <div style="
+            font-size: 1.05rem; font-weight: 800; color: #f0f6ff;
+            font-family: 'Outfit', sans-serif; letter-spacing: 0.03em;
+        ">{b_id}</div>
+        <div style="
+            font-size: 0.78rem; color: #8ba3c0;
+            margin-top: 4px;
+            display: flex; align-items: center; justify-content: center; gap: 4px;
+            font-family: 'Plus Jakarta Sans', sans-serif;
+        ">📍 {loc}</div>
     </div>
-    <div style="text-align: center; margin-bottom: 12px; margin-top: 4px;">
-        <div
-            style="font-size: 1.1rem; font-weight: 700; color: var(--text-primary); font-family: var(--font-heading); letter-spacing: 0.02em;">
-            {b_id}</div>
-        <div
-            style="font-size: 0.8rem; color: var(--text-secondary); margin-top: 4px; display: flex; align-items: center; justify-content: center; gap: 4px;">
-            📍 {loc}</div>
+
+    <!-- Status badge -->
+    <div style="display: flex; justify-content: center; margin-bottom: 14px;">
+        <span style="
+            padding: 4px 14px;
+            background: rgba(0,0,0,0.22);
+            border: 1px solid {status_color}45;
+            border-radius: 50px;
+            color: {status_color};
+            font-size: 0.72rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.06em;
+            font-family: 'Outfit', sans-serif;
+            box-shadow: 0 0 10px {status_color}20;
+        ">● {status}</span>
     </div>
-    <div style="display: flex; justify-content: center; align-items: center; gap: 8px; margin-bottom: 16px;"><span
-            style="padding: 4px 12px; background: rgba(0,0,0,0.2); border: 1px solid {status_color}40; border-radius: 20px; color: {status_color}; font-size: 0.75rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; box-shadow: 0 0 10px {status_color}10;">●
-            {status}</span></div>
-    <div
-        style="display: flex; justify-content: space-between; align-items: center; background: rgba(0,0,0,0.2); padding: 8px 12px; border-radius: 12px; font-size: 0.75rem; border: 1px solid rgba(255,255,255,0.05);">
-        <div style="color: var(--text-secondary); display: flex; align-items: center; gap: 4px;" title="Baterai">🔋
-            <span style="font-family: var(--font-mono); color: var(--text-primary);">{batt}</span></div>
-        <div style="color: var(--text-secondary); display: flex; align-items: center; gap: 4px;"
-            title="Terakhir Update">🕒 <span style="font-family: var(--font-mono);">{fmt_update}</span></div>
+
+    <!-- Battery + Timestamp -->
+    <div style="
+        display: flex; justify-content: space-between; align-items: center;
+        background: rgba(0,0,0,0.22);
+        padding: 8px 12px;
+        border-radius: 12px;
+        border: 1px solid rgba(255,255,255,0.05);
+        font-size: 0.73rem;
+    ">
+        <div style="color: #8ba3c0; display:flex; align-items:center; gap:5px;" title="Baterai">
+            🔋<span
+                style="color: #f0f6ff; font-weight: 600; font-family: 'Plus Jakarta Sans', sans-serif;">{batt}</span>
+        </div>
+        <div style="color: #8ba3c0; display:flex; align-items:center; gap:5px;" title="Terakhir Update">
+            🕒 <span
+                style="color: #f0f6ff; font-weight: 600; font-family: 'Plus Jakarta Sans', sans-serif;">{fmt_update}</span>
+        </div>
     </div>
 </div>

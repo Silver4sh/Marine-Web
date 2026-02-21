@@ -6,3 +6,6 @@ pandas
 plotly
 folium
 streamlit-folium
+numpy
+scikit-learn
+altair

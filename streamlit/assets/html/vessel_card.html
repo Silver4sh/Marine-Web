@@ -1,24 +1,67 @@
-<div class="vessel-card"
-    style="background: {bg_color}; border: 1px solid {border_color}; border-radius: 20px; padding: 16px; margin-bottom: 12px; box-shadow: {box_shadow}; backdrop-filter: blur(12px); transition: all 0.3s ease;">
-    <div style="display: flex; justify-content: space-between; align-items: start; margin-bottom: 8px;">
-        <div style="overflow: hidden; white-space: nowrap; text-overflow: ellipsis; max-width: 65%;">
-            <div
-                style="font-weight: 700; color: var(--text-primary); font-family: var(--font-heading); font-size: 1rem; margin-bottom: 2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; letter-spacing: 0.5px;">
-                {v_id}</div>
-            <div style="font-size: 0.75rem; color: var(--text-secondary); font-family: var(--font-body);">{v_name}</div>
+<div style="
+    background: {bg_color};
+    border: 1px solid {border_color};
+    border-radius: 20px;
+    padding: 16px;
+    margin-bottom: 10px;
+    box-shadow: {box_shadow};
+    backdrop-filter: blur(14px);
+    -webkit-backdrop-filter: blur(14px);
+    transition: all 0.28s cubic-bezier(0.4, 0, 0.2, 1);
+    position: relative;
+    overflow: hidden;
+">
+    <!-- Status color bar top -->
+    <div style="
+        position: absolute; top: 0; left: 0; right: 0; height: 3px;
+        background: linear-gradient(90deg, {status_color}, transparent);
+        box-shadow: 0 0 10px {status_color}80;
+    "></div>
+
+    <!-- Header: ID + Status Badge -->
+    <div style="display:flex; justify-content:space-between; align-items:start; margin-bottom: 10px;">
+        <div style="overflow:hidden; max-width: 65%;">
+            <div style="
+                font-weight: 700; color: #f0f6ff;
+                font-family: 'Outfit', sans-serif;
+                font-size: 0.95rem; letter-spacing: 0.03em;
+                white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+            ">{v_id}</div>
+            <div style="
+                font-size: 0.75rem; color: #8ba3c0;
+                font-family: 'Plus Jakarta Sans', sans-serif;
+                margin-top: 2px;
+                white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+            ">{v_name}</div>
         </div>
-        <div style="text-align: right; flex-shrink: 0;">
-            <span
-                style="background: {status_bg}; color: {status_color}; padding: 4px 10px; border-radius: 50px; font-size: 0.7rem; font-weight: 700; border: 1px solid {status_color}40; letter-spacing: 0.5px; font-family: var(--font-heading);">{status_text}</span>
-        </div>
+        <span style="
+            background: {status_bg};
+            color: {status_color};
+            padding: 4px 10px;
+            border-radius: 50px;
+            font-size: 0.68rem;
+            font-weight: 700;
+            border: 1px solid {status_color}50;
+            letter-spacing: 0.05em;
+            font-family: 'Outfit', sans-serif;
+            white-space: nowrap;
+        ">{status_text}</span>
     </div>
-    <div
-        style="display: flex; justify-content: space-between; align-items: center; background: rgba(0,0,0,0.2); padding: 8px 12px; border-radius: 12px;">
-        <div style="display: flex; align-items: center; gap: 8px;">
-            <span style="font-size: 0.9rem;">🚀</span>
-            <span
-                style="font-size: 0.9rem; color: var(--text-primary); font-family: var(--font-mono); font-weight: 600;">{v_speed}
-                kn</span>
-        </div>
+
+    <!-- Speed display -->
+    <div style="
+        display: flex; align-items: center; gap: 8px;
+        background: rgba(0,0,0,0.25);
+        padding: 8px 14px;
+        border-radius: 12px;
+        border: 1px solid rgba(255,255,255,0.05);
+        backdrop-filter: blur(4px);
+    ">
+        <span style="font-size: 1rem;">🚀</span>
+        <span style="
+            font-size: 0.9rem; color: #f0f6ff;
+            font-family: 'Plus Jakarta Sans', sans-serif;
+            font-weight: 600;
+        ">{v_speed} kn</span>
     </div>
 </div>

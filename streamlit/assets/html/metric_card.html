@@ -1,25 +1,75 @@
-<div class="metric-card">
-    <div style="display: flex; justify-content: space-between; align-items: start; margin-bottom: 8px;">
-        <span
-            style="font-size: 0.85rem; color: var(--text-secondary); font-weight: 600; letter-spacing: 0.5px; text-transform: uppercase; font-family: var(--font-heading);">
-            {label}
-        </span>
-        <div
-            style="width: 8px; height: 8px; border-radius: 50%; background-color: {delta_color}; box-shadow: 0 0 10px {delta_color};">
-        </div>
+<div class="metric-card" style="
+    background: linear-gradient(145deg, rgba(22, 34, 56, 0.75) 0%, rgba(10, 16, 32, 0.65) 100%);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    border: 1px solid rgba(255,255,255,0.08);
+    border-radius: 24px;
+    padding: 24px;
+    box-shadow: 0 8px 32px rgba(0,0,0,0.28);
+    position: relative;
+    overflow: hidden;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    animation: fadeScale 0.5s ease forwards;
+">
+    <!-- Animated top bar -->
+    <div style="
+        position: absolute;
+        top: 0; left: 0; right: 0;
+        height: 3px;
+        background: linear-gradient(90deg, {delta_color}, transparent);
+        box-shadow: 0 0 12px {delta_color};
+    "></div>
+
+    <!-- Shimmer layer -->
+    <div style="
+        position: absolute; inset: 0;
+        background: linear-gradient(90deg, transparent, rgba(255,255,255,0.04), transparent);
+        transform: translateX(-100%);
+        transition: transform 0.5s ease;
+        border-radius: 24px;
+        pointer-events: none;
+    " class="metric-shimmer"></div>
+
+    <!-- Header row: label + color dot -->
+    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom: 12px;">
+        <span style="
+            font-size: 0.75rem;
+            color: #8ba3c0;
+            font-weight: 700;
+            letter-spacing: 0.08em;
+            text-transform: uppercase;
+            font-family: 'Outfit', sans-serif;
+        ">{label}</span>
+        <div style="
+            width: 9px; height: 9px;
+            border-radius: 50%;
+            background: {delta_color};
+            box-shadow: 0 0 10px {delta_color}, 0 0 4px {delta_color};
+            animation: emitterPulse 2.5s ease-in-out infinite;
+        "></div>
     </div>
 
-    <div
-        style="font-size: 2.2rem; font-weight: 700; color: var(--text-primary); font-family: var(--font-heading); margin-bottom: 4px;">
-        {value}
-    </div>
+    <!-- Value -->
+    <div style="
+        font-size: 2.1rem;
+        font-weight: 800;
+        color: #f0f6ff;
+        font-family: 'Outfit', sans-serif;
+        margin-bottom: 10px;
+        line-height: 1.1;
+        letter-spacing: -0.02em;
+    ">{value}</div>
 
-    <!-- delta_section -->
-    <div style="font-size: 0.85rem; display: flex; align-items: center; gap: 6px; color: var(--text-secondary);">
-        <span
-            style="color: {delta_color}; background: rgba(255,255,255,0.05); padding: 4px 10px; border-radius: 50px; font-weight: 600; font-family: var(--font-body); border: 1px solid rgba(255,255,255,0.05);">
-            {delta}
-        </span>
+    <!-- Delta badge -->
+    <div style="font-size: 0.82rem; display:flex; align-items:center; gap:6px;">
+        <span style="
+            color: {delta_color};
+            background: rgba(255,255,255,0.06);
+            padding: 4px 12px;
+            border-radius: 50px;
+            font-weight: 600;
+            font-family: 'Plus Jakarta Sans', sans-serif;
+            border: 1px solid rgba(255,255,255,0.07);
+        ">{delta}</span>
     </div>
-    <!-- end_delta_section -->
 </div>

@@ -4,14 +4,19 @@ import pandas as pd
 import folium
 
 def load_html(filename):
-    """Memuat template HTML dari folder assets."""
+    """Memuat template HTML dari folder assets, dikompresi ke satu baris
+    agar st.markdown(unsafe_allow_html=True) merender HTML dengan benar."""
     try:
-        # Resolve path relative to this file (dashboard/core/utils.py)
-        current_dir = os.path.dirname(os.path.abspath(__file__)) # .../dashboard/core
-        project_dir = os.path.dirname(current_dir) # .../dashboard
-        file_path = os.path.join(project_dir, "assets", "html", filename)
-        
-        with open(file_path, "r", encoding="utf-8") as f: return f.read()
+        current_dir = os.path.dirname(os.path.abspath(__file__))
+        project_dir = os.path.dirname(current_dir)
+        file_path   = os.path.join(project_dir, "assets", "html", filename)
+        with open(file_path, "r", encoding="utf-8") as f:
+            content = f.read()
+        # Collapse multi-line HTML to single line — required by Streamlit's
+        # CommonMark parser so it doesn't escape the HTML tags.
+        import re
+        content = re.sub(r'\s+', ' ', content).strip()
+        return content
     except FileNotFoundError:
         return ""
 
