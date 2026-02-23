@@ -94,7 +94,7 @@ def render_login_page():
             submit_button = st.form_submit_button(
                 "🚀  Masuk ke Sistem",
                 type="primary",
-                use_container_width=True
+                width="stretch"
             )
 
             if submit_button:

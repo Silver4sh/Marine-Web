@@ -64,7 +64,7 @@ def render_survey_list():
             "surveyor_name":  "Surveyor",
             "comment":        "Komentar"
         },
-        use_container_width=True,
+        width="stretch",
         hide_index=True
     )
 
@@ -118,7 +118,7 @@ def render_create_survey_form():
             comment = st.text_area("Komentar / Catatan", placeholder="Catatan kondisi lapangan, temuan, dll...", height=120)
 
         st.markdown("<br>", unsafe_allow_html=True)
-        submitted = st.form_submit_button("💾 Simpan Laporan", type="primary", use_container_width=True)
+        submitted = st.form_submit_button("💾 Simpan Laporan", type="primary", width="stretch")
 
         if submitted:
             if not project_name or not code_report:

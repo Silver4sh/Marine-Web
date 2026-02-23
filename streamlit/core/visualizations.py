@@ -186,7 +186,7 @@ def render_map_content():
                          
                 except: continue
                 
-        st_folium(m, height=650, use_container_width=True)
+        st_folium(m, height=650, width="stretch")
         
         # Detail Section below Map
         if final_selected and not df.empty:
@@ -205,4 +205,4 @@ def page_heatmap(df, indikator):
     data = df[['latitude', 'longitude', indikator]].dropna().values.tolist()
     m = folium.Map(location=[df['latitude'].mean(), df['longitude'].mean()], zoom_start=5, tiles="CartoDB Dark Matter")
     HeatMap(data, radius=25, blur=20).add_to(m)
-    st_folium(m, height=400, use_container_width=True)
+    st_folium(m, height=400, width="stretch")

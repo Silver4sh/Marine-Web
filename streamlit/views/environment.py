@@ -21,7 +21,7 @@ def render_chart(df, x_col, y_col, color_col, title):
     if title:
         chart = chart.properties(title=title)
 
-    st.altair_chart(chart.interactive(), use_container_width=True)
+    st.altair_chart(chart.interactive(), width="stretch")
 
 
 def render_sparkline(df, y_col, title, color="#0ea5e9"):
@@ -41,7 +41,7 @@ def render_sparkline(df, y_col, title, color="#0ea5e9"):
         y=alt.Y(y_col, axis=alt.Axis(labels=True, grid=True, title="")),
         tooltip=['created_at', y_col]
     ).properties(title=title, height=150)
-    st.altair_chart(chart, use_container_width=True)
+    st.altair_chart(chart, width="stretch")
 
 
 def _section_header(icon: str, title: str, subtitle: str = ""):
@@ -172,7 +172,7 @@ def view_buoy_detail(b_id, name):
 
             st.divider()
             st.markdown("#### 📄 Data Mentah")
-            st.dataframe(filtered_df, use_container_width=True)
+            st.dataframe(filtered_df, width="stretch")
         else:
             st.info("Tidak ada data dalam rentang tanggal yang dipilih.")
     else:
@@ -245,7 +245,7 @@ def render_buoy_monitoring():
                     else:
                         st.error("Template buoy_card.html missing")
 
-                    if st.button("Detail 🔍", key=f"btn_detail_{b_id}", use_container_width=True):
+                    if st.button("Detail 🔍", key=f"btn_detail_{b_id}", width="stretch"):
                         st.session_state['buoy_detail_id']   = b_id
                         st.session_state['buoy_detail_name'] = f"Buoy {b_id} — {loc}"
                 else:
@@ -283,7 +283,7 @@ def render_environment_page():
             st.divider()
             col_title, col_close = st.columns([8, 1])
             with col_close:
-                if st.button("✖ Tutup", use_container_width=True):
+                if st.button("✖ Tutup", width="stretch"):
                     st.session_state['buoy_detail_id']   = None
                     st.session_state['buoy_detail_name'] = None
                     st.rerun()

@@ -42,8 +42,8 @@ def _render_add_user_panel():
         new_pass = st.text_input("Kata Sandi", type="password")
         new_role = st.selectbox("Peran", [ROLE_ADMIN, ROLE_OPERATIONS, ROLE_MARCOM, ROLE_FINANCE])
         c1, c2 = st.columns(2)
-        submitted = c1.form_submit_button("✅ Buat Pengguna", type="primary", use_container_width=True)
-        cancelled = c2.form_submit_button("↩️ Batal", use_container_width=True)
+        submitted = c1.form_submit_button("✅ Buat Pengguna", type="primary", width="stretch")
+        cancelled = c2.form_submit_button("↩️ Batal", width="stretch")
 
         if submitted:
             if new_user and new_pass:
@@ -95,14 +95,14 @@ def _render_edit_user_panel(user_row):
                               horizontal=True)
 
     c1, c2 = st.columns(2)
-    if c1.button("💾 Simpan", type="primary", use_container_width=True):
+    if c1.button("💾 Simpan", type="primary", width="stretch"):
         if new_role   != current_role:   update_user_role(user_row['username'], new_role)
         if new_status != current_status: update_user_status(user_row['username'], new_status)
         st.success("✅ Pengguna berhasil diperbarui!")
         st.cache_data.clear()
         st.session_state.admin_panel = None
         st.rerun()
-    if c2.button("↩️ Batal", use_container_width=True):
+    if c2.button("↩️ Batal", width="stretch"):
         st.session_state.admin_panel = None
         st.rerun()
 
@@ -126,7 +126,7 @@ def _render_delete_user_panel(username):
 
     col1, col2 = st.columns(2)
     with col1:
-        if st.button("🗑️ Ya, Hapus", type="primary", use_container_width=True):
+        if st.button("🗑️ Ya, Hapus", type="primary", width="stretch"):
             if delete_user(username):
                 st.success(f"Pengguna {username} berhasil dihapus.")
                 st.cache_data.clear()
@@ -135,7 +135,7 @@ def _render_delete_user_panel(username):
             else:
                 st.error("Gagal menghapus pengguna.")
     with col2:
-        if st.button("↩️ Batal", use_container_width=True):
+        if st.button("↩️ Batal", width="stretch"):
             st.session_state.admin_panel = None
             st.rerun()
 
@@ -149,7 +149,7 @@ def render_user_management_tab():
 
     col_head1, col_head2 = st.columns([6, 2])
     with col_head2:
-        if st.button("➕ Tambah Pengguna", use_container_width=True, type="primary"):
+        if st.button("➕ Tambah Pengguna", width="stretch", type="primary"):
             st.session_state.admin_panel = 'add'
 
     # Inline panels
@@ -163,7 +163,7 @@ def render_user_management_tab():
     if not users_df.empty:
         st.dataframe(
             users_df[['username', 'role', 'user_status', 'last_login']],
-            use_container_width=True,
+            width="stretch",
             column_config={
                 "username":    "ID Pengguna",
                 "user_status": st.column_config.Column("Status", width="small"),
@@ -182,12 +182,12 @@ def render_user_management_tab():
         if selected_user:
             user_row = users_df[users_df['username'] == selected_user].iloc[0]
             with c_btn1:
-                if st.button("✏️ Edit", use_container_width=True):
+                if st.button("✏️ Edit", width="stretch"):
                     st.session_state.admin_panel = 'edit'
                     st.session_state.admin_edit_user = user_row
                     st.rerun()
             with c_btn2:
-                if st.button("🗑️ Hapus", type="primary", use_container_width=True):
+                if st.button("🗑️ Hapus", type="primary", width="stretch"):
                     if selected_user == st.session_state.username:
                         st.error("❌ Tidak dapat menghapus akun sendiri!")
                     else:
@@ -216,7 +216,7 @@ def render_settings_tab():
     cn_pass = st.text_input("Konfirmasi Kata Sandi Baru", type="password", placeholder="Ulangi kata sandi baru")
 
     st.markdown("<br>", unsafe_allow_html=True)
-    if st.button("💾 Perbarui Kredensial", type="primary", use_container_width=True):
+    if st.button("💾 Perbarui Kredensial", type="primary", width="stretch"):
         if n_pass != cn_pass:
             st.error("❌ Kata sandi baru tidak cocok.")
         elif len(n_pass) < 6:
@@ -236,7 +236,7 @@ def render_audit_tab():
         st.dataframe(
             df,
             hide_index=True,
-            use_container_width=True,
+            width="stretch",
             column_config={
                 "changed_at": st.column_config.DatetimeColumn("Timestamp", format="D MMM YYYY, HH:mm")
             }

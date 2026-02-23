@@ -138,8 +138,9 @@ def render_overview_tab(fleet, orders, financial, role):
                              template="plotly_dark",
                              color='revenue',
                              color_continuous_scale=['#0f172a', '#38bdf8'])
+                fig.update_layout(showlegend=False, coloraxis_showscale=False)
                 apply_chart_style(fig)
-                st.plotly_chart(fig, use_container_width=True)
+                st.plotly_chart(fig, width='stretch')
 
                 last_month = rev_df.iloc[-1]
                 prev_month = rev_df.iloc[-2] if len(rev_df) > 1 else last_month
@@ -160,7 +161,7 @@ def render_overview_tab(fleet, orders, financial, role):
                              title="Distribusi Pesanan", template="plotly_dark",
                              color_discrete_sequence=['#2dd4bf', '#f472b6', '#fbbf24'])
                 apply_chart_style(fig)
-                st.plotly_chart(fig, use_container_width=True)
+                st.plotly_chart(fig, width='stretch')
 
                 completed = orders.get('completed', 0)
                 open_orders = orders.get('open', 0)
@@ -182,11 +183,11 @@ def render_overview_tab(fleet, orders, financial, role):
         """, unsafe_allow_html=True)
 
         if role == ROLE_ADMIN:
-            if st.button("🗺️ Buka Peta Kapal", use_container_width=True):
+            if st.button("🗺️ Buka Peta Kapal", width='stretch'):
                 st.session_state.current_page = "🗺️ Peta Kapal"
                 st.rerun()
         elif role == ROLE_OPERATIONS:
-            if st.button("🗺️ Buka Peta Kapal", use_container_width=True):
+            if st.button("🗺️ Buka Peta Kapal", width='stretch'):
                 st.session_state.current_page = "🗺️ Peta Kapal"
                 st.rerun()
 
@@ -207,7 +208,7 @@ def render_overview_tab(fleet, orders, financial, role):
         st.dataframe(
             fleet_data,
             hide_index=True,
-            use_container_width=True,
+            width='stretch',
             column_config={
                 "Status": "Status",
                 "Count": st.column_config.ProgressColumn(

@@ -59,7 +59,7 @@ def render_metric_card(label, value, delta=None, color="green", help_text=None):
         </style>
         """
         st.markdown(css, unsafe_allow_html=True)
-        with st.popover("ℹ️", use_container_width=False):
+        with st.popover("ℹ️"):
             st.markdown(f"**Info Metrik**\n\n{help_text}")
 
 def get_status_color(status):
@@ -176,7 +176,7 @@ def render_vessel_card(row, status_color, highlighted=False):
                         .replace("{v_speed}", str(v_speed))
         st.markdown(card_html, unsafe_allow_html=True)
     
-    if st.button("📍 Lokasi", key=f"btn_{v_id}_{row.get('Last Update', '')}", use_container_width=True):
+    if st.button("📍 Lokasi", key=f"btn_{v_id}_{row.get('Last Update', '')}", width='stretch'):
         st.session_state["search_select"] = v_id
 
 def render_vessel_list_column(title, df, icon="⚓", height=650):
@@ -228,6 +228,6 @@ def render_vessel_detail_section(row):
     if not path_df.empty:
         path_df = path_df[['created_at', 'latitude', 'longitude', 'speed', 'heading']]
         path_df.columns = ['Waktu', 'Latitude', 'Longitude', 'Kecepatan (kn)', 'Heading (°)']
-        st.dataframe(path_df, use_container_width=True, hide_index=True)
+        st.dataframe(path_df, width='stretch', hide_index=True)
     else:
         st.info("Belum ada data riwayat perjalanan.")

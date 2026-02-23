@@ -78,7 +78,7 @@ def generate_client_map(df):
 
 def render_map(df):
     m = generate_client_map(df)
-    st_folium(m, height=500, use_container_width=True)
+    st_folium(m, height=500, width="stretch")
 
 
 def _section_header(icon, title, subtitle=""):
@@ -162,7 +162,7 @@ def render_clients_page():
     with tab_matrix:
         c_chart, c_insight = st.columns([3, 1])
         with c_chart:
-            st.plotly_chart(render_growth_matrix(df), use_container_width=True)
+            st.plotly_chart(render_growth_matrix(df), width="stretch")
         with c_insight:
             _section_header("💡", "Audit Strategi")
             st.info("**Mitra Kunci**: Klien dengan banyak proyek aktif dan LTV tinggi.")
@@ -191,7 +191,7 @@ def render_clients_page():
 
         st.dataframe(
             filtered_df[['name', 'industry', 'region', 'projects_active', 'ltv', 'churn_risk']],
-            use_container_width=True,
+            width="stretch",
             hide_index=True,
             column_config={
                 "name":            "Nama Klien",

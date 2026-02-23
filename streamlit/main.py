@@ -117,7 +117,7 @@ def sidebar_nav():
             if st.button(
                 item,
                 key=key_btn,
-                use_container_width=True,
+                width="stretch",
                 type="primary" if st.session_state.current_page == item else "secondary"
             ):
                 st.session_state.current_page = item
@@ -132,12 +132,12 @@ def sidebar_nav():
             unread = 0
 
         notif_label = f"🔔 Notifikasi  {'· ' + str(unread) if unread > 0 else ''}"
-        if st.button(notif_label, key="notif_btn", use_container_width=True):
+        if st.button(notif_label, key="notif_btn", width="stretch"):
             show_notification_dialog()
 
         st.divider()
 
-        if st.button("🚪 Keluar", key="logout", use_container_width=True):
+        if st.button("🚪 Keluar", key="logout", width="stretch"):
             st.session_state.logged_in = False
             st.session_state.username = None
             st.rerun()
