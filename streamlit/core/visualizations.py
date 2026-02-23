@@ -36,62 +36,236 @@ def add_history_path_to_map(m, path_df, fill_color, v_id_str, show_timelapse=Fal
     ).add_to(m)
 
     if show_timelapse and len(path_df) > 1:
-        # --- Smooth Animation Logic ---
-        # Interpolate points to create a smooth path
-        path_df = path_df.sort_values("created_at") # Ensure sorted by time
+        from folium import Element
         
-        features = []
-        for i in range(len(path_df) - 1):
-            start = path_df.iloc[i]
-            end = path_df.iloc[i+1]
+        path_sorted = path_df.sort_values("created_at")
+        
+        # Build JS data array
+        rute_js = []
+        for _, row in path_sorted.iterrows():
+            time_str = row['created_at'].strftime("%H:%M:%S") if pd.notnull(row['created_at']) else "Unknown"
+            speed_str = f"Speed: {row.get('speed', 0)} kn | Hdg: {row.get('heading', 0)}&deg;"
+            rute_js.append(f"{{ latlng: [{row['latitude']}, {row['longitude']}], time: '{time_str}', loc: '{speed_str}' }}")
             
-            # Create reduced number of interpolated steps for performance, but enough for smoothness
-            # Calculate distance to determine steps? Or just fixed steps.
-            # Let's use fixed steps for simplicity first, or time based.
-            # Using fixed steps per segment (e.g., 10 steps)
-            steps = 10 
-            
-            lats = np.linspace(start['latitude'], end['latitude'], steps)
-            lons = np.linspace(start['longitude'], end['longitude'], steps)
-            
-            # Simple linear time interpolation
-            start_time = start['created_at'].timestamp() * 1000 # ms
-            end_time = end['created_at'].timestamp() * 1000 # ms
-            times = np.linspace(start_time, end_time, steps)
-            
-            for j in range(steps):
-                feature = {
-                    'type': 'Feature',
-                    'geometry': {
-                        'type': 'Point',
-                        'coordinates': [lons[j], lats[j]], 
-                    },
-                    'properties': {
-                        'time': int(times[j]),
-                        'style': {'color': fill_color},
-                        'icon': 'circle',
-                        'iconstyle': {
-                            'fillColor': fill_color,
-                            'fillOpacity': 1,
-                            'stroke': 'true',
-                            'radius': 5
-                        }
-                    }
-                }
-                features.append(feature)
+        rute_js_str = ",\\n                        ".join(rute_js)
+        # Set total animation duration to roughly 15-20 seconds for smooth playback
+        total_anim_ms = 20000
+        point_ms = total_anim_ms // max(1, len(rute_js) - 1)
+        durations = [point_ms] * (len(rute_js) - 1)
+        durations_js_str = ", ".join(map(str, durations))
+        
+        # 1. Add moving marker plugin script
+        m.get_root().html.add_child(Element('<script src="https://ewoken.github.io/Leaflet.MovingMarker/MovingMarker.js"></script>'))
+        
+        # 2. Setup custom tactical UI for the map
+        custom_ui = f"""
+        <style>
+            .hud-controls-container {{
+                position: absolute;
+                bottom: 30px;
+                left: 50%;
+                transform: translateX(-50%);
+                background: rgba(10, 16, 32, 0.85);
+                padding: 15px 25px;
+                border: 1px solid {fill_color}80;
+                border-radius: 12px;
+                z-index: 9999;
+                width: 70%;
+                max-width: 600px;
+                box-shadow: 0 4px 15px rgba(0, 0, 0, 0.5);
+                font-family: 'Courier New', monospace;
+                color: #8ba3c0;
+                backdrop-filter: blur(8px);
+            }}
+            .hud-time-display {{
+                text-align: center;
+                font-size: 1.2rem;
+                font-weight: bold;
+                color: {fill_color};
+                margin-bottom: 5px;
+                text-shadow: 0 0 10px {fill_color}80;
+            }}
+            .hud-location-info {{
+                text-align: center;
+                margin-bottom: 15px;
+                font-size: 0.85rem;
+                opacity: 0.8;
+            }}
+            .hud-slider {{
+                width: 100%;
+                accent-color: {fill_color};
+                cursor: pointer;
+            }}
+            .hud-btn-group {{
+                display: flex;
+                gap: 10px;
+                justify-content: center;
+                margin-top: 15px;
+            }}
+            .hud-btn {{
+                padding: 8px 20px;
+                border: 1px solid {fill_color}50;
+                border-radius: 6px;
+                cursor: pointer;
+                font-weight: bold;
+                transition: 0.3s;
+                background: transparent;
+                color: {fill_color};
+                text-transform: uppercase;
+                font-size: 0.8rem;
+            }}
+            .hud-btn:hover {{
+                background: {fill_color}30;
+                box-shadow: 0 0 10px {fill_color}40;
+            }}
+            .hud-speed-active {{
+                background: {fill_color};
+                color: #0b1120 !important;
+                border-color: {fill_color};
+            }}
+        </style>
+
+        <div class="hud-controls-container">
+            <div class="hud-time-display" id="hudTime">--:--:--</div>
+            <div class="hud-location-info" id="hudLoc">Sinkronisasi memuat map plugin...</div>
+            <input type="range" class="hud-slider" id="hudSlider" min="0" max="100" value="0" disabled>
+            <div class="hud-btn-group" style="align-items: center;">
+                <button class="hud-btn hud-btn-active" id="btnPlay" onclick="window.startTacticalAnim(event)">▶ Play</button>
+                <button class="hud-btn" onclick="window.stopTacticalAnim(event)">⏸ Pause</button>
+                <button class="hud-btn" onclick="window.resetTacticalAnim(event)">🔄 Reset</button>
                 
-        TimestampedGeoJson(
-            {'type': 'FeatureCollection', 'features': features},
-            period='PT1S',
-            duration='PT1M', # Trail duration
-            add_last_point=False,
-            auto_play=True,
-            loop=False,
-            max_speed=1,
-            loop_button=True,
-            date_options='YYYY/MM/DD HH:mm:ss',
-            time_slider_drag_update=True
-        ).add_to(m)
+                <div style="border-left: 1px solid {fill_color}50; height: 24px; margin: 0 10px;"></div>
+                
+                <select id="speedSelect" onchange="window.setParamSpeed(this.value)" style="
+                    background: transparent; 
+                    color: {fill_color}; 
+                    border: 1px solid {fill_color}50; 
+                    border-radius: 6px; 
+                    padding: 6px 10px; 
+                    font-size: 0.8rem;
+                    font-family: inherit;
+                    font-weight: bold;
+                    cursor: pointer;
+                    outline: none;
+                ">
+                    <option value="1" style="background:#0b1120;">Speed x1</option>
+                    <option value="2" style="background:#0b1120;">Speed x2</option>
+                    <option value="3" style="background:#0b1120;">Speed x3</option>
+                    <option value="4" style="background:#0b1120;">Speed x4</option>
+                </select>
+            </div>
+        </div>
+        """
+        m.get_root().html.add_child(Element(custom_ui))
+        
+        map_id = m.get_name()
+        
+        custom_js = f"""
+        <script>
+            document.addEventListener('DOMContentLoaded', function() {{
+                function initMovingMarker() {{
+                    // Wait for Leaflet.MovingMarker to load completely
+                    if (typeof L === 'undefined' || typeof L.Marker === 'undefined' || typeof L.Marker.movingMarker === 'undefined') {{
+                        setTimeout(initMovingMarker, 200);
+                        return;
+                    }}
+                    
+                    // Dapatkan instance map dari variabel global leaflet
+                    let mapInstance = null;
+                    try {{ mapInstance = {map_id}; }} catch(e) {{
+                        for (let k in window) {{
+                            if (window[k] && window[k]._leaflet_id) {{
+                                mapInstance = window[k]; break;
+                            }}
+                        }}
+                    }}
+                    
+                    if (!mapInstance) return;
+
+                    const dataTrip = [
+                        {rute_js_str}
+                    ];
+                    const rute = dataTrip.map(d => d.latlng);
+                    const baseDurations = [{durations_js_str}];
+                    
+                    const marker = L.Marker.movingMarker(rute, [...baseDurations], {{ autostart: false }});
+                    
+                    const carIcon = L.icon({{
+                        iconUrl: 'https://cdn-icons-png.flaticon.com/512/3448/3448339.png',
+                        iconSize: [40, 40], iconAnchor: [20, 20]
+                    }});
+                    marker.setIcon(carIcon).addTo(mapInstance);
+                    
+                    const timeLabel = document.getElementById('hudTime');
+                    const locLabel = document.getElementById('hudLoc');
+                    const slider = document.getElementById('hudSlider');
+                    
+                    marker.on('checkpoint', function (result) {{
+                        const index = result.index;
+                        if (dataTrip[index]) {{
+                            timeLabel.innerText = dataTrip[index].time;
+                            locLabel.innerText = dataTrip[index].loc;
+                            slider.value = (index / (dataTrip.length - 1)) * 100;
+                        }}
+                    }});
+                    
+                    let followInterval;
+                    window.startTacticalAnim = function(e) {{
+                        if (e) e.preventDefault();
+                        marker.start();
+                        followInterval = setInterval(() => {{
+                            if (marker.isRunning()) mapInstance.panTo(marker.getLatLng());
+                        }}, 100);
+                    }};
+                    
+                    window.stopTacticalAnim = function(e) {{
+                        if (e) e.preventDefault();
+                        marker.pause();
+                        clearInterval(followInterval);
+                    }};
+                    
+                    window.setParamSpeed = function(factor) {{
+                        let isRunning = marker.isRunning();
+                        if (isRunning) marker.pause();
+                        
+                        // Konversi string dari dropdown ke angka
+                        factor = parseFloat(factor);
+                        if(isNaN(factor) || factor <= 0) factor = 1;
+
+                        marker._durations = baseDurations.map(d => Math.floor(d / factor));
+                        
+                        if (isRunning) window.startTacticalAnim();
+                    }};
+                    
+                    window.resetTacticalAnim = function(e) {{
+                        if (e) e.preventDefault();
+                        marker.stop();
+                        marker.setLatLng(rute[0]);
+                        timeLabel.innerText = dataTrip[0].time;
+                        locLabel.innerText = "Standby...";
+                        slider.value = 0;
+                        clearInterval(followInterval);
+                        mapInstance.setView(rute[0], Math.max(mapInstance.getZoom(), 8));
+                    }};
+                    
+                    marker.on('end', () => {{
+                        clearInterval(followInterval);
+                        timeLabel.innerText = dataTrip[dataTrip.length - 1].time;
+                        locLabel.innerText = "Lintasan Selesai";
+                        slider.value = 100;
+                    }});
+                    
+                    // Init display
+                    timeLabel.innerText = dataTrip[0].time;
+                    locLabel.innerText = dataTrip[0].loc;
+                }}
+                
+                // Mulai inisialisasi looping pengecekan
+                initMovingMarker();
+            }});
+        </script>
+        """
+        m.get_root().html.add_child(Element(custom_js))
 
 def render_map_content():
     st.title("🗺️ Peta Posisi Kapal")
