@@ -1,6 +1,6 @@
 /* ============================================================
-   MARINE OS — DESIGN SYSTEM v2.0
-   Merged & unified from global.css + style.css
+   MARINE OS — DESIGN SYSTEM v2.1
+   Soft palettes, high contrast text, lightweight animations
    ============================================================ */
 
 /* --- 1. FONT IMPORTS --- */
@@ -8,49 +8,57 @@
 
 /* --- 2. CSS CUSTOM PROPERTIES (Design Tokens) --- */
 :root {
-    /* Base Palette — Deep Oceanic Night */
-    --bg-dark: #0b1120;
-    --bg-mid: #0f172a;
-    --bg-card: rgba(22, 34, 56, 0.65);
-    --bg-sidebar: rgba(10, 16, 32, 0.92);
-    --bg-elevated: rgba(30, 44, 70, 0.8);
+    /* Base Palette — Deep Oceanic Night (softened) */
+    --bg-dark: #0d1424;
+    --bg-mid: #111827;
+    --bg-card: rgba(22, 36, 58, 0.72);
+    --bg-sidebar: rgba(11, 17, 34, 0.94);
+    --bg-elevated: rgba(30, 46, 72, 0.85);
 
-    /* Brand Accents */
-    --primary: #0ea5e9;
-    --primary-dim: rgba(14, 165, 233, 0.15);
-    --primary-glow: rgba(14, 165, 233, 0.45);
-    --secondary: #818cf8;
-    --secondary-glow: rgba(129, 140, 248, 0.45);
-    --accent: #14b8a6;
-    --accent-glow: rgba(20, 184, 166, 0.45);
-    --pink: #ec4899;
-    --pink-glow: rgba(236, 72, 153, 0.35);
+    /* Brand Accents — softer, less neon */
+    --primary: #38bdf8;
+    /* sky-400 (was sky-500) */
+    --primary-dim: rgba(56, 189, 248, 0.12);
+    --primary-glow: rgba(56, 189, 248, 0.28);
+    /* reduced from 0.45 */
+    --secondary: #a78bfa;
+    /* violet-400 */
+    --secondary-glow: rgba(167, 139, 250, 0.25);
+    --accent: #2dd4bf;
+    /* teal-400 */
+    --accent-glow: rgba(45, 212, 191, 0.25);
+    --pink: #f472b6;
+    /* pink-400 */
+    --pink-glow: rgba(244, 114, 182, 0.2);
 
     /* Semantic Colors */
-    --danger: #f43f5e;
-    --danger-dim: rgba(244, 63, 94, 0.15);
-    --success: #22c55e;
-    --success-dim: rgba(34, 197, 94, 0.15);
-    --warning: #f59e0b;
-    --warning-dim: rgba(245, 158, 11, 0.15);
-    --info: #38bdf8;
-    --info-dim: rgba(56, 189, 248, 0.12);
+    --danger: #fb7185;
+    --danger-dim: rgba(251, 113, 133, 0.15);
+    --success: #4ade80;
+    --success-dim: rgba(74, 222, 128, 0.12);
+    --warning: #fbbf24;
+    --warning-dim: rgba(251, 191, 36, 0.12);
+    --info: #7dd3fc;
+    --info-dim: rgba(125, 211, 252, 0.10);
 
-    /* Text */
-    --text-primary: #f0f6ff;
-    --text-secondary: #8ba3c0;
-    --text-muted: #4a6080;
+    /* Text — high contrast */
+    --text-primary: #eef2ff;
+    /* very close to white, slight blue warmth */
+    --text-secondary: #94a3b8;
+    /* slate-400 */
+    --text-muted: #475569;
+    /* slate-600 */
 
     /* Borders */
-    --border: rgba(255, 255, 255, 0.08);
-    --border-hover: rgba(14, 165, 233, 0.4);
-    --border-bright: rgba(255, 255, 255, 0.18);
+    --border: rgba(255, 255, 255, 0.07);
+    --border-hover: rgba(56, 189, 248, 0.35);
+    --border-bright: rgba(255, 255, 255, 0.14);
 
     /* Gradients */
-    --grad-primary: linear-gradient(135deg, #0ea5e9 0%, #818cf8 100%);
-    --grad-card: linear-gradient(145deg, rgba(22, 34, 56, 0.7) 0%, rgba(10, 16, 32, 0.65) 100%);
-    --grad-accent: linear-gradient(90deg, #0ea5e9, #818cf8, #ec4899, #14b8a6);
-    --grad-sidebar: linear-gradient(180deg, rgba(14, 165, 233, 0.08) 0%, transparent 60%);
+    --grad-primary: linear-gradient(135deg, #38bdf8 0%, #a78bfa 100%);
+    --grad-card: linear-gradient(145deg, rgba(22, 36, 58, 0.75) 0%, rgba(11, 17, 34, 0.65) 100%);
+    --grad-accent: linear-gradient(90deg, #38bdf8, #a78bfa, #f472b6, #2dd4bf);
+    --grad-sidebar: linear-gradient(180deg, rgba(56, 189, 248, 0.06) 0%, transparent 60%);
 
     /* Typography */
     --font-heading: 'Outfit', sans-serif;
@@ -58,21 +66,21 @@
 
     /* Radii */
     --radius-sm: 8px;
-    --radius-md: 16px;
-    --radius-lg: 24px;
+    --radius-md: 14px;
+    --radius-lg: 22px;
     --radius-xl: 32px;
     --radius-pill: 50px;
 
     /* Shadows */
-    --shadow-sm: 0 2px 8px rgba(0, 0, 0, 0.25);
-    --shadow-md: 0 8px 32px rgba(0, 0, 0, 0.3);
-    --shadow-lg: 0 20px 60px rgba(0, 0, 0, 0.4);
-    --shadow-glow: 0 0 30px var(--primary-glow);
+    --shadow-sm: 0 2px 8px rgba(0, 0, 0, 0.22);
+    --shadow-md: 0 8px 28px rgba(0, 0, 0, 0.28);
+    --shadow-lg: 0 20px 50px rgba(0, 0, 0, 0.38);
+    --shadow-glow: 0 0 24px var(--primary-glow);
 
-    /* Transitions */
-    --transition-fast: all 0.18s cubic-bezier(0.4, 0, 0.2, 1);
-    --transition-med: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-    --transition-slow: all 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+    /* Transitions — fast but smooth */
+    --transition-fast: all 0.15s ease;
+    --transition-med: all 0.25s ease;
+    --transition-slow: all 0.4s ease;
 }
 
 /* --- 3. KEYFRAME ANIMATIONS --- */
@@ -383,9 +391,11 @@ section[data-testid="stSidebar"]::before {
 
 /* Sidebar heading */
 section[data-testid="stSidebar"] [data-testid="stMarkdownContainer"] h2 {
-    background: linear-gradient(90deg, #fff 0%, #8ba3c0 100%);
+    background: linear-gradient(90deg, #fff 0%, #94a3b8 100%);
     -webkit-background-clip: text;
+    background-clip: text;
     -webkit-text-fill-color: transparent;
+    color: transparent;
     text-transform: uppercase;
     font-size: 0.78rem !important;
     letter-spacing: 0.14em;

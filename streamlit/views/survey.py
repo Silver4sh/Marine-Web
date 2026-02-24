@@ -70,77 +70,132 @@ def render_survey_list():
 
 
 def render_create_survey_form():
-    _section_header("✏️", "Buat Laporan Baru", "Isi data survei harian")
+    tab1, tab2 = st.tabs(["Daftar Survey", "Buat Survey"])
+    with tab1:
+        _section_header("📜", "Daftar Survey", "Data survei harian")
+        render_survey_list()
 
-    with st.form("create_survey_form"):
-        col1, col2 = st.columns(2)
+    with tab2:
+        _section_header("✏️", "Buat Survey", "Isi data survei harian")
+        with st.form("create_survey_form"):
+            col1, col2 = st.columns(2)
 
-        with col1:
-            project_name = st.text_input("Nama Proyek", placeholder="Contoh: Survei Selat Malaka")
+            with col1:
+                project_name = st.text_input("Nama Proyek", placeholder="Contoh: Survei Selat Malaka")
 
-            # Auto-generate code report based on date + timestamp
-            auto_code = f"SRV-{datetime.now().strftime('%Y%m%d-%H%M%S')}"
-            code_report = st.text_input(
-                "Kode Laporan",
-                value=auto_code,
-                help="Di-generate otomatis berdasarkan tanggal dan waktu. Bisa diubah jika diperlukan."
-            )
+                # Auto-generate code report based on date + timestamp
+                auto_code = f"SRV-{datetime.now().strftime('%Y%m%d-%H%M%S')}"
+                code_report = st.text_input(
+                    "Kode Laporan",
+                    value=auto_code,
+                    help="Di-generate otomatis berdasarkan tanggal dan waktu. Bisa diubah jika diperlukan."
+                )
 
-            # Site dropdown
-            sites_df = run_query(
-                "SELECT code_site, code_site || ' - ' || location as label "
-                "FROM operation.sites WHERE status = 'Active'"
-            )
-            site_opts   = sites_df['code_site'].tolist() if not sites_df.empty else []
-            site_labels = sites_df['label'].tolist()    if not sites_df.empty else []
-            id_site = st.selectbox(
-                "Site",
-                options=site_opts,
-                format_func=lambda x: site_labels[site_opts.index(x)] if x in site_opts else x
-            )
+                # Site dropdown
+                sites_df = run_query(
+                    "SELECT code_site, code_site || ' - ' || location as label "
+                    "FROM operation.sites WHERE status = 'Active'"
+                )
+                site_opts   = sites_df['code_site'].tolist() if not sites_df.empty else []
+                site_labels = sites_df['label'].tolist()    if not sites_df.empty else []
+                id_site = st.selectbox(
+                    "Site",
+                    options=site_opts,
+                    format_func=lambda x: site_labels[site_opts.index(x)] if x in site_opts else x
+                )
 
-            # Vessel dropdown
-            vessels_df = run_query(
-                "SELECT code_vessel, name FROM operation.vessels WHERE status = 'Active'"
-            )
-            vessel_opts   = vessels_df['code_vessel'].tolist() if not vessels_df.empty else []
-            vessel_labels = vessels_df['name'].tolist()        if not vessels_df.empty else []
-            id_vessel = st.selectbox(
-                "Kapal",
-                options=vessel_opts,
-                format_func=lambda x: vessel_labels[vessel_opts.index(x)] if x in vessel_opts else x
-            )
+                # Vessel dropdown
+                vessels_df = run_query(
+                    "SELECT code_vessel, name FROM operation.vessels WHERE status = 'Active'"
+                )
+                vessel_opts   = vessels_df['code_vessel'].tolist() if not vessels_df.empty else []
+                vessel_labels = vessels_df['name'].tolist()        if not vessels_df.empty else []
+                id_vessel = st.selectbox(
+                    "Kapal",
+                    options=vessel_opts,
+                    format_func=lambda x: vessel_labels[vessel_opts.index(x)] if x in vessel_opts else x
+                )
 
-        with col2:
-            current_user = st.session_state.get('username', 'N/A')
-            st.text_input("Surveyor (Anda)", value=current_user, disabled=True)
-            date_survey = st.date_input("Tanggal Survei", datetime.now())
-            comment = st.text_area("Komentar / Catatan", placeholder="Catatan kondisi lapangan, temuan, dll...", height=120)
+            with col2:
+                current_user = st.session_state.get('username', 'N/A')
+                st.text_input("Surveyor (Anda)", value=current_user, disabled=True)
+                date_survey = st.date_input("Tanggal Survei", datetime.now())
+                comment = st.text_area("Komentar / Catatan", placeholder="Catatan kondisi lapangan, temuan, dll...", height=120)
 
-        st.markdown("<br>", unsafe_allow_html=True)
-        submitted = st.form_submit_button("💾 Simpan Laporan", type="primary", width="stretch")
+            st.markdown("<br>", unsafe_allow_html=True)
+            submitted = st.form_submit_button("💾 Simpan Laporan", type="primary", width="stretch")
 
-        if submitted:
-            if not project_name or not code_report:
-                st.error("❌ Nama Proyek dan Kode Laporan wajib diisi.")
-            else:
-                data = {
-                    "project_name": project_name,
-                    "code_report":  code_report,
-                    "id_site":      id_site,
-                    "id_vessel":    id_vessel,
-                    "id_user":      current_user,
-                    "date_survey":  date_survey,
-                    "comment":      comment
-                }
-                success, msg = create_survey_report(data)
-                if success:
-                    st.success(f"✅ {msg}")
-                    st.cache_data.clear()
-                    st.rerun()  # Reset form and refresh list
+            if submitted:
+                if not project_name or not code_report:
+                    st.error("❌ Nama Proyek dan Kode Laporan wajib diisi.")
                 else:
-                    st.error(f"❌ Gagal: {msg}")
+                    data = {
+                        "project_name": project_name,
+                        "code_report":  code_report,
+                        "id_site":      id_site,
+                        "id_vessel":    id_vessel,
+                        "id_user":      current_user,
+                        "date_survey":  date_survey,
+                        "comment":      comment
+                    }
+                    success, msg = create_survey_report(data)
+                    if success:
+                        st.success(f"✅ {msg}")
+                        st.cache_data.clear()
+                        st.rerun()  # Reset form and refresh list
+                    else:
+                        st.error(f"❌ Gagal: {msg}")
 
+def render_buoy_data_form():
+    tab1, tab2 = st.tabs(["Daftar data Buoy", "Buat data Buoy"])
+    
+    with tab1:
+        st.info("Fitur riwayat data buoy akan segera hadir.")
+
+    with tab2:
+        _section_header("📡", "Input Data Buoy", "Masukkan data (.dat, .xlsx, .csv) dari buoy untuk kalkulasi rata-rata")
+
+        uploaded_file = st.file_uploader("Upload File Data Buoy", type=["dat", "xlsx", "csv"])
+        
+        if uploaded_file is not None:
+            try:
+                df = pd.read_csv(uploaded_file, skiprows=[0,2,3], na_values="NAN")
+                df = df.dropna()
+                
+                if 'TIMESTAMP' in df.columns:
+                    df['TIMESTAMP'] = pd.to_datetime(df['TIMESTAMP'], format='%Y-%m-%d %H:%M:%S', errors='coerce')
+                    df = df.dropna(subset=['TIMESTAMP'])
+                    df = df.sort_values(by='TIMESTAMP')
+
+                mapping_kolom = {
+                    'Hsig1_3': 'tinggi_gelombang_signifikan',
+                    'Hsig': 'tinggi_gelombang_maks',
+                    'Tzuc': 'periode_nol_crossing',
+                    'Tpeak': 'periode_puncak',
+                    'WL_av': 'rata_rata_level_air',
+                    'WL_max': 'level_air_maksimum'
+                }
+                df.rename(columns=mapping_kolom, inplace=True)
+
+                st.success("✅ File berhasil di-parse dan diproses!")
+                
+                if 'TIMESTAMP' in df.columns:
+                    df = df.set_index('TIMESTAMP')
+                
+                st.subheader("Informasi Gelombang & Level Air (Mapped Data)")
+                st.dataframe(df, width = "stretch")
+                
+                csv_data = df.to_csv(index=True).encode('utf-8')
+                st.download_button(
+                    label="⬇️ Download Data Bersih (CSV)",
+                    data=csv_data,
+                    file_name="wlr_data_bersih.csv",
+                    mime="text/csv",
+                    key="download_clean_wlr"
+                )
+
+            except Exception as e:
+                st.error(f"❌ Terjadi kesalahan saat membaca atau memproses file: {str(e)}")
 
 def render_survey_page():
     st.markdown("""
@@ -153,10 +208,10 @@ def render_survey_page():
         </div>
     """, unsafe_allow_html=True)
 
-    tab1, tab2 = st.tabs(["📜 Daftar Laporan", "➕ Buat Laporan Baru"])
+    tab1, tab2 = st.tabs(["➕ DaftarSurvey", "➕ Data Buoy"])
 
     with tab1:
-        render_survey_list()
+        render_create_survey_form()
 
     with tab2:
-        render_create_survey_form()
+        render_buoy_data_form()

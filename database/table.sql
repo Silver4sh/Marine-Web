@@ -3,7 +3,7 @@ CREATE SCHEMA log 			AUTHORIZATION postgres;
 CREATE SCHEMA audit 		AUTHORIZATION postgres;
 CREATE SCHEMA rockworks 	AUTHORIZATION postgres;
 CREATE SCHEMA survey		AUTHORIZATION postgres;
-CREATE SCHEMA buoy		 	AUTHORIZATION postgres;
+CREATE SCHEMA ocean		 	AUTHORIZATION postgres;
 
 --- Table
 -- al
@@ -307,8 +307,8 @@ CREATE TABLE audit.audit_logs (
 
 CREATE TABLE audit.audit_logs_default PARTITION OF audit.audit_logs DEFAULT; -- Default partition for unmatched dates
 
--- buoy
-CREATE TABLE buoy.buoys (
+-- ocean
+CREATE TABLE ocean.buoys (
 	id 			serial4				NOT NULL,
 	id_site 	varchar(20) 		NOT NULL,
 	code_buoy 	varchar(20) 		NOT NULL,
@@ -324,7 +324,7 @@ CREATE TABLE buoy.buoys (
 	CONSTRAINT buoys_id_site_fkey 	FOREIGN KEY (id_site) REFERENCES operation.sites(code_site) ON UPDATE CASCADE ON DELETE CASCADE
 );
 
-CREATE TABLE buoy.buoy_sensor_histories (
+CREATE TABLE ocean.buoy_sensor_histories (
 	id 			serial4		NOT NULL,
 	id_buoy 	varchar(20) NOT NULL,
 	salinitas 	int4,
@@ -335,10 +335,10 @@ CREATE TABLE buoy.buoy_sensor_histories (
 	density 	int4,
 	created_at 	timestamp 	DEFAULT NOW(),
 	CONSTRAINT buoy_sensor_histories_pkey 			PRIMARY KEY (id),
-	CONSTRAINT buoy_sensor_histories_id_site_fkey 	FOREIGN KEY (id_buoy) REFERENCES buoy.buoys(code_buoy) ON UPDATE CASCADE ON DELETE CASCADE
+	CONSTRAINT buoy_sensor_histories_id_site_fkey 	FOREIGN KEY (id_buoy) REFERENCES ocean.buoys(code_buoy) ON UPDATE CASCADE ON DELETE CASCADE
 );
 
-CREATE TABLE buoy.buoy_mtc_histories (
+CREATE TABLE ocean.buoy_mtc_histories (
 	id				serial4		NOT NULL,
 	id_buoy			varchar(20)	NOT NULL,
 	start_date		timestamp	NOT NULL,
@@ -348,7 +348,20 @@ CREATE TABLE buoy.buoy_mtc_histories (
 	updated_at		timestamp,
 	deleted_at		timestamp,
 	CONSTRAINT buoy_mtc_histories_pkey			PRIMARY KEY (id),
-	CONSTRAINT buoy_mtc_histories_id_buoy_fkey	FOREIGN KEY (id_buoy) REFERENCES buoy.buoys(code_buoy) ON UPDATE CASCADE ON DELETE CASCADE
+	CONSTRAINT buoy_mtc_histories_id_buoy_fkey	FOREIGN KEY (id_buoy) REFERENCES ocean.buoys(code_buoy) ON UPDATE CASCADE ON DELETE CASCADE
+);
+
+CREATE TABLE ocean.tide_wave_histories (
+	id				serial4		NOT NULL,
+	tide_sig		int4		NOT NULL,
+	tide_high		int4		NOT NULL,
+	tide_low		int4		NOT NULL,
+	tide_mean		int4		NOT NULL,
+	tide_median		int4		NOT NULL,
+	wave_height		int4		NOT NULL,
+	wave_period		int4		NOT NULL,
+	created_at		timestamp	NOT NULL,
+	CONSTRAINT tide_wave_histories_pkey				PRIMARY KEY (id)
 );
 
 -- log
@@ -1398,9 +1411,9 @@ CREATE INDEX idx_partner_search 						ON operation.partners 					USING btree (st
 CREATE INDEX idx_clients_region_search 					ON operation.clients 						USING btree (region, status);
 CREATE INDEX idx_users_search 							ON operation.users 						USING btree (organs, role);
 
---buoy
-CREATE INDEX idx_buoy_sensor_histories_search 			ON buoy.buoy_sensor_histories 		USING btree (created_at);
-CREATE INDEX idx_buoy_mtc_histories_search 				ON buoy.buoy_mtc_histories 			USING btree (id_buoy, start_date);
+--ocean
+CREATE INDEX idx_buoy_sensor_histories_search 			ON ocean.buoy_sensor_histories 		USING btree (created_at);
+CREATE INDEX idx_buoy_mtc_histories_search 				ON ocean.buoy_mtc_histories 			USING btree (id_buoy, start_date);
 
 
 -- Audit
@@ -1525,8 +1538,8 @@ CREATE INDEX idx_daily_report_vibrocore_site 					ON survey.daily_report_vibroco
 CREATE INDEX idx_daily_report_vibrocore_vessel 					ON survey.daily_report_vibrocore 					USING btree (id_vessel);
 CREATE INDEX idx_daily_report_vibrocore_detail_search 			ON survey.daily_report_vibrocore_detail 			USING btree (id_report); 
 
--- buoy
-CREATE INDEX idx_buoys_site 					ON buoy.buoys (id_site);
+-- ocean
+CREATE INDEX idx_buoys_site 					ON ocean.buoys (id_site);
 
 -- operation
 CREATE INDEX idx_clients_contact 				ON operation.clients (id_contact);
@@ -1550,8 +1563,8 @@ CREATE SEQUENCE operation.seq_payment_code;
 CREATE SEQUENCE operation.seq_vessel_code;
 CREATE SEQUENCE operation.seq_task_code;
 
--- buoy
-CREATE SEQUENCE buoy.seq_buoy_code;
+-- ocean
+CREATE SEQUENCE ocean.seq_buoy_code;
 
 -- log
 CREATE SEQUENCE log.seq_term_code;
@@ -1571,7 +1584,7 @@ BEGIN
     IF TG_TABLE_NAME = 'contacts' THEN prefix := 'CT'; seq_name := 'operation.seq_contact_code';
     ELSIF TG_TABLE_NAME = 'method_payments' THEN prefix := 'MP'; seq_name := 'operation.seq_methodpay_code';
     ELSIF TG_TABLE_NAME = 'sites' THEN prefix := 'ST'; seq_name := 'operation.seq_site_code';
-    ELSIF TG_TABLE_NAME = 'buoys' THEN prefix := 'BY'; seq_name := 'buoy.seq_buoy_code';
+    ELSIF TG_TABLE_NAME = 'buoys' THEN prefix := 'BY'; seq_name := 'ocean.seq_buoy_code';
     ELSIF TG_TABLE_NAME = 'users' THEN prefix := 'USR'; seq_name := 'operation.seq_user_code';
     ELSIF TG_TABLE_NAME = 'clients' THEN prefix := 'CL'; seq_name := 'operation.seq_client_code';
     ELSIF TG_TABLE_NAME = 'partners' THEN prefix := 'PT'; seq_name := 'operation.seq_partner_code';
@@ -1617,7 +1630,7 @@ $$ LANGUAGE plpgsql;
 CREATE TRIGGER trg_generate_code_contacts BEFORE INSERT ON operation.contacts FOR EACH ROW WHEN (NEW.code_contact IS NULL) EXECUTE FUNCTION operation.generate_code_auto();
 CREATE TRIGGER trg_generate_code_methodpay BEFORE INSERT ON operation.method_payments FOR EACH ROW WHEN (NEW.code_methodpay IS NULL) EXECUTE FUNCTION operation.generate_code_auto();
 CREATE TRIGGER trg_generate_code_sites BEFORE INSERT ON operation.sites FOR EACH ROW WHEN (NEW.code_site IS NULL) EXECUTE FUNCTION operation.generate_code_auto();
-CREATE TRIGGER trg_generate_code_buoys BEFORE INSERT ON buoy.buoys FOR EACH ROW WHEN (NEW.code_buoy IS NULL) EXECUTE FUNCTION operation.generate_code_auto();
+CREATE TRIGGER trg_generate_code_buoys BEFORE INSERT ON ocean.buoys FOR EACH ROW WHEN (NEW.code_buoy IS NULL) EXECUTE FUNCTION operation.generate_code_auto();
 CREATE TRIGGER trg_generate_code_users BEFORE INSERT ON operation.users FOR EACH ROW WHEN (NEW.code_user IS NULL) EXECUTE FUNCTION operation.generate_code_auto();
 CREATE TRIGGER trg_generate_code_clients BEFORE INSERT ON operation.clients FOR EACH ROW WHEN (NEW.code_client IS NULL) EXECUTE FUNCTION operation.generate_code_auto();
 CREATE TRIGGER trg_generate_code_partners BEFORE INSERT ON operation.partners FOR EACH ROW WHEN (NEW.code_partner IS NULL) EXECUTE FUNCTION operation.generate_code_auto();
