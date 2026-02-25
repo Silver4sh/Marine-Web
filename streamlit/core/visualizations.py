@@ -83,44 +83,64 @@ def add_history_path_to_map(m, path_df, fill_color, v_id_str, show_timelapse=Fal
     waypoints_js = ",\n".join(waypoints)
     durations_js = ", ".join(map(str, _calc_durations(rows_list)))
 
-    # Load local MovingMarker.js (served from static/ via Streamlit)
-    m.get_root().html.add_child(Element(
-        '<script src="app/static/MovingMarker.js"></script>'
-    ))
-
     map_id = m.get_name()
+
+    # Read MovingMarker.js source to inline it — eliminates any CDN / static-serve race
+    import os as _os
+    _plugin_path = _os.path.join(_os.path.dirname(_os.path.dirname(_os.path.abspath(__file__))),
+                                 "static", "MovingMarker.js")
+    try:
+        with open(_plugin_path, "r", encoding="utf-8") as _f:
+            _moving_marker_src = _f.read()
+    except FileNotFoundError:
+        # Fallback: load from parent project dir
+        _fallback = _os.path.join(_os.path.dirname(_os.path.dirname(_os.path.dirname(_os.path.abspath(__file__)))),
+                                  "MovingMarker.js")
+        with open(_fallback, "r", encoding="utf-8") as _f:
+            _moving_marker_src = _f.read()
+
 
     hud_html = f"""
     <style>
         .hud-wrap {{
-            position:absolute; bottom:30px; left:50%; transform:translateX(-50%);
-            background:rgba(10,16,32,0.88); padding:14px 22px;
-            border:1px solid {fill_color}80; border-radius:12px; z-index:9999;
-            width:68%; max-width:580px; font-family:'Courier New',monospace;
-            color:#8ba3c0; backdrop-filter:blur(8px);
-            box-shadow:0 4px 15px rgba(0,0,0,0.5);
+            position:absolute; bottom:28px; left:50%; transform:translateX(-50%);
+            background:rgba(13,20,36,0.90); padding:13px 20px;
+            border:1px solid rgba(56,189,248,0.25); border-radius:12px;
+            z-index:9999; width:65%; max-width:560px;
+            font-family:'Courier New',monospace; color:#94a3b8;
+            backdrop-filter:blur(10px); box-shadow:0 4px 20px rgba(0,0,0,0.45);
         }}
-        .hud-time {{text-align:center;font-size:1.15rem;font-weight:bold;
-            color:{fill_color};text-shadow:0 0 10px {fill_color}80;margin-bottom:3px;}}
-        .hud-info {{text-align:center;font-size:0.82rem;opacity:.8;margin-bottom:12px;}}
-        .hud-slider {{width:100%;accent-color:{fill_color};cursor:pointer;}}
-        .hud-btns {{display:flex;gap:8px;justify-content:center;align-items:center;margin-top:12px;}}
-        .hud-btn {{padding:7px 18px;border:1px solid {fill_color}50;border-radius:6px;
-            cursor:pointer;font-weight:bold;transition:.25s;background:transparent;
-            color:{fill_color};text-transform:uppercase;font-size:.78rem;}}
-        .hud-btn:hover {{background:{fill_color}25;box-shadow:0 0 8px {fill_color}40;}}
-        .hud-sep {{border-left:1px solid {fill_color}40;height:22px;margin:0 8px;}}
-        .hud-select {{background:transparent;color:{fill_color};
-            border:1px solid {fill_color}50;border-radius:6px;
-            padding:5px 10px;font-size:.78rem;font-family:inherit;
-            font-weight:bold;cursor:pointer;outline:none;}}
+        .hud-time {{
+            text-align:center; font-size:1.1rem; font-weight:bold;
+            color:#7dd3fc; margin-bottom:2px;
+        }}
+        .hud-info {{
+            text-align:center; font-size:0.8rem; opacity:.75; margin-bottom:10px;
+        }}
+        .hud-slider {{width:100%; accent-color:#38bdf8; cursor:pointer; margin-bottom:10px;}}
+        .hud-btns {{display:flex; gap:8px; justify-content:center; align-items:center;}}
+        .hud-btn {{
+            padding:6px 16px; border:1px solid rgba(56,189,248,0.3);
+            border-radius:6px; cursor:pointer; font-weight:600;
+            background:rgba(56,189,248,0.08); color:#7dd3fc;
+            font-size:.76rem; transition:background .15s,border-color .15s;
+        }}
+        .hud-btn:hover {{background:rgba(56,189,248,0.18); border-color:rgba(56,189,248,0.55);}}
+        .hud-sep {{border-left:1px solid rgba(56,189,248,0.2); height:20px; margin:0 6px;}}
+        .hud-select {{
+            background:rgba(13,20,36,0.8); color:#7dd3fc;
+            border:1px solid rgba(56,189,248,0.3); border-radius:6px;
+            padding:4px 8px; font-size:.76rem; cursor:pointer; outline:none;
+        }}
     </style>
+
     <div class="hud-wrap">
         <div class="hud-time" id="hudTime">--:--:--</div>
-        <div class="hud-info" id="hudInfo">Memuat plugin...</div>
-        <input type="range" class="hud-slider" id="hudSlider" min="0" max="100" value="0" disabled>
+        <div class="hud-info" id="hudInfo">Menunggu plugin...</div>
+        <input type="range" class="hud-slider" id="hudSlider"
+               min="0" max="100" value="0" disabled>
         <div class="hud-btns">
-            <button class="hud-btn" id="btnPlay" onclick="window._tactPlay()">▶ Play</button>
+            <button class="hud-btn" onclick="window._tactPlay()">▶ Play</button>
             <button class="hud-btn" onclick="window._tactPause()">⏸ Pause</button>
             <button class="hud-btn" onclick="window._tactReset()">↺ Reset</button>
             <div class="hud-sep"></div>
@@ -134,83 +154,123 @@ def add_history_path_to_map(m, path_df, fill_color, v_id_str, show_timelapse=Fal
     </div>
 
     <script>
-    (function poll() {{
-        if (typeof L === 'undefined' || !L.Marker.movingMarker) {{
-            return setTimeout(poll, 100);
+    /*
+     * Inline Leaflet.MovingMarker — waits for L to be defined before
+     * registering the plugin, then initialises the animation immediately.
+     * This avoids the "typeof L === undefined" race condition.
+     */
+    (function waitForLeaflet() {{
+        if (typeof L === 'undefined' || !L.Marker) {{
+            return setTimeout(waitForLeaflet, 60);
         }}
 
-        // Resolve map instance
-        let map;
-        try {{ map = {map_id}; }} catch(e) {{
-            for (let k in window) {{
-                if (window[k] && window[k]._leaflet_id) {{ map = window[k]; break; }}
+        // ── Register MovingMarker plugin inline (no external script src) ────
+        if (!L.Marker.movingMarker) {{
+            {_moving_marker_src}
+        }}
+
+        // ── Resolve the Folium map instance ─────────────────────────────────
+        function getMap() {{
+            let map;
+            try {{ map = {map_id}; }} catch(e) {{}}
+            if (map && map._leaflet_id && map.getCenter) return map;
+            // Fallback: look in window globals
+            for (const k of Object.keys(window)) {{
+                const v = window[k];
+                if (v && v._leaflet_id && typeof v.getCenter === 'function') return v;
             }}
+            return null;
         }}
-        if (!map) return setTimeout(poll, 100);
 
-        const pts = [{waypoints_js}];
-        const latlngs = pts.map(p => p.latlng);
-        const baseDur  = [{durations_js}];
+        function initAnimation() {{
+            const map = getMap();
+            if (!map) return setTimeout(initAnimation, 80);
 
-        const shipIcon = L.icon({{
-            iconUrl: 'https://cdn-icons-png.flaticon.com/512/870/870082.png',
-            iconSize: [34, 34], iconAnchor: [17, 17]
-        }});
+            // ── Data ────────────────────────────────────────────────────────
+            const pts     = [{waypoints_js}];
+            const latlngs = pts.map(p => p.latlng);
+            const baseDur = [{durations_js}];   // ms per segment
+            let speedFactor = 1;
 
-        const mk = L.Marker.movingMarker(latlngs, [...baseDur], {{autostart: false}});
-        mk.setIcon(shipIcon).addTo(map);
+            // ── Ship icon ───────────────────────────────────────────────────
+            const shipIcon = L.icon({{
+                iconUrl:   'https://cdn-icons-png.flaticon.com/512/870/870082.png',
+                iconSize:  [32, 32],
+                iconAnchor:[16, 16]
+            }});
 
-        const elTime  = document.getElementById('hudTime');
-        const elInfo  = document.getElementById('hudInfo');
-        const slider  = document.getElementById('hudSlider');
+            // ── Factory: create a fresh MovingMarker (needed for reset/speed) ──
+            let pollTimer;
+            function createMarker(durations) {{
+                const mk = L.Marker.movingMarker(latlngs, durations, {{ autostart: false }});
+                mk.setIcon(shipIcon).addTo(map);
 
-        // Checkpoint fires when marker arrives at each waypoint
-        mk.on('checkpoint', e => {{
-            const d = pts[e.index];
-            if (!d) return;
-            elTime.innerText = d.time;
-            elInfo.innerText  = d.loc;
-            slider.value = (e.index / (pts.length - 1)) * 100;
-        }});
+                // Official 'end' event
+                mk.on('end', () => {{
+                    clearInterval(pollTimer);
+                    slider.value     = 100;
+                    elTime.innerText = pts[pts.length - 1].time;
+                    elInfo.innerText = pts[pts.length - 1].loc + '  ·  Selesai ✓';
+                }});
+                return mk;
+            }}
 
-        let panTimer;
-        const startPan = () => {{
-            clearInterval(panTimer);
-            panTimer = setInterval(() => mk.isRunning() && map.panTo(mk.getLatLng()), 150);
-        }};
+            let mk = createMarker([...baseDur]);
 
-        // NOTE: L.Marker.MovingMarker.start() already handles resume internally
-        window._tactPlay  = () => {{ mk.start(); startPan(); }};
-        window._tactPause = () => {{ mk.pause(); clearInterval(panTimer); }};
-        window._tactSpeed = factor => {{
-            const running = mk.isRunning();
-            if (running) mk.pause();
-            factor = Math.max(parseFloat(factor) || 1, 0.01);
-            mk._durations = baseDur.map(d => Math.max(50, Math.floor(d / factor)));
-            if (running) {{ mk.start(); startPan(); }}
-        }};
-        window._tactReset = () => {{
-            mk.stop();
-            mk.setLatLng(latlngs[0]);
-            mk._durations = [...baseDur];
-            mk._state = L.Marker.MovingMarker.notStartedState;
+            // ── HUD DOM references ──────────────────────────────────────────
+            const elTime = document.getElementById('hudTime');
+            const elInfo = document.getElementById('hudInfo');
+            const slider = document.getElementById('hudSlider');
+
             elTime.innerText = pts[0].time;
-            elInfo.innerText  = pts[0].loc;
-            slider.value = 0;
-            clearInterval(panTimer);
-            map.setView(latlngs[0], Math.max(map.getZoom(), 8));
-        }};
+            elInfo.innerText = pts[0].loc;
 
-        mk.on('end', () => {{
-            clearInterval(panTimer);
-            elTime.innerText = pts[pts.length - 1].time;
-            elInfo.innerText  = 'Lintasan selesai';
-            slider.value = 100;
-        }});
+            // ── Polling loop: pan map + update HUD (no checkpoint event in API) ──
+            function startPolling() {{
+                clearInterval(pollTimer);
+                pollTimer = setInterval(() => {{
+                    if (!mk.isRunning()) return;
+                    const pos = mk.getLatLng();
+                    map.panTo(pos);
 
-        // Init display
-        elTime.innerText = pts[0].time;
-        elInfo.innerText  = pts[0].loc;
+                    // Find closest waypoint index for HUD label
+                    let closest = 0, minDist = Infinity;
+                    pts.forEach((p, i) => {{
+                        const d = map.distance(pos, L.latLng(p.latlng));
+                        if (d < minDist) {{ minDist = d; closest = i; }}
+                    }});
+                    elTime.innerText = pts[closest].time;
+                    elInfo.innerText = pts[closest].loc;
+                    slider.value     = (closest / (pts.length - 1)) * 100;
+                }}, 250);
+            }}
+
+            // ── Controls ─────────────────────────────────────────────────────
+            // start() handles both first-play and resume-after-pause (official API)
+            window._tactPlay = () => {{ mk.start(); startPolling(); }};
+
+            window._tactPause = () => {{ mk.pause(); clearInterval(pollTimer); }};
+
+            window._tactReset = () => {{
+                mk.stop(); clearInterval(pollTimer); mk.remove();
+                mk = createMarker(baseDur.map(d => Math.max(50, Math.floor(d / speedFactor))));
+                map.setView(latlngs[0], Math.max(map.getZoom(), 8));
+                elTime.innerText = pts[0].time;
+                elInfo.innerText = pts[0].loc;
+                slider.value = 0;
+            }};
+
+            // Recreate with new speed (official API has no public duration setter)
+            window._tactSpeed = (val) => {{
+                const wasRunning = mk.isRunning();
+                mk.stop(); clearInterval(pollTimer); mk.remove();
+                speedFactor = Math.max(parseFloat(val) || 1, 0.1);
+                mk = createMarker(baseDur.map(d => Math.max(50, Math.floor(d / speedFactor))));
+                if (wasRunning) {{ mk.start(); startPolling(); }}
+            }};
+        }}
+
+        initAnimation();
     }})();
     </script>
     """
