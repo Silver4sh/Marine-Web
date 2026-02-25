@@ -14,18 +14,22 @@ DB_PORT = os.getenv("DB_PORT")
 DB_NAME = os.getenv("DB_NAME")
 DB_URL = f"postgresql+psycopg2://{DB_USER}:{DB_PASS}@{DB_HOST}:{DB_PORT}/{DB_NAME}"
 
-@st.cache_resource
+_engine: Engine | None = None
+
 def get_engine() -> Engine:
-    try:
-        return create_engine(DB_URL, echo=False, pool_pre_ping=True, pool_size=10, max_overflow=20, pool_recycle=1800)
-    except Exception as e:
-        st.error(f"Gagal membuat engine database: {e}"); return None
+    global _engine
+    if _engine is None:
+        try:
+            _engine = create_engine(DB_URL, echo=False, pool_pre_ping=True, pool_size=10, max_overflow=20, pool_recycle=1800)
+        except Exception as e:
+            print(f"[ERROR] Gagal membuat engine database: {e}")
+    return _engine
 
 def get_connection():
     engine = get_engine()
     if engine is None: return None
     try: return engine.connect()
-    except SQLAlchemyError as e: st.error(f"Kesalahan koneksi database: {e}"); return None
+    except SQLAlchemyError as e: print(f"[ERROR] Kesalahan koneksi database: {e}"); return None
 
 def run_query(query, params=None):
     engine = get_engine()
@@ -120,7 +124,7 @@ def get_revenue_cycle_metrics():
 # --- ENVIRONMENTAL & OTHER QUERIES ---
 @st.cache_data(ttl=60)
 def get_data_water():
-    query = "SELECT bsh.id_buoy, s.latitude, s.longitude, bsh.salinitas as salinitas, bsh.turbidity as turbidity, bsh.current as current, bsh.oxygen as oxygen, bsh.tide as tide, bsh.density as density, bsh.created_at as latest_timestamp FROM operation.buoy_sensor_histories bsh JOIN operation.buoys b ON b.code_buoy = bsh.id_buoy JOIN operation.sites s ON s.code_site = b.id_site ORDER BY bsh.created_at DESC"
+    query = "SELECT bsh.id_buoy, s.latitude, s.longitude, bsh.salinitas as salinitas, bsh.turbidity as turbidity, bsh.current as current, bsh.oxygen as oxygen, bsh.tide as tide, bsh.density as density, bsh.created_at as latest_timestamp FROM buoy.buoy_sensor_histories bsh JOIN buoy.buoys b ON b.code_buoy = bsh.id_buoy JOIN operation.sites s ON s.code_site = b.id_site ORDER BY bsh.created_at DESC"
     return run_query(query)
 
 @st.cache_data(ttl=300)
@@ -135,7 +139,7 @@ def get_logs():
 
 @st.cache_data(ttl=60)
 def get_environmental_anomalies():
-    query = "WITH stats AS (SELECT id_buoy, AVG(salinitas) as avg_sal, STDDEV(salinitas) as std_sal, AVG(turbidity) as avg_tur, STDDEV(turbidity) as std_tur FROM operation.buoy_sensor_histories WHERE created_at >= NOW() - INTERVAL '30 days' GROUP BY id_buoy) SELECT h.id_buoy, h.created_at, h.salinitas, h.turbidity, (h.salinitas - s.avg_sal) / NULLIF(s.std_sal, 0) as sal_z_score, (h.turbidity - s.avg_tur) / NULLIF(s.std_tur, 0) as tur_z_score FROM operation.buoy_sensor_histories h JOIN stats s ON h.id_buoy = s.id_buoy WHERE h.created_at >= NOW() - INTERVAL '7 days' AND (ABS((h.salinitas - s.avg_sal) / NULLIF(s.std_sal, 0)) > 2 OR ABS((h.turbidity - s.avg_tur) / NULLIF(s.std_tur, 0)) > 2) ORDER BY h.created_at DESC"
+    query = "WITH stats AS (SELECT id_buoy, AVG(salinitas) as avg_sal, STDDEV(salinitas) as std_sal, AVG(turbidity) as avg_tur, STDDEV(turbidity) as std_tur FROM buoy.buoy_sensor_histories WHERE created_at >= NOW() - INTERVAL '30 days' GROUP BY id_buoy) SELECT h.id_buoy, h.created_at, h.salinitas, h.turbidity, (h.salinitas - s.avg_sal) / NULLIF(s.std_sal, 0) as sal_z_score, (h.turbidity - s.avg_tur) / NULLIF(s.std_tur, 0) as tur_z_score FROM buoy.buoy_sensor_histories h JOIN stats s ON h.id_buoy = s.id_buoy WHERE h.created_at >= NOW() - INTERVAL '7 days' AND (ABS((h.salinitas - s.avg_sal) / NULLIF(s.std_sal, 0)) > 2 OR ABS((h.turbidity - s.avg_tur) / NULLIF(s.std_tur, 0)) > 2) ORDER BY h.created_at DESC"
     return run_query(query)
 
 # --- SYSTEM SETTINGS ---
@@ -221,7 +225,7 @@ def update_password(username, old_pass, new_pass):
 @st.cache_data(ttl=57)
 def get_buoy_fleet():
     # 1. Fetch Active Buoys (User removed location, that's fine, View handles it)
-    q1 = "SELECT b.code_buoy, b.status, '85%' as battery, MAX(bsh.created_at) as last_update FROM operation.buoys b LEFT JOIN operation.buoy_sensor_histories bsh ON b.code_buoy = bsh.id_buoy GROUP BY b.code_buoy, b.status"
+    q1 = "SELECT b.code_buoy, b.status, '85%' as battery, MAX(bsh.created_at) as last_update FROM buoy.buoys b LEFT JOIN buoy.buoy_sensor_histories bsh ON b.code_buoy = bsh.id_buoy GROUP BY b.code_buoy, b.status"
     df1 = run_query(q1)
     
     # Combine results
@@ -234,7 +238,7 @@ def get_buoy_fleet():
 
 @st.cache_data(ttl=60)
 def get_buoy_history(buoy_id):
-    query = "SELECT id_buoy, created_at, salinitas, turbidity, oxygen, density, current, tide FROM operation.buoy_sensor_histories WHERE id_buoy = :buoy_id ORDER BY created_at ASC"
+    query = "SELECT id_buoy, created_at, salinitas, turbidity, oxygen, density, current, tide FROM buoy.buoy_sensor_histories WHERE id_buoy = :buoy_id ORDER BY created_at ASC"
     df = run_query(query, params={"buoy_id": buoy_id})
     return df
 
@@ -292,7 +296,7 @@ def get_environmental_compliance_dashboard():
         COUNT(*) as total_readings,
         SUM(CASE WHEN turbidity > 50 THEN 1 ELSE 0 END) as high_turbidity_events,
         AVG(turbidity) as avg_turbidity
-    FROM operation.buoy_sensor_histories
+    FROM buoy.buoy_sensor_histories
     WHERE created_at >= NOW() - INTERVAL '30 days'
     GROUP BY 1
     ORDER BY 1 DESC

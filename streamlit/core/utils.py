@@ -3,15 +3,22 @@ import streamlit as st
 import pandas as pd
 import folium
 
-def load_html(filename):
-    """Memuat template HTML dari folder assets."""
+def load_html(filename: str) -> str:
+    """
+    Memuat template HTML dari folder assets/html dan mengompresnya ke satu baris.
+
+    Kompresi ke satu baris diperlukan karena parser CommonMark milik Streamlit
+    akan mengubah tag HTML multi-baris menjadi teks biasa yang di-escape.
+    """
     try:
-        # Resolve path relative to this file (dashboard/core/utils.py)
-        current_dir = os.path.dirname(os.path.abspath(__file__)) # .../dashboard/core
-        project_dir = os.path.dirname(current_dir) # .../dashboard
-        file_path = os.path.join(project_dir, "assets", "html", filename)
-        
-        with open(file_path, "r", encoding="utf-8") as f: return f.read()
+        import re
+        current_dir = os.path.dirname(os.path.abspath(__file__))
+        project_dir = os.path.dirname(current_dir)
+        file_path   = os.path.join(project_dir, "assets", "html", filename)
+        with open(file_path, "r", encoding="utf-8") as f:
+            content = f.read()
+        # Collapse all whitespace runs (newlines, tabs, spaces) to a single space
+        return re.sub(r'\s+', ' ', content).strip()
     except FileNotFoundError:
         return ""
 
@@ -54,7 +61,7 @@ def render_metric_card(label, value, delta=None, color="green", help_text=None):
         </style>
         """
         st.markdown(css, unsafe_allow_html=True)
-        with st.popover("ℹ️", use_container_width=False):
+        with st.popover("ℹ️", width='content'):
             st.markdown(f"**Info Metrik**\n\n{help_text}")
 
 def get_status_color(status):
@@ -171,7 +178,7 @@ def render_vessel_card(row, status_color, highlighted=False):
                         .replace("{v_speed}", str(v_speed))
         st.markdown(card_html, unsafe_allow_html=True)
     
-    if st.button("📍 Lokasi", key=f"btn_{v_id}_{row.get('Last Update', '')}", use_container_width=True):
+    if st.button("📍 Lokasi", key=f"btn_{v_id}_{row.get('Last Update', '')}", width='stretch'):
         st.session_state["search_select"] = v_id
 
 def render_vessel_list_column(title, df, icon="⚓", height=650):
@@ -223,6 +230,6 @@ def render_vessel_detail_section(row):
     if not path_df.empty:
         path_df = path_df[['created_at', 'latitude', 'longitude', 'speed', 'heading']]
         path_df.columns = ['Waktu', 'Latitude', 'Longitude', 'Kecepatan (kn)', 'Heading (°)']
-        st.dataframe(path_df, use_container_width=True, hide_index=True)
+        st.dataframe(path_df, width='stretch', hide_index=True)
     else:
         st.info("Belum ada data riwayat perjalanan.")

@@ -70,16 +70,16 @@ def sidebar_nav():
         # Render Tombol
         for item in menu:
             key_btn = f"nav_{item}"
-            if st.button(item, key=key_btn, use_container_width=True, type="primary" if st.session_state.current_page == item else "secondary"):
+            if st.button(item, key=key_btn, width='stretch', type="primary" if st.session_state.current_page == item else "secondary"):
                 st.session_state.current_page = item
                 st.rerun()
 
         st.divider()
-        if st.button("🔔 Notifikasi", key="notif_btn", use_container_width=True):
+        if st.button("🔔 Notifikasi", key="notif_btn", width='stretch'):
             show_notification_dialog()
                 
         st.divider()
-        if st.button("🚪 Keluar", key="logout", use_container_width=True):
+        if st.button("🚪 Keluar", key="logout", width='stretch'):
              st.session_state.logged_in = False
              st.session_state.username = None
              st.rerun()
