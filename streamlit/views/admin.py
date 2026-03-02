@@ -1,10 +1,11 @@
 import streamlit as st
 import pandas as pd
-from core import (
+from db.repositories.user_repo import (
     get_all_users, create_new_user, update_user_status, update_user_role, delete_user,
-    update_password, get_logs
+    update_password
 )
-from core.config import ROLE_ADMIN, ROLE_OPERATIONS, ROLE_MARCOM, ROLE_FINANCE
+from db.repositories.settings_repo import get_logs
+from config.settings import ROLE_ADMIN, ROLE_OPERATIONS, ROLE_MARCOM, ROLE_FINANCE
 
 
 def _section_header(icon, title, subtitle=""):

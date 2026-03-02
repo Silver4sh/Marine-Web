@@ -1,11 +1,8 @@
 import streamlit as st
 import pandas as pd
 from datetime import datetime
-from core.database import (
-    get_all_surveys,
-    create_survey_report,
-    run_query,
-)
+from db.repositories.survey_repo import get_all_surveys, create_survey_report
+from db.connection import run_query
 
 
 def _section_header(icon, title, subtitle=""):
@@ -208,7 +205,7 @@ def render_survey_page():
         </div>
     """, unsafe_allow_html=True)
 
-    tab1, tab2 = st.tabs(["➕ DaftarSurvey", "➕ Data Buoy"])
+    tab1, tab2 = st.tabs(["📋 Daftar Survey", "📡 Data Buoy"])
 
     with tab1:
         render_create_survey_form()

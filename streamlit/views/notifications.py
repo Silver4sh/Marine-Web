@@ -1,9 +1,10 @@
 import streamlit as st
 import datetime
-from core import (
-    get_fleet_status, get_financial_metrics, get_system_settings,
-    get_clients_summary, get_logs, get_notification_id, generate_insights
-)
+from db.repositories.fleet_repo import get_fleet_status
+from db.repositories.finance_repo import get_financial_metrics
+from db.repositories.settings_repo import get_system_settings, get_logs
+from db.repositories.client_repo import get_clients_summary
+from services.analytics_service import get_notification_id, generate_insights
 
 
 @st.cache_data(ttl=60, show_spinner=False)

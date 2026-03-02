@@ -6,8 +6,10 @@ from folium.plugins import MarkerCluster
 from streamlit_folium import st_folium
 import random
 
-from core import get_clients_summary, apply_chart_style, render_metric_card
-from core.ai_analyst import MarineAIAnalyst
+from db.repositories.client_repo import get_clients_summary, get_client_reliability_scoring
+from components.charts import apply_chart_style
+from components.cards import render_metric_card
+from services.ai_service import MarineAIAnalyst
 
 
 def enrich_client_data(df):
@@ -157,7 +159,10 @@ def render_clients_page():
 
     st.divider()
 
-    tab_matrix, tab_map, tab_list = st.tabs(["🚀 Matriks Nilai", "🌍 Kehadiran Geografis", "📋 Direktori"])
+    tab_matrix, tab_map, tab_list, tab_reliability = st.tabs([
+        "🚀 Matriks Nilai", "🌍 Kehadiran Geografis",
+        "📋 Direktori", "🏆 Skor Reliabilitas"
+    ])
 
     with tab_matrix:
         c_chart, c_insight = st.columns([3, 1])
@@ -202,3 +207,43 @@ def render_clients_page():
                 "projects_active": st.column_config.Column("Proyek Aktif")
             }
         )
+
+    with tab_reliability:
+        _section_header("🏆", "Skor Reliabilitas Klien",
+                         "Penilaian berdasarkan LTV & kecepatan pembayaran")
+        rel_df = get_client_reliability_scoring()
+        if rel_df.empty:
+            st.info("Data reliabilitas belum tersedia.")
+        else:
+            rel_df = rel_df.sort_values("reliability_score", ascending=False).head(15)
+            rel_df["reliability_score"] = rel_df["reliability_score"].round(2)
+            rel_df["avg_payment_delay"]  = rel_df["avg_payment_delay"].round(1)
+
+            fig_rel = px_local.bar(
+                rel_df, x="reliability_score", y="name",
+                orientation="h", color="reliability_score",
+                color_continuous_scale=["#f43f5e", "#f59e0b", "#22c55e"],
+                title="Top 15 Klien — Skor Reliabilitas Tertinggi",
+                labels={"reliability_score": "Skor", "name": "Klien"},
+                template="plotly_dark",
+            )
+            apply_chart_style(fig_rel)
+            fig_rel.update_layout(yaxis=dict(autorange="reversed"),
+                                  coloraxis_showscale=False, height=420)
+            st.plotly_chart(fig_rel, width="stretch")
+
+            st.dataframe(
+                rel_df[["name", "total_revenue", "avg_payment_delay", "reliability_score"]],
+                hide_index=True, width="stretch",
+                column_config={
+                    "name":             "Klien",
+                    "total_revenue":    st.column_config.NumberColumn(
+                                            "Total Revenue (IDR)", format="Rp %,.0f"),
+                    "avg_payment_delay": st.column_config.NumberColumn(
+                                            "Rata-rata Keterlambatan (hari)", format="%.1f hari"),
+                    "reliability_score": st.column_config.ProgressColumn(
+                                            "Skor", min_value=0,
+                                            max_value=float(rel_df["reliability_score"].max()),
+                                            format="%.2f"),
+                }
+            )

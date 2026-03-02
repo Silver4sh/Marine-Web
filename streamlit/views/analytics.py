@@ -2,13 +2,12 @@ import streamlit as st
 import pandas as pd
 import plotly.express as px
 import plotly.graph_objects as go
-from core import (
-    get_financial_metrics, get_revenue_analysis, get_order_stats,
-    get_client_stats, get_revenue_cycle_metrics,
-    get_logistics_performance, get_fleet_daily_activity,
-    calculate_advanced_forecast, apply_chart_style, calculate_correlation
-)
-from core.ai_analyst import MarineAIAnalyst
+from db.repositories.finance_repo import get_financial_metrics, get_revenue_analysis, get_order_stats, get_revenue_cycle_metrics
+from db.repositories.client_repo import get_client_stats
+from db.repositories.fleet_repo import get_logistics_performance, get_fleet_daily_activity
+from services.analytics_service import calculate_advanced_forecast, calculate_correlation, calculate_moving_average
+from components.charts import apply_chart_style
+from services.ai_service import MarineAIAnalyst
 
 # --- FRAGMENTS FOR GRANULAR UPDATES ---
 try:
@@ -67,6 +66,17 @@ def render_revenue_forecast():
         if not forecast_df.empty:
             combined_df = pd.concat([rev_df, forecast_df])
             fig = go.Figure()
+
+            # 0. Moving average (MA-3) overlay on historical
+            ma = calculate_moving_average(rev_df, "revenue", window=3)
+            hist_ma = rev_df.copy()
+            hist_ma["ma"] = ma
+            fig.add_trace(go.Scatter(
+                x=hist_ma["month"], y=hist_ma["ma"],
+                mode="lines", name="MA-3 (Rata-rata Gerak)",
+                line=dict(color="#a78bfa", width=2, dash="dot"),
+                hoverinfo="skip"
+            ))
 
             # 1. Confidence interval
             x_conf = pd.concat([forecast_df['month'], forecast_df['month'][::-1]])

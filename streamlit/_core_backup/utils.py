@@ -1,4 +1,5 @@
 import os
+import re
 import streamlit as st
 import pandas as pd
 import folium
@@ -12,9 +13,6 @@ def load_html(filename):
         file_path   = os.path.join(project_dir, "assets", "html", filename)
         with open(file_path, "r", encoding="utf-8") as f:
             content = f.read()
-        # Collapse multi-line HTML to single line — required by Streamlit's
-        # CommonMark parser so it doesn't escape the HTML tags.
-        import re
         content = re.sub(r'\s+', ' ', content).strip()
         return content
     except FileNotFoundError:

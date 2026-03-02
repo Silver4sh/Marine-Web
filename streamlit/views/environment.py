@@ -1,9 +1,10 @@
 import streamlit as st
 import pandas as pd
 import altair as alt
-from core import get_data_water, page_heatmap, load_html
-from core.database import get_buoy_fleet, get_buoy_history
-from core.ai_analyst import MarineAIAnalyst
+from db.repositories.environ_repo import get_data_water, get_buoy_fleet, get_buoy_history
+from components.visualizations import page_heatmap
+from components.helpers import load_html
+from services.ai_service import MarineAIAnalyst
 
 
 def render_chart(df, x_col, y_col, color_col, title):
@@ -23,25 +24,6 @@ def render_chart(df, x_col, y_col, color_col, title):
 
     st.altair_chart(chart.interactive(), width="stretch")
 
-
-def render_sparkline(df, y_col, title, color="#0ea5e9"):
-    if df.empty or y_col not in df.columns:
-        return
-
-    chart = alt.Chart(df).mark_area(
-        line={'color': color},
-        color=alt.Gradient(
-            gradient='linear',
-            stops=[alt.GradientStop(color=color, offset=0),
-                   alt.GradientStop(color='white', offset=1)],
-            x1=1, x2=1, y1=1, y2=0
-        )
-    ).encode(
-        x=alt.X('created_at', axis=alt.Axis(labels=False, grid=False, title="")),
-        y=alt.Y(y_col, axis=alt.Axis(labels=True, grid=True, title="")),
-        tooltip=['created_at', y_col]
-    ).properties(title=title, height=150)
-    st.altair_chart(chart, width="stretch")
 
 
 def _section_header(icon: str, title: str, subtitle: str = ""):
