@@ -179,8 +179,8 @@ def render_clients_page():
 
     with tab_list:
         col_search, col_sort = st.columns([3, 1])
-        text_search = col_search.text_input("", placeholder="🔍  Cari nama klien...", label_visibility="collapsed")
-        sort_opt = col_sort.selectbox("", ["LTV (Tinggi-Rendah)", "Proyek (Tinggi-Rendah)", "Nama (A-Z)"],
+        text_search = col_search.text_input("Cari Klien", placeholder="🔍  Cari nama klien...", label_visibility="collapsed")
+        sort_opt = col_sort.selectbox("Urutan Data", ["LTV (Tinggi-Rendah)", "Proyek (Tinggi-Rendah)", "Nama (A-Z)"],
                                       label_visibility="collapsed")
 
         filtered_df = df.copy()

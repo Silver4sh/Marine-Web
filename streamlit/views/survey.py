@@ -3,6 +3,7 @@ import pandas as pd
 from datetime import datetime
 from db.repositories.survey_repo import get_all_surveys, create_survey_report
 from db.connection import run_query
+from components.cards import render_metric_card
 
 
 def _section_header(icon, title, subtitle=""):
@@ -25,22 +26,28 @@ def render_survey_list():
         st.info("Belum ada laporan survei yang dibuat.")
         return
 
-    # Summary metrics
+    # ── Premium metric cards ───────────────────────────────────────────────────
     c1, c2, c3 = st.columns(3)
-    c1.metric("Total Laporan", len(df))
-    if 'vessel_name' in df.columns:
-        c2.metric("Kapal Berbeda", df['vessel_name'].nunique())
-    if 'date_survey' in df.columns:
-        try:
-            latest = pd.to_datetime(df['date_survey']).max()
-            c3.metric("Survei Terbaru", latest.strftime("%d %b %Y") if pd.notnull(latest) else "—")
-        except Exception:
-            pass
+    with c1:
+        render_metric_card("Total Laporan", len(df), "Sejak awal", "#818cf8")
+    with c2:
+        vessel_cnt = df['vessel_name'].nunique() if 'vessel_name' in df.columns else 0
+        render_metric_card("Kapal Berbeda", vessel_cnt, "Tersurvei", "#0ea5e9")
+    with c3:
+        latest_str = "—"
+        if 'date_survey' in df.columns:
+            try:
+                latest = pd.to_datetime(df['date_survey']).max()
+                if pd.notnull(latest):
+                    latest_str = latest.strftime("%d %b %Y")
+            except Exception:
+                pass
+        render_metric_card("Survei Terbaru", latest_str, "Pembaruan Terakhir", "#34d399")
 
     st.divider()
 
-    # Search Filter
-    search = st.text_input("", placeholder="🔍  Cari laporan (proyek, kode, kapal)...",
+    # ── Search filter ──────────────────────────────────────────────────────────
+    search = st.text_input("Cari Laporan", placeholder="🔍  Cari laporan (proyek, kode, kapal)...",
                            label_visibility="collapsed")
     if search:
         mask = (
@@ -53,13 +60,13 @@ def render_survey_list():
     st.dataframe(
         df,
         column_config={
-            "date_survey":    st.column_config.DatetimeColumn("Tanggal", format="D MMM YYYY"),
-            "project_name":   "Proyek",
-            "code_report":    "Kode",
-            "site_name":      "Site",
-            "vessel_name":    "Kapal",
-            "surveyor_name":  "Surveyor",
-            "comment":        "Komentar"
+            "date_survey":   st.column_config.DatetimeColumn("Tanggal", format="D MMM YYYY"),
+            "project_name":  "Proyek",
+            "code_report":   "Kode",
+            "site_name":     "Site",
+            "vessel_name":   "Kapal",
+            "surveyor_name": "Surveyor",
+            "comment":       "Komentar"
         },
         width="stretch",
         hide_index=True
@@ -80,7 +87,6 @@ def render_create_survey_form():
             with col1:
                 project_name = st.text_input("Nama Proyek", placeholder="Contoh: Survei Selat Malaka")
 
-                # Auto-generate code report based on date + timestamp
                 auto_code = f"SRV-{datetime.now().strftime('%Y%m%d-%H%M%S')}"
                 code_report = st.text_input(
                     "Kode Laporan",
@@ -88,7 +94,6 @@ def render_create_survey_form():
                     help="Di-generate otomatis berdasarkan tanggal dan waktu. Bisa diubah jika diperlukan."
                 )
 
-                # Site dropdown
                 sites_df = run_query(
                     "SELECT code_site, code_site || ' - ' || location as label "
                     "FROM operation.sites WHERE status = 'Active'"
@@ -101,7 +106,6 @@ def render_create_survey_form():
                     format_func=lambda x: site_labels[site_opts.index(x)] if x in site_opts else x
                 )
 
-                # Vessel dropdown
                 vessels_df = run_query(
                     "SELECT code_vessel, name FROM operation.vessels WHERE status = 'Active'"
                 )
@@ -117,7 +121,9 @@ def render_create_survey_form():
                 current_user = st.session_state.get('username', 'N/A')
                 st.text_input("Surveyor (Anda)", value=current_user, disabled=True)
                 date_survey = st.date_input("Tanggal Survei", datetime.now())
-                comment = st.text_area("Komentar / Catatan", placeholder="Catatan kondisi lapangan, temuan, dll...", height=120)
+                comment = st.text_area("Komentar / Catatan",
+                                       placeholder="Catatan kondisi lapangan, temuan, dll...",
+                                       height=120)
 
             st.markdown("<br>", unsafe_allow_html=True)
             submitted = st.form_submit_button("💾 Simpan Laporan", type="primary", width="stretch")
@@ -139,49 +145,51 @@ def render_create_survey_form():
                     if success:
                         st.success(f"✅ {msg}")
                         st.cache_data.clear()
-                        st.rerun()  # Reset form and refresh list
+                        st.rerun()
                     else:
                         st.error(f"❌ Gagal: {msg}")
 
+
 def render_buoy_data_form():
     tab1, tab2 = st.tabs(["Daftar data Buoy", "Buat data Buoy"])
-    
+
     with tab1:
         st.info("Fitur riwayat data buoy akan segera hadir.")
 
     with tab2:
-        _section_header("📡", "Input Data Buoy", "Masukkan data (.dat, .xlsx, .csv) dari buoy untuk kalkulasi rata-rata")
+        _section_header("📡", "Input Data Buoy",
+                        "Masukkan data (.dat, .xlsx, .csv) dari buoy untuk kalkulasi rata-rata")
 
         uploaded_file = st.file_uploader("Upload File Data Buoy", type=["dat", "xlsx", "csv"])
-        
+
         if uploaded_file is not None:
             try:
-                df = pd.read_csv(uploaded_file, skiprows=[0,2,3], na_values="NAN")
+                df = pd.read_csv(uploaded_file, skiprows=[0, 2, 3], na_values="NAN")
                 df = df.dropna()
-                
+
                 if 'TIMESTAMP' in df.columns:
-                    df['TIMESTAMP'] = pd.to_datetime(df['TIMESTAMP'], format='%Y-%m-%d %H:%M:%S', errors='coerce')
-                    df = df.dropna(subset=['TIMESTAMP'])
-                    df = df.sort_values(by='TIMESTAMP')
+                    df['TIMESTAMP'] = pd.to_datetime(df['TIMESTAMP'],
+                                                     format='%Y-%m-%d %H:%M:%S', errors='coerce')
+                    df = df.dropna(subset=['TIMESTAMP']).sort_values(by='TIMESTAMP')
 
                 mapping_kolom = {
                     'Hsig1_3': 'tinggi_gelombang_signifikan',
-                    'Hsig': 'tinggi_gelombang_maks',
-                    'Tzuc': 'periode_nol_crossing',
-                    'Tpeak': 'periode_puncak',
-                    'WL_av': 'rata_rata_level_air',
-                    'WL_max': 'level_air_maksimum'
+                    'Hsig':    'tinggi_gelombang_maks',
+                    'Tzuc':    'periode_nol_crossing',
+                    'Tpeak':   'periode_puncak',
+                    'WL_av':   'rata_rata_level_air',
+                    'WL_max':  'level_air_maksimum'
                 }
                 df.rename(columns=mapping_kolom, inplace=True)
 
                 st.success("✅ File berhasil di-parse dan diproses!")
-                
+
                 if 'TIMESTAMP' in df.columns:
                     df = df.set_index('TIMESTAMP')
-                
+
                 st.subheader("Informasi Gelombang & Level Air (Mapped Data)")
-                st.dataframe(df, width = "stretch")
-                
+                st.dataframe(df, width="stretch")
+
                 csv_data = df.to_csv(index=True).encode('utf-8')
                 st.download_button(
                     label="⬇️ Download Data Bersih (CSV)",
@@ -194,13 +202,14 @@ def render_buoy_data_form():
             except Exception as e:
                 st.error(f"❌ Terjadi kesalahan saat membaca atau memproses file: {str(e)}")
 
+
 def render_survey_page():
     st.markdown("""
         <div class="page-header">
             <div class="page-header-icon">📋</div>
             <div>
                 <p class="page-header-title">Laporan Survei Harian</p>
-                <p class="page-header-subtitle">Field survey reports & documentation</p>
+                <p class="page-header-subtitle">Field survey reports &amp; documentation</p>
             </div>
         </div>
     """, unsafe_allow_html=True)

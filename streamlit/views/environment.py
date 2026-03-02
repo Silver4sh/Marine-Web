@@ -1,9 +1,14 @@
 import streamlit as st
 import pandas as pd
 import altair as alt
-from db.repositories.environ_repo import get_data_water, get_buoy_fleet, get_buoy_history
+from db.repositories.environ_repo import (
+    get_data_water, get_buoy_fleet, get_buoy_history,
+    get_environmental_compliance_dashboard
+)
 from components.visualizations import page_heatmap
 from components.helpers import load_html
+from components.charts import gauge_chart
+from components.cards import render_metric_card
 from services.ai_service import MarineAIAnalyst
 
 
@@ -25,7 +30,6 @@ def render_chart(df, x_col, y_col, color_col, title):
     st.altair_chart(chart.interactive(), width="stretch")
 
 
-
 def _section_header(icon: str, title: str, subtitle: str = ""):
     sub = f'<div style="font-size:0.78rem; color:#8ba3c0; margin-top:2px;">{subtitle}</div>' if subtitle else ""
     st.markdown(f"""
@@ -43,7 +47,7 @@ def render_environ_heatmap():
     _section_header("🔥", "Enviro Heatmap", "Distribusi spasial parameter lingkungan")
     df = get_data_water()
 
-    # AI Analysis for Environment — with correct severity display
+    # AI Analysis for Environment
     anomaly_df = df[df['salinitas'] > 40] if not df.empty and 'salinitas' in df.columns else pd.DataFrame()
     ai_env = MarineAIAnalyst.analyze_environment(anomaly_df)
 
@@ -61,7 +65,7 @@ def render_environ_heatmap():
 
     if not df.empty and 'latest_timestamp' in df.columns:
         df['latest_timestamp'] = pd.to_datetime(df['latest_timestamp'])
-        max_date = df['latest_timestamp'].max()
+        max_date   = df['latest_timestamp'].max()
         start_date = max_date - pd.Timedelta(days=7)
         df = df[df['latest_timestamp'] >= start_date]
 
@@ -80,11 +84,11 @@ def render_environ_heatmap():
     else:
         chart_df = df.copy()
         if not chart_df.empty and 'latest_timestamp' in chart_df.columns:
-            chart_df['date'] = chart_df['latest_timestamp'].dt.date
+            chart_df['date']    = chart_df['latest_timestamp'].dt.date
             chart_df['current'] = pd.to_numeric(chart_df['current'], errors='coerce')
-            chart_df['tide'] = pd.to_numeric(chart_df['tide'], errors='coerce')
+            chart_df['tide']    = pd.to_numeric(chart_df['tide'],    errors='coerce')
             chart_df = chart_df.groupby(['date'])[['current', 'tide']].mean().reset_index()
-            chart_df['id_buoy'] = 'Rata-rata Wilayah'
+            chart_df['id_buoy']          = 'Rata-rata Wilayah'
             chart_df['latest_timestamp'] = pd.to_datetime(chart_df['date'])
 
         chart_df = chart_df.sort_values("latest_timestamp") if not chart_df.empty else pd.DataFrame()
@@ -101,7 +105,7 @@ def render_environ_heatmap():
 
 
 def view_buoy_detail(b_id, name):
-    """Renders buoy detail inline — no dialog decorator needed."""
+    """Renders buoy detail inline."""
     st.markdown(f"""
         <div style="display:flex; align-items:center; gap:10px; margin-bottom:14px;">
             <span style="font-size:1.5rem;">📡</span>
@@ -127,11 +131,9 @@ def view_buoy_detail(b_id, name):
 
         filtered_df = hist_df.copy()
         if isinstance(d, (list, tuple)) and len(d) == 2:
-            start_date = pd.to_datetime(d[0])
-            end_date   = pd.to_datetime(d[1])
             filtered_df = hist_df[
-                (hist_df['created_at'] >= start_date) &
-                (hist_df['created_at'] <  end_date + pd.Timedelta(days=1))
+                (hist_df['created_at'] >= pd.to_datetime(d[0])) &
+                (hist_df['created_at'] <  pd.to_datetime(d[1]) + pd.Timedelta(days=1))
             ]
 
         if not filtered_df.empty:
@@ -174,14 +176,32 @@ def render_buoy_monitoring():
     active = len(buoys_df[buoys_df['status'] == 'Active'])
     maint  = total - active
 
-    c1, c2, c3 = st.columns(3)
-    with c1: st.metric("Total Buoy",       total)
-    with c2: st.metric("Buoy Aktif",       active)
-    with c3: st.metric("Dalam Perawatan",  maint)
+    # ── Compliance score gauge ─────────────────────────────────────────────────
+    comp_df     = get_environmental_compliance_dashboard()
+    comp_score  = 100.0
+    if not comp_df.empty and 'compliance_score_pct' in comp_df.columns:
+        val = comp_df['compliance_score_pct'].iloc[0]
+        if val is not None:
+            comp_score = round(float(val), 1)
+
+    # ── Premium metric row ─────────────────────────────────────────────────────
+    c1, c2, c3, c4 = st.columns([1, 1, 1, 1.5])
+    with c1:
+        render_metric_card("Total Buoy",   total,  "", "#38bdf8")
+    with c2:
+        render_metric_card("Buoy Aktif",   active, "Online & Transmitting", "#22c55e")
+    with c3:
+        render_metric_card("Perawatan",    maint,  "Offline / MTC", "#f59e0b")
+    with c4:
+        st.plotly_chart(
+            gauge_chart(comp_score, "Kepatuhan Lingkungan", 100, "%",
+                        thresholds=(75, 90), height=160),
+            width="stretch", config={"displayModeBar": False}
+        )
 
     st.divider()
 
-    # Grid 4-col
+    # ── Buoy grid ──────────────────────────────────────────────────────────────
     cols_per_row = 4
     rows = [buoys_df.iloc[i:i+cols_per_row] for i in range(0, len(buoys_df), cols_per_row)]
 
@@ -214,15 +234,16 @@ def render_buoy_monitoring():
 
                     html_template = load_html("buoy_card.html")
                     if html_template:
-                        card_html = html_template \
-                            .replace("{b_id}", str(b_id)) \
-                            .replace("{loc}", str(loc)) \
-                            .replace("{status}", str(status)) \
-                            .replace("{status_color}", status_color) \
-                            .replace("{bg_gradient}", bg_gradient) \
-                            .replace("{border_color}", border_color) \
-                            .replace("{batt}", str(batt)) \
-                            .replace("{fmt_update}", str(fmt_update))
+                        card_html = (html_template
+                            .replace("{b_id}",        str(b_id))
+                            .replace("{loc}",         str(loc))
+                            .replace("{status}",      str(status))
+                            .replace("{status_color}", status_color)
+                            .replace("{bg_gradient}", bg_gradient)
+                            .replace("{border_color}", border_color)
+                            .replace("{batt}",        str(batt))
+                            .replace("{fmt_update}",  str(fmt_update))
+                        )
                         st.markdown(card_html, unsafe_allow_html=True)
                     else:
                         st.error("Template buoy_card.html missing")
@@ -231,7 +252,6 @@ def render_buoy_monitoring():
                         st.session_state['buoy_detail_id']   = b_id
                         st.session_state['buoy_detail_name'] = f"Buoy {b_id} — {loc}"
                 else:
-                    # Empty slot placeholder
                     st.markdown("""
                         <div style="
                             border: 1px dashed rgba(255,255,255,0.07);
@@ -247,7 +267,7 @@ def render_environment_page():
             <div class="page-header-icon">🌊</div>
             <div>
                 <p class="page-header-title">Enviro Control</p>
-                <p class="page-header-subtitle">Marine environmental monitoring & buoy telemetry</p>
+                <p class="page-header-subtitle">Marine environmental monitoring &amp; buoy telemetry</p>
             </div>
         </div>
     """, unsafe_allow_html=True)
@@ -260,7 +280,7 @@ def render_environment_page():
     with tab2:
         render_buoy_monitoring()
 
-        # Inline buoy detail panel (replaces dialog)
+        # Inline buoy detail panel
         if st.session_state.get('buoy_detail_id'):
             st.divider()
             col_title, col_close = st.columns([8, 1])
