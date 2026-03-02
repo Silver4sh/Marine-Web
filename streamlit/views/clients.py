@@ -1,5 +1,6 @@
 import streamlit as st
 import numpy as np
+import pandas as pd
 import plotly.express as px
 import folium
 from folium.plugins import MarkerCluster
@@ -15,8 +16,10 @@ from services.ai_service import MarineAIAnalyst
 def enrich_client_data(df):
     if df.empty:
         return df
-    df['projects_active'] = df['total_orders']
-    df['ltv'] = df['ltv'].astype(float)
+    # Cast all numeric columns safely (DB may return them as object/string)
+    df['total_orders']     = pd.to_numeric(df['total_orders'],     errors='coerce').fillna(0).astype(int)
+    df['ltv']              = pd.to_numeric(df['ltv'],              errors='coerce').fillna(0.0)
+    df['projects_active']  = df['total_orders']
 
     conditions = [
         (df['projects_active'] >= 4),
@@ -215,11 +218,16 @@ def render_clients_page():
         if rel_df.empty:
             st.info("Data reliabilitas belum tersedia.")
         else:
+            # Ensure numeric types before plotting
+            rel_df['reliability_score']  = pd.to_numeric(rel_df['reliability_score'],  errors='coerce').fillna(0.0)
+            rel_df['avg_payment_delay']  = pd.to_numeric(rel_df['avg_payment_delay'],  errors='coerce').fillna(0.0)
+            rel_df['total_revenue']      = pd.to_numeric(rel_df['total_revenue'],      errors='coerce').fillna(0.0)
+
             rel_df = rel_df.sort_values("reliability_score", ascending=False).head(15)
             rel_df["reliability_score"] = rel_df["reliability_score"].round(2)
-            rel_df["avg_payment_delay"]  = rel_df["avg_payment_delay"].round(1)
+            rel_df["avg_payment_delay"] = rel_df["avg_payment_delay"].round(1)
 
-            fig_rel = px_local.bar(
+            fig_rel = px.bar(
                 rel_df, x="reliability_score", y="name",
                 orientation="h", color="reliability_score",
                 color_continuous_scale=["#f43f5e", "#f59e0b", "#22c55e"],
