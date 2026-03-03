@@ -1,86 +1,83 @@
 /* ============================================================
-   MARINE OS — DESIGN SYSTEM v2.1
-   Soft palettes, high contrast text, lightweight animations
+   MARINE OS — DESIGN SYSTEM v3.0
+   Premium Deep Ocean Theme — Bold, modern, high contrast
    ============================================================ */
 
 /* --- 1. FONT IMPORTS --- */
-@import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=Space+Grotesk:wght@400;500;600;700&display=swap');
 
-/* --- 2. CSS CUSTOM PROPERTIES (Design Tokens) --- */
+/* --- 2. CSS CUSTOM PROPERTIES --- */
 :root {
-    /* Base Palette — Deep Oceanic Night (softened) */
-    --bg-dark: #0d1424;
-    --bg-mid: #111827;
-    --bg-card: rgba(22, 36, 58, 0.72);
-    --bg-sidebar: rgba(11, 17, 34, 0.94);
-    --bg-elevated: rgba(30, 46, 72, 0.85);
+    /* Base Palette — Deep Abyss */
+    --bg-dark: #060d1a;
+    --bg-mid: #0a1628;
+    --bg-card: rgba(14, 24, 46, 0.80);
+    --bg-sidebar: rgba(6, 10, 22, 0.97);
+    --bg-elevated: rgba(18, 30, 58, 0.90);
 
-    /* Brand Accents — softer, less neon */
-    --primary: #38bdf8;
-    /* sky-400 (was sky-500) */
-    --primary-dim: rgba(56, 189, 248, 0.12);
-    --primary-glow: rgba(56, 189, 248, 0.28);
-    /* reduced from 0.45 */
-    --secondary: #a78bfa;
-    /* violet-400 */
-    --secondary-glow: rgba(167, 139, 250, 0.25);
-    --accent: #2dd4bf;
-    /* teal-400 */
-    --accent-glow: rgba(45, 212, 191, 0.25);
-    --pink: #f472b6;
-    /* pink-400 */
-    --pink-glow: rgba(244, 114, 182, 0.2);
+    /* Brand Accents — Bioluminescent Teal */
+    --primary: #00d4aa;
+    --primary-dim: rgba(0, 212, 170, 0.12);
+    --primary-glow: rgba(0, 212, 170, 0.30);
+    --secondary: #6366f1;
+    --secondary-glow: rgba(99, 102, 241, 0.25);
+    --accent: #22d3ee;
+    --accent-glow: rgba(34, 211, 238, 0.22);
+    --gold: #f59e0b;
+    --gold-glow: rgba(245, 158, 11, 0.20);
 
     /* Semantic Colors */
-    --danger: #fb7185;
-    --danger-dim: rgba(251, 113, 133, 0.15);
-    --success: #4ade80;
-    --success-dim: rgba(74, 222, 128, 0.12);
-    --warning: #fbbf24;
-    --warning-dim: rgba(251, 191, 36, 0.12);
-    --info: #7dd3fc;
-    --info-dim: rgba(125, 211, 252, 0.10);
+    --danger: #f43f5e;
+    --danger-dim: rgba(244, 63, 94, 0.14);
+    --success: #10b981;
+    --success-dim: rgba(16, 185, 129, 0.12);
+    --warning: #f59e0b;
+    --warning-dim: rgba(245, 158, 11, 0.12);
+    --info: #22d3ee;
+    --info-dim: rgba(34, 211, 238, 0.10);
 
-    /* Text — high contrast */
-    --text-primary: #eef2ff;
-    /* very close to white, slight blue warmth */
+    /* Text */
+    --text-primary: #f0f9ff;
     --text-secondary: #94a3b8;
-    /* slate-400 */
     --text-muted: #475569;
-    /* slate-600 */
+    --text-bright: #ffffff;
 
     /* Borders */
-    --border: rgba(255, 255, 255, 0.07);
-    --border-hover: rgba(56, 189, 248, 0.35);
-    --border-bright: rgba(255, 255, 255, 0.14);
+    --border: rgba(255, 255, 255, 0.06);
+    --border-hover: rgba(0, 212, 170, 0.40);
+    --border-bright: rgba(255, 255, 255, 0.12);
+    --border-card: rgba(0, 212, 170, 0.08);
 
     /* Gradients */
-    --grad-primary: linear-gradient(135deg, #38bdf8 0%, #a78bfa 100%);
-    --grad-card: linear-gradient(145deg, rgba(22, 36, 58, 0.75) 0%, rgba(11, 17, 34, 0.65) 100%);
-    --grad-accent: linear-gradient(90deg, #38bdf8, #a78bfa, #f472b6, #2dd4bf);
-    --grad-sidebar: linear-gradient(180deg, rgba(56, 189, 248, 0.06) 0%, transparent 60%);
+    --grad-primary: linear-gradient(135deg, #00d4aa 0%, #6366f1 100%);
+    --grad-card: linear-gradient(145deg, rgba(14, 24, 46, 0.85) 0%, rgba(6, 12, 28, 0.75) 100%);
+    --grad-accent: linear-gradient(90deg, #00d4aa, #22d3ee, #6366f1, #f59e0b);
+    --grad-sidebar: linear-gradient(180deg, rgba(0, 212, 170, 0.04) 0%, transparent 50%);
+    --grad-hero: radial-gradient(ellipse at 60% 0%, rgba(0, 212, 170, 0.16) 0%, transparent 60%),
+        radial-gradient(ellipse at 10% 90%, rgba(99, 102, 241, 0.14) 0%, transparent 55%);
 
     /* Typography */
-    --font-heading: 'Outfit', sans-serif;
-    --font-body: 'Plus Jakarta Sans', sans-serif;
+    --font-heading: 'Space Grotesk', sans-serif;
+    --font-body: 'Inter', sans-serif;
 
     /* Radii */
-    --radius-sm: 8px;
-    --radius-md: 14px;
-    --radius-lg: 22px;
-    --radius-xl: 32px;
+    --radius-sm: 6px;
+    --radius-md: 12px;
+    --radius-lg: 18px;
+    --radius-xl: 28px;
     --radius-pill: 50px;
 
     /* Shadows */
-    --shadow-sm: 0 2px 8px rgba(0, 0, 0, 0.22);
-    --shadow-md: 0 8px 28px rgba(0, 0, 0, 0.28);
-    --shadow-lg: 0 20px 50px rgba(0, 0, 0, 0.38);
-    --shadow-glow: 0 0 24px var(--primary-glow);
+    --shadow-sm: 0 2px 8px rgba(0, 0, 0, 0.35);
+    --shadow-md: 0 8px 28px rgba(0, 0, 0, 0.45);
+    --shadow-lg: 0 24px 60px rgba(0, 0, 0, 0.55);
+    --shadow-glow: 0 0 30px var(--primary-glow);
+    --shadow-card: 0 4px 20px rgba(0, 0, 0, 0.40), inset 0 1px 0 rgba(255, 255, 255, 0.05);
 
-    /* Transitions — fast but smooth */
+    /* Transitions */
     --transition-fast: all 0.15s ease;
-    --transition-med: all 0.25s ease;
-    --transition-slow: all 0.4s ease;
+    --transition-med: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+    --transition-slow: all 0.45s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 /* --- 3. KEYFRAME ANIMATIONS --- */
@@ -88,7 +85,7 @@
 @keyframes fadeInUp {
     from {
         opacity: 0;
-        transform: translateY(24px);
+        transform: translateY(20px);
     }
 
     to {
@@ -100,7 +97,7 @@
 @keyframes fadeInLeft {
     from {
         opacity: 0;
-        transform: translateX(-20px);
+        transform: translateX(-18px);
     }
 
     to {
@@ -112,7 +109,7 @@
 @keyframes fadeScale {
     from {
         opacity: 0;
-        transform: scale(0.94);
+        transform: scale(0.96);
     }
 
     to {
@@ -124,7 +121,7 @@
 @keyframes slideDown {
     from {
         opacity: 0;
-        transform: translateY(-16px);
+        transform: translateY(-14px);
     }
 
     to {
@@ -155,16 +152,6 @@
     }
 }
 
-@keyframes borderSpin {
-    from {
-        transform: rotate(0deg);
-    }
-
-    to {
-        transform: rotate(360deg);
-    }
-}
-
 @keyframes gradientShift {
     0% {
         background-position: 0% 50%;
@@ -187,7 +174,7 @@
     }
 
     50% {
-        transform: translateY(-8px);
+        transform: translateY(-7px);
     }
 }
 
@@ -199,18 +186,10 @@
     }
 
     50% {
-        text-shadow: 0 0 25px var(--primary-glow), 0 0 10px var(--secondary-glow);
+        text-shadow: 0 0 24px var(--primary-glow), 0 0 8px var(--secondary-glow);
     }
 }
 
-@keyframes ripple {
-    to {
-        transform: scale(2.5);
-        opacity: 0;
-    }
-}
-
-/* Sonar / Loader Animations */
 @keyframes emitterPulse {
 
     0%,
@@ -220,8 +199,8 @@
     }
 
     50% {
-        transform: translate(-50%, -50%) scale(1.25);
-        box-shadow: 0 0 45px var(--primary-glow), 0 0 15px var(--secondary-glow);
+        transform: translate(-50%, -50%) scale(1.22);
+        box-shadow: 0 0 42px var(--primary-glow), 0 0 14px var(--secondary-glow);
     }
 }
 
@@ -230,12 +209,12 @@
         width: 0;
         height: 0;
         opacity: 0;
-        border-width: 4px;
+        border-width: 3px;
         border-color: var(--primary);
     }
 
     10% {
-        opacity: 0.7;
+        opacity: 0.65;
     }
 
     70% {
@@ -271,43 +250,28 @@
 
 @keyframes skeletonLoad {
     0% {
-        background-color: rgba(255, 255, 255, 0.04);
+        background-color: rgba(255, 255, 255, 0.03);
     }
 
     100% {
-        background-color: rgba(255, 255, 255, 0.12);
+        background-color: rgba(255, 255, 255, 0.10);
     }
 }
 
-@keyframes badgePop {
-    0% {
-        transform: scale(0);
-    }
-
-    70% {
-        transform: scale(1.2);
-    }
-
-    100% {
-        transform: scale(1);
-    }
-}
-
-@keyframes notifPing {
-
-    0%,
-    100% {
-        transform: scale(1);
-        opacity: 1;
-    }
-
-    50% {
-        transform: scale(1.5);
+@keyframes ripple {
+    to {
+        transform: scale(2.5);
         opacity: 0;
     }
 }
 
 /* --- 4. GLOBAL RESET & APP BACKGROUND --- */
+
+*,
+*::before,
+*::after {
+    box-sizing: border-box;
+}
 
 html,
 body,
@@ -319,20 +283,19 @@ body,
 .stApp {
     background-color: var(--bg-dark);
     background-image:
-        radial-gradient(ellipse at 10% 15%, rgba(14, 165, 233, 0.12) 0%, transparent 45%),
-        radial-gradient(ellipse at 88% 80%, rgba(129, 140, 248, 0.12) 0%, transparent 45%),
-        radial-gradient(ellipse at 55% 50%, rgba(20, 184, 166, 0.06) 0%, transparent 55%),
-        radial-gradient(ellipse at 30% 90%, rgba(236, 72, 153, 0.06) 0%, transparent 40%);
+        radial-gradient(ellipse 80% 50% at 60% -10%, rgba(0, 212, 170, 0.14) 0%, transparent 60%),
+        radial-gradient(ellipse 60% 60% at 10% 90%, rgba(99, 102, 241, 0.12) 0%, transparent 55%),
+        radial-gradient(ellipse 50% 40% at 90% 50%, rgba(34, 211, 238, 0.06) 0%, transparent 50%);
     background-attachment: fixed;
     font-family: var(--font-body);
 }
 
 /* Main content block */
 .block-container {
-    padding-top: 1.5rem !important;
-    padding-bottom: 3rem !important;
+    padding-top: 1.75rem !important;
+    padding-bottom: 3.5rem !important;
     max-width: 96% !important;
-    animation: fadeInUp 0.55s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+    animation: fadeInUp 0.5s cubic-bezier(0.4, 0, 0.2, 1) forwards;
 }
 
 /* --- 5. TYPOGRAPHY --- */
@@ -345,10 +308,9 @@ h5,
 h6 {
     font-family: var(--font-heading) !important;
     color: var(--text-primary) !important;
-    letter-spacing: -0.02em;
+    letter-spacing: -0.025em;
 }
 
-/* Gradient text on main markdown headings */
 [data-testid="stMarkdownContainer"] h1,
 [data-testid="stMarkdownContainer"] h2 {
     background: var(--grad-primary);
@@ -370,13 +332,13 @@ span {
 
 section[data-testid="stSidebar"] {
     background: var(--bg-sidebar) !important;
-    border-right: 1px solid var(--border) !important;
-    backdrop-filter: blur(24px) saturate(180%) !important;
-    -webkit-backdrop-filter: blur(24px) saturate(180%) !important;
-    box-shadow: 4px 0 40px rgba(0, 0, 0, 0.4) !important;
+    border-right: 1px solid rgba(0, 212, 170, 0.08) !important;
+    backdrop-filter: blur(28px) saturate(180%) !important;
+    -webkit-backdrop-filter: blur(28px) saturate(180%) !important;
+    box-shadow: 6px 0 50px rgba(0, 0, 0, 0.50) !important;
 }
 
-/* Sidebar top gradient accent line */
+/* Sidebar animated top accent */
 section[data-testid="stSidebar"]::before {
     content: "";
     position: absolute;
@@ -389,104 +351,100 @@ section[data-testid="stSidebar"]::before {
     animation: gradientShift 5s ease infinite;
 }
 
-/* Sidebar heading */
+/* Sidebar heading text */
 section[data-testid="stSidebar"] [data-testid="stMarkdownContainer"] h2 {
-    background: linear-gradient(90deg, #fff 0%, #94a3b8 100%);
+    background: linear-gradient(90deg, var(--text-primary) 0%, var(--text-muted) 100%);
     -webkit-background-clip: text;
     background-clip: text;
     -webkit-text-fill-color: transparent;
     color: transparent;
     text-transform: uppercase;
-    font-size: 0.78rem !important;
-    letter-spacing: 0.14em;
+    font-size: 0.72rem !important;
+    letter-spacing: 0.16em;
     margin-top: 1rem;
     font-weight: 700 !important;
 }
 
-/* Sidebar nav buttons base */
+/* Sidebar nav buttons */
 section[data-testid="stSidebar"] button {
     background: transparent !important;
     border: none !important;
     text-align: left !important;
-    padding: 0.55rem 1rem !important;
+    padding: 0.5rem 0.85rem !important;
     font-weight: 500 !important;
     font-family: var(--font-heading) !important;
-    color: var(--text-secondary) !important;
+    color: var(--text-muted) !important;
     border-radius: var(--radius-md) !important;
     transition: var(--transition-fast) !important;
-    margin-bottom: 3px;
-    position: relative;
-    overflow: hidden;
+    margin-bottom: 2px;
+    font-size: 0.87rem !important;
 }
 
 section[data-testid="stSidebar"] button:hover {
-    background: rgba(255, 255, 255, 0.07) !important;
+    background: rgba(0, 212, 170, 0.07) !important;
     color: var(--text-primary) !important;
     transform: translateX(4px) !important;
     border-color: transparent !important;
 }
 
-/* Active nav button — subtle left accent bar */
+/* Active nav button */
 section[data-testid="stSidebar"] button[kind="primary"] {
-    background: rgba(56, 189, 248, 0.10) !important;
-    color: #7dd3fc !important;
-    border-left: 3px solid rgba(56, 189, 248, 0.6) !important;
-    border-radius: 4px var(--radius-md) var(--radius-md) 4px !important;
+    background: rgba(0, 212, 170, 0.10) !important;
+    color: #5eead4 !important;
+    border-left: 2px solid rgba(0, 212, 170, 0.65) !important;
+    border-radius: 2px var(--radius-md) var(--radius-md) 2px !important;
     box-shadow: none !important;
 }
 
 section[data-testid="stSidebar"] button[kind="primary"]:hover {
     transform: translateX(2px) !important;
-    background: rgba(56, 189, 248, 0.15) !important;
+    background: rgba(0, 212, 170, 0.14) !important;
 }
-
-
 
 /* --- 7. BUTTONS --- */
 
-/* Primary — Soft frosted style (not harsh gradient pill) */
+/* Primary */
 button[kind="primary"] {
-    background: rgba(56, 189, 248, 0.14) !important;
-    border: 1px solid rgba(56, 189, 248, 0.35) !important;
+    background: rgba(0, 212, 170, 0.12) !important;
+    border: 1px solid rgba(0, 212, 170, 0.35) !important;
     border-radius: var(--radius-md) !important;
     padding: 0.55rem 1.6rem !important;
     font-family: var(--font-heading) !important;
     font-weight: 600 !important;
-    letter-spacing: 0.02em !important;
-    color: #bae6fd !important;
-    /* sky-200 — readable on dark */
+    letter-spacing: 0.01em !important;
+    color: #99f6e4 !important;
     box-shadow: none !important;
     transition: var(--transition-fast) !important;
 }
 
 button[kind="primary"]:hover {
-    background: rgba(56, 189, 248, 0.22) !important;
-    border-color: rgba(56, 189, 248, 0.6) !important;
-    color: #e0f2fe !important;
+    background: rgba(0, 212, 170, 0.20) !important;
+    border-color: rgba(0, 212, 170, 0.60) !important;
+    color: #ccfbf1 !important;
     transform: translateY(-2px) !important;
-    box-shadow: 0 4px 16px rgba(56, 189, 248, 0.18) !important;
+    box-shadow: 0 6px 20px rgba(0, 212, 170, 0.18) !important;
 }
 
 button[kind="primary"]:active {
     transform: translateY(0) !important;
-    background: rgba(56, 189, 248, 0.28) !important;
+    background: rgba(0, 212, 170, 0.28) !important;
 }
 
-/* Secondary — Subtle ghost style */
+/* Secondary */
 button[kind="secondary"] {
     background: rgba(255, 255, 255, 0.04) !important;
     border: 1px solid rgba(255, 255, 255, 0.08) !important;
     border-radius: var(--radius-md) !important;
-    color: #94a3b8 !important;
+    color: var(--text-muted) !important;
     font-family: var(--font-heading) !important;
     font-weight: 500 !important;
     transition: var(--transition-fast) !important;
 }
 
 button[kind="secondary"]:hover {
-    background: rgba(56, 189, 248, 0.08) !important;
-    border-color: rgba(56, 189, 248, 0.3) !important;
-    color: #e2e8f0 !important;
+    background: rgba(0, 212, 170, 0.07) !important;
+    border-color: rgba(0, 212, 170, 0.28) !important;
+    color: var(--text-primary) !important;
     transform: translateY(-1px) !important;
 }
 
@@ -495,7 +453,7 @@ button[kind="secondary"]:hover {
 div[data-baseweb="input"],
 div[data-baseweb="select"],
 div[data-baseweb="textarea"] {
-    background-color: rgba(10, 16, 32, 0.6) !important;
+    background-color: rgba(6, 12, 28, 0.70) !important;
     border: 1px solid var(--border) !important;
     border-radius: var(--radius-md) !important;
     transition: var(--transition-fast);
@@ -507,7 +465,7 @@ div[data-baseweb="select"]:focus-within,
 div[data-baseweb="textarea"]:focus-within {
     border-color: var(--primary) !important;
     box-shadow: 0 0 0 3px var(--primary-dim) !important;
-    background-color: rgba(10, 16, 32, 0.9) !important;
+    background-color: rgba(6, 12, 28, 0.95) !important;
 }
 
 input,
@@ -516,56 +474,52 @@ textarea {
     font-family: var(--font-body) !important;
 }
 
-/* --- 9. METRIC CARDS (stMetric) --- */
+/* --- 9. METRIC CARDS --- */
 
 div.stMetric {
     background: var(--grad-card);
     backdrop-filter: blur(20px);
     -webkit-backdrop-filter: blur(20px);
-    border: 1px solid var(--border);
+    border: 1px solid var(--border-card);
     border-radius: var(--radius-lg);
-    padding: 24px;
-    box-shadow: var(--shadow-md);
+    padding: 22px 24px;
+    box-shadow: var(--shadow-card);
     position: relative;
     overflow: hidden;
     transition: var(--transition-med);
     animation: fadeScale 0.5s ease forwards;
 }
 
-/* Shiny shimmer sweep on hover */
+/* Shimmer sweep */
 div.stMetric::after {
     content: '';
     position: absolute;
     top: 0;
     left: -100%;
-    width: 60%;
+    width: 50%;
     height: 100%;
-    background: linear-gradient(90deg,
-            transparent 0%,
-            rgba(255, 255, 255, 0.07) 50%,
-            transparent 100%);
-    transition: left 0.5s ease;
-    border-radius: inherit;
+    background: linear-gradient(90deg, transparent 0%, rgba(0, 212, 170, 0.05) 50%, transparent 100%);
+    transition: left 0.6s ease;
 }
 
 div.stMetric:hover::after {
-    left: 150%;
+    left: 160%;
 }
 
 div.stMetric:hover {
-    transform: translateY(-6px);
+    transform: translateY(-5px);
     border-color: var(--border-hover);
-    box-shadow: 0 20px 50px rgba(0, 0, 0, 0.35), 0 0 20px var(--primary-dim);
+    box-shadow: 0 20px 50px rgba(0, 0, 0, 0.45), 0 0 24px var(--primary-dim);
 }
 
-/* Gradient top border trick */
+/* Gradient edge border */
 div.stMetric::before {
     content: "";
     position: absolute;
     inset: 0;
     border-radius: var(--radius-lg);
     padding: 1px;
-    background: linear-gradient(135deg, rgba(255, 255, 255, 0.15), rgba(255, 255, 255, 0.03));
+    background: linear-gradient(135deg, rgba(0, 212, 170, 0.18), rgba(99, 102, 241, 0.06));
     -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
     -webkit-mask-composite: xor;
     mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
@@ -575,33 +529,33 @@ div.stMetric::before {
 
 [data-testid="stMetricValue"] {
     font-family: var(--font-heading) !important;
-    font-weight: 700 !important;
+    font-weight: 800 !important;
     color: var(--text-primary) !important;
-    font-size: 1.9rem !important;
+    font-size: 1.85rem !important;
 }
 
 [data-testid="stMetricLabel"] {
-    font-size: 0.78rem !important;
+    font-size: 0.70rem !important;
     text-transform: uppercase;
-    letter-spacing: 0.08em;
+    letter-spacing: 0.10em;
     color: var(--text-muted) !important;
-    font-weight: 600 !important;
+    font-weight: 700 !important;
 }
 
 [data-testid="stMetricDelta"] {
-    font-size: 0.8rem !important;
+    font-size: 0.78rem !important;
     font-weight: 600 !important;
 }
 
 /* --- 10. TABS --- */
 
 div[data-baseweb="tab-list"] {
-    background: rgba(0, 0, 0, 0.25);
+    background: rgba(0, 0, 0, 0.30);
     border-radius: var(--radius-pill);
     padding: 5px;
     border: 1px solid var(--border);
     display: inline-flex;
-    margin-bottom: 1.2rem;
+    margin-bottom: 1.25rem;
     gap: 2px;
 }
 
@@ -609,9 +563,9 @@ button[data-baseweb="tab"] {
     background: transparent !important;
     border: none !important;
     border-radius: var(--radius-xl) !important;
-    color: var(--text-secondary) !important;
+    color: var(--text-muted) !important;
     padding: 8px 22px !important;
-    font-size: 0.88rem;
+    font-size: 0.85rem;
     font-weight: 500;
     font-family: var(--font-heading) !important;
     transition: var(--transition-fast) !important;
@@ -625,8 +579,8 @@ button[data-baseweb="tab"]:hover {
 button[data-baseweb="tab"][aria-selected="true"] {
     background: var(--grad-primary) !important;
     color: #fff !important;
-    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.35), 0 0 12px var(--primary-glow) !important;
-    font-weight: 600 !important;
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.35), 0 0 14px var(--primary-glow) !important;
+    font-weight: 700 !important;
 }
 
 /* --- 11. DATAFRAMES --- */
@@ -635,26 +589,26 @@ div[data-testid="stDataFrame"] {
     border: 1px solid var(--border);
     border-radius: var(--radius-md);
     overflow: hidden;
-    background: rgba(15, 25, 45, 0.4);
+    background: rgba(8, 16, 36, 0.50);
     box-shadow: var(--shadow-sm);
     transition: var(--transition-med);
 }
 
 div[data-testid="stDataFrame"]:hover {
-    border-color: var(--border-hover);
-    box-shadow: 0 8px 30px rgba(0, 0, 0, 0.25);
+    border-color: rgba(0, 212, 170, 0.20);
+    box-shadow: 0 8px 30px rgba(0, 0, 0, 0.28);
 }
 
 div[data-testid="stDataFrame"] div[class*="ColumnHeaders"] {
-    background: rgba(10, 16, 35, 0.9) !important;
+    background: rgba(6, 12, 28, 0.90) !important;
     text-transform: uppercase;
-    font-size: 0.73rem;
-    letter-spacing: 0.09em;
+    font-size: 0.70rem;
+    letter-spacing: 0.10em;
     color: var(--text-muted);
     border-bottom: 1px solid var(--border);
 }
 
-/* --- 12. ALERTS & NOTIFICATIONS --- */
+/* --- 12. ALERTS --- */
 
 div[data-testid="stAlert"] {
     border-radius: var(--radius-md) !important;
@@ -667,29 +621,25 @@ div[data-testid="stAlert"][data-baseweb="notification"] {
     font-family: var(--font-body) !important;
 }
 
-/* Success */
 div[data-testid="stAlert"].st-success,
 [class*="stSuccess"] {
     background: var(--success-dim) !important;
-    border-color: rgba(34, 197, 94, 0.3) !important;
+    border-color: rgba(16, 185, 129, 0.30) !important;
 }
 
-/* Error */
 [class*="stError"] {
     background: var(--danger-dim) !important;
-    border-color: rgba(244, 63, 94, 0.3) !important;
+    border-color: rgba(244, 63, 94, 0.30) !important;
 }
 
-/* Warning */
 [class*="stWarning"] {
     background: var(--warning-dim) !important;
-    border-color: rgba(245, 158, 11, 0.3) !important;
+    border-color: rgba(245, 158, 11, 0.30) !important;
 }
 
-/* Info */
 [class*="stInfo"] {
     background: var(--info-dim) !important;
-    border-color: rgba(56, 189, 248, 0.25) !important;
+    border-color: rgba(34, 211, 238, 0.25) !important;
 }
 
 /* --- 13. EXPANDER --- */
@@ -697,13 +647,13 @@ div[data-testid="stAlert"].st-success,
 [data-testid="stExpander"] {
     border: 1px solid var(--border) !important;
     border-radius: var(--radius-md) !important;
-    background: rgba(22, 34, 56, 0.4) !important;
+    background: rgba(14, 22, 48, 0.45) !important;
     transition: var(--transition-fast);
     overflow: hidden;
 }
 
 [data-testid="stExpander"]:hover {
-    border-color: var(--border-hover) !important;
+    border-color: rgba(0, 212, 170, 0.16) !important;
 }
 
 .streamlit-expanderHeader {
@@ -721,8 +671,8 @@ div[data-testid="stAlert"].st-success,
 /* --- 14. SCROLLBAR --- */
 
 ::-webkit-scrollbar {
-    width: 5px;
-    height: 5px;
+    width: 4px;
+    height: 4px;
 }
 
 ::-webkit-scrollbar-track {
@@ -730,9 +680,8 @@ div[data-testid="stAlert"].st-success,
 }
 
 ::-webkit-scrollbar-thumb {
-    background: rgba(255, 255, 255, 0.08);
+    background: rgba(0, 212, 170, 0.15);
     border-radius: 10px;
-    transition: background 0.2s;
 }
 
 ::-webkit-scrollbar-thumb:hover {
@@ -742,19 +691,18 @@ div[data-testid="stAlert"].st-success,
 /* --- 15. LOGIN PAGE --- */
 
 [data-testid="stForm"] {
-    background: rgba(14, 22, 42, 0.7);
-    backdrop-filter: blur(24px) saturate(160%);
-    -webkit-backdrop-filter: blur(24px) saturate(160%);
-    border: 1px solid rgba(255, 255, 255, 0.1);
+    background: rgba(8, 14, 32, 0.80);
+    backdrop-filter: blur(28px) saturate(160%);
+    -webkit-backdrop-filter: blur(28px) saturate(160%);
+    border: 1px solid rgba(0, 212, 170, 0.12);
     border-radius: var(--radius-xl);
     padding: 2.5rem;
-    box-shadow: 0 25px 70px rgba(0, 0, 0, 0.5), inset 0 1px 0 rgba(255, 255, 255, 0.08);
+    box-shadow: 0 30px 80px rgba(0, 0, 0, 0.55), inset 0 1px 0 rgba(255, 255, 255, 0.06);
     animation: fadeScale 0.7s cubic-bezier(0.4, 0, 0.2, 1) forwards;
     position: relative;
     overflow: hidden;
 }
 
-/* Animated gradient border on login card */
 [data-testid="stForm"]::before {
     content: '';
     position: absolute;
@@ -762,58 +710,17 @@ div[data-testid="stAlert"].st-success,
     border-radius: var(--radius-xl);
     background: var(--grad-accent);
     background-size: 300% 300%;
-    animation: gradientShift 6s ease infinite;
+    animation: gradientShift 5s ease infinite;
     z-index: -1;
-    opacity: 0.35;
+    opacity: 0.5;
 }
 
-[data-testid="stForm"] h3 {
-    text-align: center;
-    font-weight: 800 !important;
-    background: var(--grad-primary);
-    -webkit-background-clip: text;
-    background-clip: text;
-    color: transparent;
-    -webkit-text-fill-color: transparent;
-    margin-bottom: 1.5rem;
-    opacity: 0;
-    animation: fadeInUp 0.6s ease 0.3s forwards;
-    font-size: 1.5rem !important;
-}
-
-[data-testid="stForm"] input {
-    background: rgba(0, 0, 0, 0.3) !important;
-    border: 1px solid rgba(255, 255, 255, 0.1) !important;
-    color: var(--text-primary) !important;
-    border-radius: var(--radius-md) !important;
-    transition: var(--transition-fast);
-}
-
-[data-testid="stForm"] input:focus {
-    border-color: var(--primary) !important;
-    box-shadow: 0 0 0 3px var(--primary-dim) !important;
-    background: rgba(0, 0, 0, 0.5) !important;
-}
-
-.login-header h1 {
-    font-size: 2.8rem !important;
-    font-weight: 900 !important;
-    background: var(--grad-accent);
-    background-size: 300% 300%;
-    -webkit-background-clip: text;
-    background-clip: text;
-    -webkit-text-fill-color: transparent;
-    color: transparent;
-    animation: gradientShift 5s ease infinite, float 4s ease-in-out infinite;
-    display: inline-block;
-}
-
-/* --- 16. FULLSCREEN PAGE LOADER --- */
+/* --- 16. FULLSCREEN LOADER --- */
 
 .fullscreen-loader {
     position: fixed !important;
     inset: 0 !important;
-    background: radial-gradient(ellipse at center, #121e38 0%, var(--bg-dark) 100%) !important;
+    background: radial-gradient(ellipse at center, #0b1830 0%, var(--bg-dark) 100%) !important;
     z-index: 99999999 !important;
     display: flex !important;
     flex-direction: column;
@@ -835,12 +742,12 @@ div[data-testid="stAlert"].st-success,
     position: absolute;
     top: 50%;
     left: 50%;
-    width: 22px;
-    height: 22px;
+    width: 20px;
+    height: 20px;
     border-radius: 50%;
     background: var(--primary);
     transform: translate(-50%, -50%);
-    box-shadow: 0 0 25px var(--primary-glow);
+    box-shadow: 0 0 28px var(--primary-glow);
     z-index: 2;
     animation: emitterPulse 2s ease-in-out infinite;
 }
@@ -869,15 +776,15 @@ div[data-testid="stAlert"].st-success,
 }
 
 .loader-text {
-    font-size: 0.85rem;
-    letter-spacing: 0.35em;
+    font-size: 0.80rem;
+    letter-spacing: 0.38em;
     font-weight: 600;
     text-transform: uppercase;
     color: var(--text-secondary);
     animation: textPulse 2s ease-in-out infinite;
 }
 
-/* --- 17. SKELETON / LOADING PLACEHOLDERS --- */
+/* --- 17. SKELETON --- */
 
 .stSkeleton {
     background: rgba(255, 255, 255, 0.04) !important;
@@ -889,7 +796,7 @@ div[data-testid="stAlert"].st-success,
 
 .stSpinner>div {
     border-color: var(--primary) transparent var(--secondary) transparent !important;
-    box-shadow: 0 0 15px var(--primary-glow) !important;
+    box-shadow: 0 0 16px var(--primary-glow) !important;
 }
 
 /* --- 19. TOP DECORATION BAR --- */
@@ -905,7 +812,7 @@ header>.stDecoration {
 /* --- 20. STATUS WIDGET --- */
 
 .stStatusWidget {
-    background: rgba(10, 16, 32, 0.85);
+    background: rgba(6, 12, 26, 0.90);
     border: 1px solid var(--border);
     border-radius: 20px;
     backdrop-filter: blur(12px);
@@ -917,14 +824,14 @@ header>.stDecoration {
     filter: drop-shadow(0 0 6px var(--primary));
 }
 
-/* --- 21. PAGE HEADER UTILITY CLASS --- */
+/* --- 21. PAGE HEADER UTILITY --- */
 
 .page-header {
     display: flex;
     align-items: center;
-    gap: 12px;
-    margin-bottom: 1.5rem;
-    padding-bottom: 1rem;
+    gap: 14px;
+    margin-bottom: 1.75rem;
+    padding-bottom: 1.1rem;
     border-bottom: 1px solid var(--border);
     animation: fadeInLeft 0.4s ease forwards;
 }
@@ -936,7 +843,7 @@ header>.stDecoration {
 
 .page-header-title {
     font-family: var(--font-heading);
-    font-size: 1.7rem;
+    font-size: 1.65rem;
     font-weight: 800;
     background: var(--grad-primary);
     -webkit-background-clip: text;
@@ -944,20 +851,21 @@ header>.stDecoration {
     -webkit-text-fill-color: transparent;
     color: transparent;
     margin: 0;
+    letter-spacing: -0.03em;
 }
 
 .page-header-subtitle {
-    font-size: 0.82rem;
+    font-size: 0.80rem;
     color: var(--text-muted);
     margin: 0;
-    margin-top: 2px;
+    margin-top: 3px;
 }
 
-/* --- 22. AI INSIGHT CARD UTILITY --- */
+/* --- 22. AI INSIGHT CARD --- */
 
 .ai-insight-card {
-    background: linear-gradient(90deg, rgba(14, 165, 233, 0.1) 0%, rgba(129, 140, 248, 0.06) 60%, transparent 100%);
-    border: 1px solid rgba(14, 165, 233, 0.2);
+    background: linear-gradient(90deg, rgba(0, 212, 170, 0.08) 0%, rgba(99, 102, 241, 0.04) 60%, transparent 100%);
+    border: 1px solid rgba(0, 212, 170, 0.16);
     border-radius: var(--radius-md);
     padding: 16px 20px;
     margin-bottom: 1.5rem;
@@ -998,14 +906,14 @@ hr {
     color: var(--text-primary) !important;
 }
 
-/* --- 25. CAPTION TEXT --- */
+/* --- 25. CAPTION --- */
 
 [data-testid="stCaptionContainer"] {
     color: var(--text-muted) !important;
-    font-size: 0.8rem !important;
+    font-size: 0.78rem !important;
 }
 
-/* --- 26. TOOLTIP (HELP TEXT ICONS) --- */
+/* --- 26. TOOLTIP --- */
 
 [data-testid="stTooltipIcon"] svg {
     color: var(--text-muted);
@@ -1019,11 +927,11 @@ hr {
 /* --- 27. DIALOG / MODAL --- */
 
 [data-testid="stDialog"] {
-    background: rgba(10, 16, 35, 0.96) !important;
+    background: rgba(6, 14, 32, 0.97) !important;
     border: 1px solid var(--border-bright) !important;
     border-radius: var(--radius-xl) !important;
     backdrop-filter: blur(32px) !important;
-    box-shadow: 0 40px 100px rgba(0, 0, 0, 0.6) !important;
+    box-shadow: 0 40px 100px rgba(0, 0, 0, 0.65) !important;
     animation: fadeScale 0.35s cubic-bezier(0.4, 0, 0.2, 1) forwards;
 }
 
@@ -1033,23 +941,22 @@ div[data-baseweb="datepicker"] {
     border-radius: var(--radius-md) !important;
 }
 
-/* --- 29. STAGGERED GRID CARD ANIMATIONS --- */
+/* --- 29. STAGGERED COLUMN ANIMATIONS --- */
 
-/* Apply staggered entrance to column children of metric cards */
 [data-testid="stColumns"]>[data-testid="stColumn"]:nth-child(1)>div {
-    animation-delay: 0.0s;
+    animation-delay: 0.00s;
 }
 
 [data-testid="stColumns"]>[data-testid="stColumn"]:nth-child(2)>div {
-    animation-delay: 0.07s;
+    animation-delay: 0.06s;
 }
 
 [data-testid="stColumns"]>[data-testid="stColumn"]:nth-child(3)>div {
-    animation-delay: 0.14s;
+    animation-delay: 0.12s;
 }
 
 [data-testid="stColumns"]>[data-testid="stColumn"]:nth-child(4)>div {
-    animation-delay: 0.21s;
+    animation-delay: 0.18s;
 }
 
 /* --- 30. PLOTLY CHART CONTAINERS --- */
@@ -1061,12 +968,11 @@ div[data-baseweb="datepicker"] {
 }
 
 [data-testid="stPlotlyChart"]:hover {
-    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.35);
 }
 
-/* Plotly modebar */
 .modebar-container {
-    opacity: 0.4 !important;
+    opacity: 0.35 !important;
     transition: opacity 0.2s !important;
 }
 
@@ -1074,7 +980,7 @@ div[data-baseweb="datepicker"] {
     opacity: 1 !important;
 }
 
-/* --- 31. FOLIUM MAP CONTAINER --- */
+/* --- 31. FOLIUM MAP --- */
 
 [data-testid="stIFrame"] {
     border-radius: var(--radius-md);
@@ -1082,10 +988,10 @@ div[data-baseweb="datepicker"] {
     border: 1px solid var(--border) !important;
 }
 
-/* --- 32. SELECT BOX OPTIONS --- */
+/* --- 32. SELECT BOX DROPDOWN --- */
 
 ul[data-baseweb="menu"] {
-    background: rgba(12, 20, 42, 0.98) !important;
+    background: rgba(8, 16, 38, 0.98) !important;
     border: 1px solid var(--border) !important;
     border-radius: var(--radius-md) !important;
     backdrop-filter: blur(20px) !important;
@@ -1097,4 +1003,20 @@ li[role="option"] {
 
 li[role="option"]:hover {
     background: var(--primary-dim) !important;
+}
+
+/* --- 33. LOGIN HERO TITLE --- */
+
+.login-hero-title {
+    font-family: var(--font-heading) !important;
+    font-size: 2.8rem;
+    font-weight: 900 !important;
+    background: var(--grad-accent);
+    background-size: 300% 300%;
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+    color: transparent;
+    animation: gradientShift 5s ease infinite, float 4s ease-in-out infinite;
+    display: inline-block;
 }

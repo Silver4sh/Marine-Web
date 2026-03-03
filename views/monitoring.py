@@ -1,7 +1,7 @@
 import streamlit as st
 import pandas as pd
 import plotly.express as px
-from concurrent.futures import ThreadPoolExecutor, as_completed
+from concurrent.futures import ThreadPoolExecutor
 
 from components.cards import render_metric_card, render_vessel_list_column, render_vessel_card
 from components.charts import apply_chart_style, gauge_chart, kpi_progress_bar
@@ -13,36 +13,32 @@ from db.repositories.settings_repo import get_system_settings
 from services.ai_service import MarineAIAnalyst
 from config.settings import ROLE_ADMIN, ROLE_FINANCE, ROLE_MARCOM, ROLE_OPERATIONS
 
-# ── Parallel loader ────────────────────────────────────────────────────────────
-_executor = ThreadPoolExecutor(max_workers=6)
-
 def _load_dashboard_data(role: str) -> dict:
     """Fire off all data fetches in parallel for maximum responsiveness."""
-    tasks = {
-        "fleet":     _executor.submit(get_fleet_status),
-        "orders":    _executor.submit(get_order_stats),
-        "settings":  _executor.submit(get_system_settings),
-        "clients":   _executor.submit(get_clients_summary),
-        "anomalies": _executor.submit(get_operational_anomalies),
-    }
-    if role in [ROLE_ADMIN, ROLE_FINANCE, ROLE_MARCOM]:
-        tasks["financial"] = _executor.submit(get_financial_metrics)
-        tasks["revenue"]   = _executor.submit(get_revenue_analysis)
-    else:
-        tasks["financial"] = None
-        tasks["revenue"]   = None
-
     results = {
         "fleet": {}, "orders": {}, "financial": {}, "settings": {},
         "clients": pd.DataFrame(), "anomalies": pd.DataFrame(), "revenue": pd.DataFrame()
     }
-    for key, future in tasks.items():
-        if future is None:
-            continue
-        try:
-            results[key] = future.result(timeout=15)
-        except Exception as e:
-            print(f"[monitoring] Failed to load {key}: {e}")
+
+    task_defs = {
+        "fleet":     get_fleet_status,
+        "orders":    get_order_stats,
+        "settings":  get_system_settings,
+        "clients":   get_clients_summary,
+        "anomalies": get_operational_anomalies,
+    }
+    if role in [ROLE_ADMIN, ROLE_FINANCE, ROLE_MARCOM]:
+        task_defs["financial"] = get_financial_metrics
+        task_defs["revenue"]   = get_revenue_analysis
+
+    # Use context manager so threads are cleaned up within this script run
+    with ThreadPoolExecutor(max_workers=6) as pool:
+        futures = {key: pool.submit(fn) for key, fn in task_defs.items()}
+        for key, future in futures.items():
+            try:
+                results[key] = future.result(timeout=15)
+            except Exception as e:
+                print(f"[monitoring] Failed to load {key}: {e}")
 
     return results
 
