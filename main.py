@@ -12,7 +12,6 @@ st.set_page_config(
 # Impor Tampilan
 from views.auth import render_login_page
 from views.monitoring import render_monitoring_view
-from views.notifications import show_notification_dialog, count_unread_notifications
 from views.analytics import render_analytics_page
 from views.clients import render_clients_page
 from views.admin import render_admin_page
@@ -45,7 +44,7 @@ for key, default in required_states.items():
 # --- Navigasi & Routing ---
 
 def main_app():
-    sidebar_nav(count_unread_notifications, show_notification_dialog)
+    sidebar_nav()
     page = st.session_state.current_page
 
     loader_placeholder, should_show_loader = transition_loader(page)

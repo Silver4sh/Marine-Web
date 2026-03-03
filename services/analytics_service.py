@@ -1,16 +1,6 @@
 import pandas as pd
 import numpy as np
-import hashlib
 from config.settings import ROLE_ADMIN, ROLE_FINANCE, ROLE_MARCOM
-
-
-# ─────────────────────────────────────────────────────────────────────────────
-# Notification helpers
-# ─────────────────────────────────────────────────────────────────────────────
-
-def get_notification_id(category: str, message: str, time_val) -> str:
-    """Stable hash-based ID for a notification so state survives re-renders."""
-    return hashlib.md5(f"{category}|{message}|{str(time_val)}".encode()).hexdigest()
 
 
 def generate_insights(fleet: dict, financial: dict, role: str, settings: dict, clients_df) -> list:

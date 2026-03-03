@@ -17,7 +17,7 @@ def _get_brand():
     return name, color1, color2
 
 
-def sidebar_nav(count_unread_notifications_func=None, show_notification_dialog_func=None):
+def sidebar_nav():
     app_name, color1, color2 = _get_brand()
 
     with st.sidebar:
@@ -91,18 +91,6 @@ def sidebar_nav(count_unread_notifications_func=None, show_notification_dialog_f
             ):
                 st.session_state.current_page = item
                 st.rerun()
-
-        st.divider()
-
-        try:
-            unread = count_unread_notifications_func(st.session_state.user_role) if count_unread_notifications_func else 0
-        except Exception:
-            unread = 0
-
-        notif_label = f"🔔 Notifikasi  {'· ' + str(unread) if unread > 0 else ''}"
-        if st.button(notif_label, key="notif_btn", width="stretch"):
-            if show_notification_dialog_func:
-                show_notification_dialog_func()
 
         st.divider()
 
