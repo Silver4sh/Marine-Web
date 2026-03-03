@@ -211,23 +211,27 @@ def render_settings_tab():
         </div>
     """, unsafe_allow_html=True)
 
-    u       = st.session_state.username
-    c_pass  = st.text_input("Kata Sandi Saat Ini",       type="password", placeholder="••••••••")
-    n_pass  = st.text_input("Kata Sandi Baru",            type="password", placeholder="Minimal 6 karakter")
-    cn_pass = st.text_input("Konfirmasi Kata Sandi Baru", type="password", placeholder="Ulangi kata sandi baru")
+    u = st.session_state.username
 
-    st.markdown("<br>", unsafe_allow_html=True)
-    if st.button("💾 Perbarui Kredensial", type="primary", width="stretch"):
-        if n_pass != cn_pass:
-            st.error("❌ Kata sandi baru tidak cocok.")
-        elif len(n_pass) < 6:
-            st.warning("⚠️ Kata sandi minimal 6 karakter.")
-        else:
-            success, msg = update_password(u, c_pass, n_pass)
-            if success:
-                st.success(f"✅ {msg}")
+    with st.form("change_password_form", clear_on_submit=True):
+        c_pass  = st.text_input("Kata Sandi Saat Ini",       type="password", placeholder="••••••••")
+        n_pass  = st.text_input("Kata Sandi Baru",            type="password", placeholder="Minimal 6 karakter")
+        cn_pass = st.text_input("Konfirmasi Kata Sandi Baru", type="password", placeholder="Ulangi kata sandi baru")
+
+        st.markdown("<br>", unsafe_allow_html=True)
+        submitted = st.form_submit_button("💾 Perbarui Kredensial", type="primary", use_container_width=True)
+
+        if submitted:
+            if n_pass != cn_pass:
+                st.error("❌ Kata sandi baru tidak cocok.")
+            elif len(n_pass) < 6:
+                st.warning("⚠️ Kata sandi minimal 6 karakter.")
             else:
-                st.error(f"❌ {msg}")
+                success, msg = update_password(u, c_pass, n_pass)
+                if success:
+                    st.success(f"✅ {msg}")
+                else:
+                    st.error(f"❌ {msg}")
 
 
 def render_audit_tab():
