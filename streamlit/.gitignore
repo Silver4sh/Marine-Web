@@ -1,7 +1,5 @@
 # Environment variables — JANGAN commit!
 .env
-*.env.local
-*.env.production
 
 # Python cache
 __pycache__/
