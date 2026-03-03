@@ -6,35 +6,37 @@ from sqlalchemy import create_engine, text
 from sqlalchemy.engine import Engine
 from sqlalchemy.exc import SQLAlchemyError
 
-# Load .env from the streamlit project root
+# Load .env from the streamlit project root (override=True ensures .env always wins)
 _BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-load_dotenv(os.path.join(_BASE_DIR, ".env"))
+load_dotenv(os.path.join(_BASE_DIR, ".env"), override=True)
 
 # ── Resolve DB credentials ────────────────────────────────────────────────────
 # Priority: st.secrets (Streamlit Cloud) → DB_URL env var → individual DB_* vars
 
 def _get_db_url() -> str:
     """Resolve the database URL from available credential sources."""
-    # 1. Try st.secrets (Streamlit Cloud deployment)
+    # 1. Try st.secrets (works locally via .streamlit/secrets.toml AND on Cloud)
     try:
-        secrets = st.secrets.get("database", {})
-        if secrets.get("DB_URL"):
-            return secrets["DB_URL"]
-        if all(secrets.get(k) for k in ("DB_HOST", "DB_USER", "DB_PASS", "DB_NAME")):
-            port = secrets.get("DB_PORT", "5432")
-            return (
-                f"postgresql+psycopg2://{secrets['DB_USER']}:{secrets['DB_PASS']}"
-                f"@{secrets['DB_HOST']}:{port}/{secrets['DB_NAME']}"
-            )
-    except Exception:
-        pass  # Not running in Streamlit Cloud or secrets not configured
+        db_secrets = st.secrets["database"]
+        # Try full URL first
+        if db_secrets.get("DB_URL"):
+            return db_secrets["DB_URL"]
+        # Build URL from individual keys
+        host = db_secrets["DB_HOST"]
+        user = db_secrets["DB_USER"]
+        pw   = db_secrets["DB_PASS"]
+        name = db_secrets["DB_NAME"]
+        port = db_secrets.get("DB_PORT", "5432")
+        return f"postgresql+psycopg2://{user}:{pw}@{host}:{port}/{name}"
+    except (KeyError, FileNotFoundError):
+        pass  # secrets.toml not present or [database] section missing
 
     # 2. Full URL from env var
     url_override = os.getenv("DB_URL", "")
     if url_override:
         return url_override
 
-    # 3. Individual env vars (local development)
+    # 3. Individual env vars (local development fallback)
     user = os.getenv("DB_USER", "postgres")
     pw   = os.getenv("DB_PASS", "")
     host = os.getenv("DB_HOST", "localhost")
@@ -71,14 +73,16 @@ def get_engine() -> Engine:
         return None
 
 
-
 def get_connection():
     engine = get_engine()
-    if engine is None: return None
-    try: return engine.connect()
+    if engine is None:
+        return None
+    try:
+        return engine.connect()
     except SQLAlchemyError as e:
         st.error(f"Kesalahan koneksi database: {e}")
         return None
+
 
 def run_query(query, params=None):
     """Execute a SQL query and return results as a DataFrame."""
