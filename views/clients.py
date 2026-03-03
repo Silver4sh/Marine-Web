@@ -83,7 +83,7 @@ def generate_client_map(df):
 
 def render_map(df):
     m = generate_client_map(df)
-    st_folium(m, height=500, width="stretch")
+    st_folium(m, height=500)
 
 
 def _section_header(icon, title, subtitle=""):
@@ -170,7 +170,7 @@ def render_clients_page():
     with tab_matrix:
         c_chart, c_insight = st.columns([3, 1])
         with c_chart:
-            st.plotly_chart(render_growth_matrix(df), width="stretch")
+            st.plotly_chart(render_growth_matrix(df))
         with c_insight:
             _section_header("💡", "Audit Strategi")
             st.info("**Mitra Kunci**: Klien dengan banyak proyek aktif dan LTV tinggi.")
@@ -199,7 +199,6 @@ def render_clients_page():
 
         st.dataframe(
             filtered_df[['name', 'industry', 'region', 'projects_active', 'ltv', 'churn_risk']],
-            width="stretch",
             hide_index=True,
             column_config={
                 "name":            "Nama Klien",
@@ -238,11 +237,11 @@ def render_clients_page():
             apply_chart_style(fig_rel)
             fig_rel.update_layout(yaxis=dict(autorange="reversed"),
                                   coloraxis_showscale=False, height=420)
-            st.plotly_chart(fig_rel, width="stretch")
+            st.plotly_chart(fig_rel, use_container_width=True)
 
             st.dataframe(
                 rel_df[["name", "total_revenue", "avg_payment_delay", "reliability_score"]],
-                hide_index=True, width="stretch",
+                hide_index=True,
                 column_config={
                     "name":             "Klien",
                     "total_revenue":    st.column_config.NumberColumn(

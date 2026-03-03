@@ -112,7 +112,7 @@ def render_revenue_forecast():
 
             apply_chart_style(fig, title="Proyeksi Pendapatan (6 Bulan)")
             fig.update_layout(height=380, margin=dict(l=0, r=0, t=40, b=0))
-            st.plotly_chart(fig, width="stretch")
+            st.plotly_chart(fig, use_container_width=True)
 
             model = forecast_df['model_name'].iloc[0] if 'model_name' in forecast_df.columns else "Regresi Linear"
             st.caption(f"🧠 **Model Prediksi**: {model} (Akurasi R² > 0.85)")
@@ -148,7 +148,7 @@ def render_correlation_section():
                 )
                 apply_chart_style(fig, title="Matriks Korelasi (Pearson)")
                 fig.update_layout(height=350)
-                st.plotly_chart(fig, width="stretch")
+                st.plotly_chart(fig, use_container_width=True)
 
             with c2:
                 _section_header("🤖", "Analisis Kausalitas")
@@ -192,7 +192,7 @@ def render_fleet_activity_chart():
         ))
         apply_chart_style(fig, title="Intensitas Operasional Armada")
         fig.update_layout(height=400)
-        st.plotly_chart(fig, width="stretch")
+        st.plotly_chart(fig, use_container_width=True)
     else:
         st.info("Tidak ada data aktivitas.")
 
@@ -272,7 +272,6 @@ def render_analytics_page():
                     "avg_delay_hours":  st.column_config.NumberColumn("Delay (Jam)", format="%.1f")
                 },
                 hide_index=True,
-                width="stretch",
                 height=250
             )
         else:

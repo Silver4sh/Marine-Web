@@ -337,7 +337,7 @@ def render_map_content():
             except Exception:
                 continue
 
-        st_folium(m, height=650, width="stretch")
+        st_folium(m, height=650)
 
         if final and not df.empty:
             row = df[df['code_vessel'] == final]
@@ -359,4 +359,4 @@ def page_heatmap(df, indikator):
     m = folium.Map(location=[df['latitude'].mean(), df['longitude'].mean()],
                    zoom_start=5, tiles="CartoDB Dark Matter")
     HeatMap(data, radius=25, blur=20).add_to(m)
-    st_folium(m, height=400, width="stretch")
+    st_folium(m, height=400)

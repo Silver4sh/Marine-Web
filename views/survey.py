@@ -68,7 +68,6 @@ def render_survey_list():
             "surveyor_name": "Surveyor",
             "comment":       "Komentar"
         },
-        width="stretch",
         hide_index=True
     )
 
@@ -126,7 +125,7 @@ def render_create_survey_form():
                                        height=120)
 
             st.markdown("<br>", unsafe_allow_html=True)
-            submitted = st.form_submit_button("💾 Simpan Laporan", type="primary", width="stretch")
+            submitted = st.form_submit_button("💾 Simpan Laporan", type="primary")
 
             if submitted:
                 if not project_name or not code_report:
@@ -188,7 +187,7 @@ def render_buoy_data_form():
                     df = df.set_index('TIMESTAMP')
 
                 st.subheader("Informasi Gelombang & Level Air (Mapped Data)")
-                st.dataframe(df, width="stretch")
+                st.dataframe(df)
 
                 csv_data = df.to_csv(index=True).encode('utf-8')
                 st.download_button(

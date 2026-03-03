@@ -27,7 +27,7 @@ def render_chart(df, x_col, y_col, color_col, title):
     if title:
         chart = chart.properties(title=title)
 
-    st.altair_chart(chart.interactive(), width="stretch")
+    st.altair_chart(chart.interactive(), use_container_width=True)
 
 
 def _section_header(icon: str, title: str, subtitle: str = ""):
@@ -156,7 +156,7 @@ def view_buoy_detail(b_id, name):
 
             st.divider()
             st.markdown("#### 📄 Data Mentah")
-            st.dataframe(filtered_df, width="stretch")
+            st.dataframe(filtered_df)
         else:
             st.info("Tidak ada data dalam rentang tanggal yang dipilih.")
     else:
@@ -195,8 +195,7 @@ def render_buoy_monitoring():
     with c4:
         st.plotly_chart(
             gauge_chart(comp_score, "Kepatuhan Lingkungan", 100, "%",
-                        thresholds=(75, 90), height=160),
-            width="stretch", config={"displayModeBar": False}
+                        thresholds=(75, 90), height=160), config={"displayModeBar": False}
         )
 
     st.divider()
@@ -248,7 +247,7 @@ def render_buoy_monitoring():
                     else:
                         st.error("Template buoy_card.html missing")
 
-                    if st.button("Detail 🔍", key=f"btn_detail_{b_id}", width="stretch"):
+                    if st.button("Detail 🔍", key=f"btn_detail_{b_id}"):
                         st.session_state['buoy_detail_id']   = b_id
                         st.session_state['buoy_detail_name'] = f"Buoy {b_id} — {loc}"
                 else:
@@ -285,7 +284,7 @@ def render_environment_page():
             st.divider()
             col_title, col_close = st.columns([8, 1])
             with col_close:
-                if st.button("✖ Tutup", width="stretch"):
+                if st.button("✖ Tutup"):
                     st.session_state['buoy_detail_id']   = None
                     st.session_state['buoy_detail_name'] = None
                     st.rerun()

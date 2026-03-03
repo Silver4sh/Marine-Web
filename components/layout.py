@@ -86,7 +86,6 @@ def sidebar_nav():
             if st.button(
                 item,
                 key=key_btn,
-                width="stretch",
                 type="primary" if st.session_state.current_page == item else "secondary"
             ):
                 st.session_state.current_page = item
@@ -94,7 +93,7 @@ def sidebar_nav():
 
         st.divider()
 
-        if st.button("🚪 Keluar", key="logout", width="stretch"):
+        if st.button("🚪 Keluar", key="logout"):
             st.session_state.logged_in = False
             st.session_state.username = None
             st.rerun()

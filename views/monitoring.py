@@ -203,8 +203,7 @@ def render_overview_tab(fleet, orders, financial, role, settings, anomaly_df):
     with g1:
         st.plotly_chart(
             gauge_chart(round(util_pct, 1), "Utilisasi Armada", 100, "%",
-                        thresholds=(40, 70), height=180),
-            width="stretch", config={"displayModeBar": False}
+                        thresholds=(40, 70), height=180), config={"displayModeBar": False}
         )
     with g2:
         comp     = orders.get("completed", 0)
@@ -212,15 +211,13 @@ def render_overview_tab(fleet, orders, financial, role, settings, anomaly_df):
         comp_pct = (comp / tot_ord) * 100
         st.plotly_chart(
             gauge_chart(round(comp_pct, 1), "Penyelesaian Pesanan", 100, "%",
-                        thresholds=(60, 80), height=180),
-            width="stretch", config={"displayModeBar": False}
+                        thresholds=(60, 80), height=180), config={"displayModeBar": False}
         )
     with g3:
         health_pct = 100 - round((maint / total_v) * 100)
         st.plotly_chart(
             gauge_chart(float(health_pct), "Kesehatan Armada", 100, "%",
-                        thresholds=(60, 85), height=180),
-            width="stretch", config={"displayModeBar": False}
+                        thresholds=(60, 85), height=180), config={"displayModeBar": False}
         )
     with g4:
         if role in [ROLE_ADMIN, ROLE_FINANCE, ROLE_MARCOM]:
@@ -229,15 +226,13 @@ def render_overview_tab(fleet, orders, financial, role, settings, anomaly_df):
             rev_pct    = min((cur_rev / rev_target) * 100 if rev_target > 0 else 0, 150)
             st.plotly_chart(
                 gauge_chart(round(rev_pct, 1), "Pencapaian Revenue", 150, "%",
-                            thresholds=(50, 100), height=180),
-                width="stretch", config={"displayModeBar": False}
+                            thresholds=(50, 100), height=180), config={"displayModeBar": False}
             )
         else:
             open_pct = min((orders.get("open", 0) / tot_ord) * 100, 100)
             st.plotly_chart(
                 gauge_chart(round(open_pct, 1), "Pesanan Terbuka", 100, "%",
-                            thresholds=(30, 60), height=180),
-                width="stretch", config={"displayModeBar": False}
+                            thresholds=(30, 60), height=180), config={"displayModeBar": False}
             )
 
     st.markdown("<br>", unsafe_allow_html=True)
@@ -265,7 +260,7 @@ def render_overview_tab(fleet, orders, financial, role, settings, anomaly_df):
                 )
                 fig.update_layout(showlegend=False, coloraxis_showscale=False)
                 apply_chart_style(fig)
-                st.plotly_chart(fig, width="stretch")
+                st.plotly_chart(fig, use_container_width=True)
 
                 # Revenue target progress bar
                 if role in [ROLE_ADMIN, ROLE_FINANCE, ROLE_MARCOM]:
@@ -293,7 +288,7 @@ def render_overview_tab(fleet, orders, financial, role, settings, anomaly_df):
                     color_discrete_sequence=["#2dd4bf", "#f472b6", "#fbbf24", "#f43f5e"]
                 )
                 apply_chart_style(fig)
-                st.plotly_chart(fig, width="stretch")
+                st.plotly_chart(fig, use_container_width=True)
 
     with c_side:
         # Fleet summary table
@@ -310,7 +305,7 @@ def render_overview_tab(fleet, orders, financial, role, settings, anomaly_df):
         ])
         max_v = max(fleet.get("total_vessels", 10), 1)
         st.dataframe(
-            fleet_df, hide_index=True, width="stretch",
+            fleet_df, hide_index=True,
             column_config={
                 "Count": st.column_config.ProgressColumn(
                     "Jumlah", format="%d", min_value=0, max_value=max_v
@@ -325,7 +320,7 @@ def render_overview_tab(fleet, orders, financial, role, settings, anomaly_df):
 
         st.markdown("<br>", unsafe_allow_html=True)
         if role in [ROLE_ADMIN, ROLE_OPERATIONS]:
-            if st.button("🗺️ Buka Peta Kapal", width="stretch", type="primary"):
+            if st.button("🗺️ Buka Peta Kapal", type="primary"):
                 st.session_state.current_page = "🗺️ Peta Kapal"
                 st.rerun()
 
