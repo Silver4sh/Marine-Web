@@ -56,7 +56,8 @@ def render_login_page():
             password = st.text_input("Password", type="password", placeholder="🔑  Password", label_visibility="collapsed")
 
             st.markdown("<br>", unsafe_allow_html=True)
-            submit_button = st.form_submit_button("🚀  Masuk ke Sistem"
+            submit_button = st.form_submit_button(
+                "🚀  Masuk ke Sistem"
             )
 
             if submit_button:
