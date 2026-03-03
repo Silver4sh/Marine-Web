@@ -1,27 +1,21 @@
-# General
-.DS_Store
+# Environment variables — JANGAN commit!
 .env
-venv/
-.venv/
+
+# Python cache
 __pycache__/
 *.py[cod]
-*$py.class
-dist/
-build/
-*.egg-info/
+*.pyo
+*.pyd
+.Python
 
-# Streamlit
+# Virtual environment
+.venv/
+venv/
+env/
+
+# Streamlit cache
 .streamlit/secrets.toml
 
-# IDEs
-.vscode/
-.idea/
-
-# Data
-*.csv
-*.xlsx
-*.json
-!assets/**/*.json
-
-# Logs
-*.log
+# OS files
+.DS_Store
+Thumbs.db
