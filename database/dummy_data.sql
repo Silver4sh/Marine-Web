@@ -359,7 +359,7 @@ INSERT INTO operation.vessel_positions (id_vessel, id_activity, longitude, latit
 -- 2. BUOY SCHEMA
 -- =============================================
 
-INSERT INTO buoy.buoys (id_site, code_buoy, longitude, latitude, status, last_mtc) VALUES
+INSERT INTO ocean.buoys (id_site, code_buoy, longitude, latitude, status, last_mtc) VALUES
 ('ST001','BYPRIOK01',106.882,-6.102,'Active',NOW()-INTERVAL'30 days'),
 ('ST001','BYPRIOK02',106.885,-6.105,'MTC',NOW()-INTERVAL'2 days'),
 ('ST001','BYPRIOK03',106.888,-6.100,'Active',NOW()-INTERVAL'15 days'),
@@ -373,7 +373,7 @@ INSERT INTO buoy.buoys (id_site, code_buoy, longitude, latitude, status, last_mt
 ('ST009','BYPNK01',109.340,-0.025,'Active',NOW()-INTERVAL'12 days'),
 ('ST011','BYBITUNG01',125.208,1.440,'Active',NOW()-INTERVAL'8 days');
 
-INSERT INTO buoy.buoy_sensor_histories (id_buoy, salinitas, turbidity, current, oxygen, tide, density, created_at) VALUES
+INSERT INTO ocean.buoy_sensor_histories (id_buoy, salinitas, turbidity, current, oxygen, tide, density, created_at) VALUES
 ('BYPRIOK01',32,15,1,6,120,1022,NOW()-INTERVAL'6 hours'),
 ('BYPRIOK01',32,18,2,6,110,1022,NOW()-INTERVAL'5 hours'),
 ('BYPRIOK01',33,20,2,5,100,1023,NOW()-INTERVAL'4 hours'),
@@ -405,7 +405,7 @@ INSERT INTO buoy.buoy_sensor_histories (id_buoy, salinitas, turbidity, current, 
 ('BYBITUNG01',33,12,1,7,110,1023,NOW()-INTERVAL'2 hours'),
 ('BYBITUNG01',33,10,1,7,105,1023,NOW());
 
-INSERT INTO buoy.buoy_mtc_histories (id_buoy, start_date, end_date, note, created_at) VALUES
+INSERT INTO ocean.buoy_mtc_histories (id_buoy, start_date, end_date, note, created_at) VALUES
 ('BYPRIOK01',NOW()-INTERVAL'30 days',NOW()-INTERVAL'29 days','Sensor Cleaning Calibration',NOW()-INTERVAL'30 days'),
 ('BYPRIOK02',NOW()-INTERVAL'2 days',NOW(),'Battery Replacement',NOW()-INTERVAL'2 days'),
 ('BYSBY02',NOW()-INTERVAL'10 days',NOW()-INTERVAL'9 days','Redeployment Post Storm',NOW()-INTERVAL'10 days'),
