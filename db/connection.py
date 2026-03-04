@@ -13,25 +13,11 @@ load_dotenv(os.path.join(_BASE_DIR, ".env"), override=True)
 # Priority: st.secrets → .env
 
 def _get_supabase_url() -> str:
-    try:
-        return st.secrets["supabase"]["SUPABASE_URL"]
-    except (KeyError, FileNotFoundError):
-        pass
-    url = os.getenv("SUPABASE_URL", "")
-    if url:
-        return url
-    raise RuntimeError("SUPABASE_URL tidak ditemukan di secrets.toml atau .env")
+    return st.secrets["supabase"]["SUPABASE_URL"]
 
 
 def _get_supabase_key() -> str:
-    try:
-        return st.secrets["supabase"]["SUPABASE_KEY"]
-    except (KeyError, FileNotFoundError):
-        pass
-    key = os.getenv("SUPABASE_KEY", "")
-    if key:
-        return key
-    raise RuntimeError("SUPABASE_KEY tidak ditemukan di secrets.toml atau .env")
+    return st.secrets["supabase"]["SUPABASE_KEY"]
 
 
 # ── Supabase Client ────────────────────────────────────────────────────────────
