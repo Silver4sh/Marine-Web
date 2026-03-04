@@ -1,4 +1,5 @@
 import os
+import hashlib
 import streamlit as st
 import pandas as pd
 import psycopg2
@@ -57,30 +58,32 @@ def get_raw_connection():
         return None
 
 
+# Engine di-cache berdasarkan hash URL — otomatis refresh saat URL berubah
 @st.cache_resource
-def get_engine() -> Engine:
-    """Return a cached SQLAlchemy engine."""
+def _build_engine(url_hash: str) -> Engine:
+    """Internal: build SQLAlchemy engine (cached by URL hash)."""
     raw_url = _get_database_url()
-    # SQLAlchemy needs postgresql+psycopg2:// driver prefix
     db_url = raw_url.replace("postgresql://", "postgresql+psycopg2://", 1)
-    try:
-        engine = create_engine(
-            db_url,
-            echo=False,
-            pool_pre_ping=True,
-            pool_size=3,
-            max_overflow=7,
-            pool_recycle=600,
-            pool_timeout=30,
-            connect_args={
-                "sslmode":         "require",
-                "connect_timeout": 15,
-            },
-        )
-        return engine
-    except Exception as e:
-        st.error(f"Gagal membuat koneksi database: {e}")
-        return None
+    return create_engine(
+        db_url,
+        echo=False,
+        pool_pre_ping=True,
+        pool_size=3,
+        max_overflow=7,
+        pool_recycle=600,
+        pool_timeout=30,
+        connect_args={
+            "sslmode":         "require",
+            "connect_timeout": 15,
+        },
+    )
+
+
+def get_engine() -> Engine:
+    """Return a SQLAlchemy engine, invalidated whenever DATABASE_URL changes."""
+    raw_url = _get_database_url()
+    url_hash = hashlib.md5(raw_url.encode()).hexdigest()
+    return _build_engine(url_hash)
 
 
 def get_connection():
