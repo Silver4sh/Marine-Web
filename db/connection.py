@@ -10,8 +10,28 @@ _BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 load_dotenv(os.path.join(_BASE_DIR, ".env"), override=True)
 
 # ── Supabase Credentials ───────────────────────────────────────────────────────
-SUPABASE_URL = "https://emkmymfpnlylknutluua.supabase.co"
-SUPABASE_KEY = "sb_publishable_HQrJOGnDV0K0R1f7ueMDwg_SdYBi_Km"
+# Priority: st.secrets → .env
+
+def _get_supabase_url() -> str:
+    try:
+        return st.secrets["supabase"]["SUPABASE_URL"]
+    except (KeyError, FileNotFoundError):
+        pass
+    url = os.getenv("SUPABASE_URL", "")
+    if url:
+        return url
+    raise RuntimeError("SUPABASE_URL tidak ditemukan di secrets.toml atau .env")
+
+
+def _get_supabase_key() -> str:
+    try:
+        return st.secrets["supabase"]["SUPABASE_KEY"]
+    except (KeyError, FileNotFoundError):
+        pass
+    key = os.getenv("SUPABASE_KEY", "")
+    if key:
+        return key
+    raise RuntimeError("SUPABASE_KEY tidak ditemukan di secrets.toml atau .env")
 
 
 # ── Supabase Client ────────────────────────────────────────────────────────────
@@ -19,7 +39,7 @@ SUPABASE_KEY = "sb_publishable_HQrJOGnDV0K0R1f7ueMDwg_SdYBi_Km"
 @st.cache_resource
 def get_supabase() -> Client:
     """Return a cached Supabase client instance."""
-    return create_client(SUPABASE_URL, SUPABASE_KEY)
+    return create_client(_get_supabase_url(), _get_supabase_key())
 
 
 # ── Resolve DATABASE_URL ───────────────────────────────────────────────────────
