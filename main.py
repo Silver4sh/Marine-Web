@@ -1,5 +1,17 @@
+import logging
 import time
 import streamlit as st
+
+# ── Suppress 'missing ScriptRunContext' noise from background threads ──────────
+# Supabase-py (httpx / realtime) spins up internal threads that don't hold a
+# Streamlit script context.  These are harmless, but flood the log in production.
+class _NoCtxFilter(logging.Filter):
+    def filter(self, record: logging.LogRecord) -> bool:
+        return "missing ScriptRunContext" not in record.getMessage()
+
+logging.getLogger("streamlit.runtime.scriptrunner_utils.script_run_context")\
+    .addFilter(_NoCtxFilter())
+
 
 # Konfigurasi Halaman (Harus di awal)
 st.set_page_config(
