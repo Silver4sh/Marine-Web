@@ -212,10 +212,11 @@ def render_buoy_monitoring():
                 if i < len(buoy_list):
                     _, buoy = buoy_list[i]
                     b_id    = buoy['code_buoy']
-                    loc     = oceanget('location') or 'Lokasi ?'
+                    loc     = buoy.get('location') or 'Lokasi ?'
                     status  = buoy['status']
-                    batt    = oceanget('battery', '-')
-                    last_up = oceanget('last_update')
+                    batt    = buoy.get('battery', '-')
+                    last_up = buoy.get('last_update')
+                    last_up    = pd.to_datetime(last_up, errors="coerce")
                     fmt_update = last_up.strftime("%d %b %H:%M") if pd.notnull(last_up) else "-"
 
                     if status == "Maintenance":

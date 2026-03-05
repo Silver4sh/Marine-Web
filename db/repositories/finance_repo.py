@@ -6,9 +6,20 @@ from db.connection import sb_table
 _EMPTY = pd.DataFrame()
 
 
-def _strip_tz(series: pd.Series) -> pd.Series:
-    """Convert tz-aware datetime series to tz-naive UTC for period operations."""
-    return pd.to_datetime(series, utc=True).dt.tz_convert(None)
+def _to_month(series: pd.Series) -> pd.Series:
+    """Parse datetimes from Supabase strings → tz-naive, floored to month start."""
+    dt = pd.to_datetime(series, utc=True).dt.tz_convert(None)
+    # Use numpy floor to month — no Period involved at all
+    return dt.values.astype("datetime64[M]").astype("datetime64[ns]")
+
+
+def _monthly(df: pd.DataFrame, date_col: str, **agg_cols) -> pd.DataFrame:
+    """Group a DataFrame by month from a date column. Returns sorted DataFrame."""
+    df = df.copy()
+    df["_month"] = _to_month(df[date_col])
+    result = df.groupby("_month").agg(**agg_cols).reset_index()
+    result = result.rename(columns={"_month": "month"})
+    return result.sort_values("month").reset_index(drop=True)
 
 
 @st.cache_data(ttl=300)
@@ -27,21 +38,20 @@ def get_financial_metrics() -> dict:
         return {"total_revenue": total_revenue, "completed_orders": 0,
                 "delta_revenue": 0.0, "current_revenue": 0.0, "prev_revenue": 0.0}
 
-    payments["month"] = _strip_tz(payments["payment_date"]).dt.to_period("M")
-    monthly = payments.groupby("month").agg(
+    monthly = _monthly(payments, "payment_date",
         revenue=("total_amount", "sum"),
         order_count=("id_order", "nunique"),
-    ).sort_index(ascending=False)
+    ).sort_values("month", ascending=False)
 
-    cur   = float(monthly.iloc[0]["revenue"])     if len(monthly) > 0 else 0.0
-    prev  = float(monthly.iloc[1]["revenue"])     if len(monthly) > 1 else 0.0
+    cur   = float(monthly.iloc[0]["revenue"])  if len(monthly) > 0 else 0.0
+    prev  = float(monthly.iloc[1]["revenue"])  if len(monthly) > 1 else 0.0
     delta = round(((cur - prev) / prev * 100) if prev > 0 else 0.0, 2)
     return {
-        "total_revenue":   total_revenue,
-        "current_revenue": cur,
-        "prev_revenue":    prev,
+        "total_revenue":    total_revenue,
+        "current_revenue":  cur,
+        "prev_revenue":     prev,
         "completed_orders": int(monthly.iloc[0]["order_count"]) if len(monthly) > 0 else 0,
-        "delta_revenue":   delta,
+        "delta_revenue":    delta,
     }
 
 
@@ -51,11 +61,14 @@ def get_revenue_analysis() -> pd.DataFrame:
         .select("total_amount, payment_date").eq("status", "Completed").execute().data
     if not rows:
         return _EMPTY
+
     df = pd.DataFrame(rows)
-    df["month"] = _strip_tz(df["payment_date"]).dt.to_period("M").dt.to_timestamp()
-    return df.groupby("month")["total_amount"].sum().reset_index()\
-             .rename(columns={"total_amount": "revenue"})\
-             .sort_values("month").reset_index(drop=True)
+    df["payment_date"] = pd.to_datetime(df["payment_date"], utc=True).dt.tz_convert(None)
+    df["month"] = df["payment_date"].values.astype("datetime64[M]").astype("datetime64[ns]")
+
+    result = df.groupby("month")["total_amount"].sum().reset_index()
+    result.columns = ["month", "revenue"]
+    return result.sort_values("month").reset_index(drop=True)
 
 
 @st.cache_data(ttl=300)
@@ -74,7 +87,7 @@ def get_revenue_by_service() -> pd.DataFrame:
                  .merge(clients, left_on="id_client", right_on="code_client", how="inner")
     return df.groupby("industry")["total_amount"].sum().reset_index()\
              .rename(columns={"industry": "Layanan", "total_amount": "Nilai"})\
-             .sort_values("Nilai", ascending=False)
+             .sort_values("Nilai", ascending=False).reset_index(drop=True)
 
 
 @st.cache_data(ttl=300)
@@ -105,19 +118,20 @@ def get_revenue_cycle_metrics() -> pd.DataFrame:
     if orders.empty or payments.empty:
         return _EMPTY
 
-    orders["order_date"]     = pd.to_datetime(orders["order_date"],     utc=True)
-    payments["payment_date"] = pd.to_datetime(payments["payment_date"], utc=True)
+    orders["order_date"]     = pd.to_datetime(orders["order_date"],     utc=True).dt.tz_convert(None)
+    payments["payment_date"] = pd.to_datetime(payments["payment_date"], utc=True).dt.tz_convert(None)
 
     merged = orders.merge(payments, left_on="code_order", right_on="id_order", how="inner")
     merged["days_to_cash"] = (merged["payment_date"] - merged["order_date"]).dt.days
-    merged["month"] = _strip_tz(merged["order_date"]).to_period("M").dt.to_timestamp()
+    # Use numpy floor to month — no Period
+    merged["month"] = merged["order_date"].values.astype("datetime64[M]").astype("datetime64[ns]")
 
     return merged.groupby("month").agg(
         avg_days_to_cash=("days_to_cash", "mean"),
         realized_revenue=("total_amount", "sum"),
         paid_count=("status", lambda x: (x == "Completed").sum()),
         total_orders=("code_order", "count"),
-    ).reset_index().sort_values("month", ascending=False)
+    ).reset_index().sort_values("month", ascending=False).reset_index(drop=True)
 
 
 @st.cache_data(ttl=3600)
@@ -129,7 +143,7 @@ def get_client_stats() -> dict:
     df = pd.DataFrame(rows)
     df["created_at"] = pd.to_datetime(df["created_at"], utc=True)
     return {
-        "total_clients":   len(df),
-        "new_clients":     int(((df["created_at"] >= cutoff) & (df["status"] == "Active")).sum()),
+        "total_clients":    len(df),
+        "new_clients":      int(((df["created_at"] >= cutoff) & (df["status"] == "Active")).sum()),
         "deactive_clients": int((df["status"] != "Active").sum()),
     }

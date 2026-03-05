@@ -38,7 +38,8 @@ def get_vessel_position() -> pd.DataFrame:
 
     positions["created_at"] = pd.to_datetime(positions["created_at"], utc=True)
     latest = positions.drop_duplicates("id_vessel").merge(
-        vessels, left_on="id_vessel", right_on="code_vessel", how="left")
+        vessels, left_on="id_vessel", right_on="code_vessel", how="left")\
+        .drop(columns=["code_vessel"])  # drop vessels' code_vessel to avoid duplicate after rename
     latest["speed"]   = latest["speed"].fillna(0)
     latest["heading"] = latest["heading"].fillna(0)
     return latest.rename(columns={
