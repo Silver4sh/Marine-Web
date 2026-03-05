@@ -13,10 +13,7 @@ load_dotenv(os.path.join(_BASE_DIR, ".env"), override=True)
 @st.cache_resource
 def get_supabase() -> Client:
     """Return a cached Supabase client instance."""
-    return create_client(
-        st.secrets.DB_ACCESS.SUPABASE_URL,
-        st.secrets.DB_ACCESS.SUPABASE_KEY,
-    )
+    return create_client(**st.secrets.DB_ACCESS)
 
 
 # ── Resolve DATABASE_URL ───────────────────────────────────────────────────────
