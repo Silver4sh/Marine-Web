@@ -1,31 +1,22 @@
-import os
 import hashlib
 import streamlit as st
 import pandas as pd
 from supabase import create_client, Client
 from dotenv import load_dotenv
+import os
 
-# Load .env from project root (override=True so .env always wins over shell env)
+# Load .env (untuk DATABASE_URL fallback)
 _BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 load_dotenv(os.path.join(_BASE_DIR, ".env"), override=True)
 
-# ── Supabase Credentials ───────────────────────────────────────────────────────
-# Priority: st.secrets → .env
-
-def _get_supabase_url() -> str:
-    return st.secrets["supabase"]["SUPABASE_URL"]
-
-
-def _get_supabase_key() -> str:
-    return st.secrets["supabase"]["SUPABASE_KEY"]
-
-
-# ── Supabase Client ────────────────────────────────────────────────────────────
 
 @st.cache_resource
 def get_supabase() -> Client:
     """Return a cached Supabase client instance."""
-    return create_client(_get_supabase_url(), _get_supabase_key())
+    return create_client(
+        st.secrets.DB_ACCESS.SUPABASE_URL,
+        st.secrets.DB_ACCESS.SUPABASE_KEY,
+    )
 
 
 # ── Resolve DATABASE_URL ───────────────────────────────────────────────────────
@@ -47,9 +38,7 @@ def _get_database_url() -> str:
         return url
 
     raise RuntimeError(
-        "DATABASE_URL tidak ditemukan. "
-        "Pastikan .env atau .streamlit/secrets.toml sudah dikonfigurasi."
-    )
+        "DATABASE_URL tidak ditemukan. ")
 
 
 # ── SQLAlchemy Engine (untuk raw SQL kompleks) ─────────────────────────────────
