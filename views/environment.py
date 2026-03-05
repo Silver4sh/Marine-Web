@@ -27,7 +27,7 @@ def render_chart(df, x_col, y_col, color_col, title):
     if title:
         chart = chart.properties(title=title)
 
-    st.altair_chart(chart.interactive(), use_container_width=True)
+    st.altair_chart(chart.interactive(), width='stretch')
 
 
 def _section_header(icon: str, title: str, subtitle: str = ""):
@@ -212,10 +212,10 @@ def render_buoy_monitoring():
                 if i < len(buoy_list):
                     _, buoy = buoy_list[i]
                     b_id    = buoy['code_buoy']
-                    loc     = buoy.get('location') or 'Lokasi ?'
+                    loc     = oceanget('location') or 'Lokasi ?'
                     status  = buoy['status']
-                    batt    = buoy.get('battery', '-')
-                    last_up = buoy.get('last_update')
+                    batt    = oceanget('battery', '-')
+                    last_up = oceanget('last_update')
                     fmt_update = last_up.strftime("%d %b %H:%M") if pd.notnull(last_up) else "-"
 
                     if status == "Maintenance":

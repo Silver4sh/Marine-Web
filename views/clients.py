@@ -237,7 +237,7 @@ def render_clients_page():
             apply_chart_style(fig_rel)
             fig_rel.update_layout(yaxis=dict(autorange="reversed"),
                                   coloraxis_showscale=False, height=420)
-            st.plotly_chart(fig_rel, use_container_width=True)
+            st.plotly_chart(fig_rel, width='stretch')
 
             st.dataframe(
                 rel_df[["name", "total_revenue", "avg_payment_delay", "reliability_score"]],

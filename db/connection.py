@@ -9,3 +9,8 @@ def get_supabase() -> Client:
         st.secrets.DB_ACCESS.DATABASE_URL,
         st.secrets.DB_ACCESS.database,
     )
+
+
+def sb_table(schema: str, table: str):
+    """Shorthand: get_supabase().schema(schema).table(table)."""
+    return get_supabase().schema(schema).table(table)

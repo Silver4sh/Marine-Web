@@ -225,7 +225,7 @@ class MarineSLM:
 
         elif intent == "env_anomaly":
             templates = [
-                "{opener} ada nilai aneh di {count} buoy. Awas dampaknya ke {term}.",
+                "{opener} ada nilai aneh di {count} ocean Awas dampaknya ke {term}.",
                 "Ada masalah kualitas air. Nilai sensor terlihat {adj}.",
                 "Kondisi lingkungan {verb} di lokasi. Perlu cek langsung ke sana."
             ]
