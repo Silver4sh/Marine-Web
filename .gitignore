@@ -1,5 +1,7 @@
 # Environment variables — JANGAN commit!
 .env
+.devcontainer
+.vscode
 
 # Python cache
 __pycache__/
