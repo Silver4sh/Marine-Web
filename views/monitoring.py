@@ -13,6 +13,9 @@ from db.repositories.settings_repo import get_system_settings
 from services.ai_service import MarineAIAnalyst
 from config.settings import ROLE_ADMIN, ROLE_FINANCE, ROLE_MARCOM, ROLE_OPERATIONS
 
+import threading
+from streamlit.runtime.scriptrunner import add_script_run_ctx, get_script_run_ctx
+
 def _load_dashboard_data(role: str) -> dict:
     """Fire off all data fetches in parallel for maximum responsiveness."""
     results = {
@@ -31,9 +34,19 @@ def _load_dashboard_data(role: str) -> dict:
         task_defs["financial"] = get_financial_metrics
         task_defs["revenue"]   = get_revenue_analysis
 
-    # Use context manager so threads are cleaned up within this script run
+    # Capture the Streamlit script context from the main thread so it can
+    # be propagated to worker threads — prevents "missing ScriptRunContext" warnings.
+    ctx = get_script_run_ctx()
+
+    def _run(fn):
+        """Wrap fn so the worker thread inherits the Streamlit script context."""
+        def _inner():
+            add_script_run_ctx(threading.current_thread(), ctx)
+            return fn()
+        return _inner
+
     with ThreadPoolExecutor(max_workers=6) as pool:
-        futures = {key: pool.submit(fn) for key, fn in task_defs.items()}
+        futures = {key: pool.submit(_run(fn)) for key, fn in task_defs.items()}
         for key, future in futures.items():
             try:
                 results[key] = future.result(timeout=15)
