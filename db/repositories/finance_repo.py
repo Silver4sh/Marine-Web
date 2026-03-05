@@ -1,132 +1,140 @@
 import streamlit as st
 import pandas as pd
-from db.connection import run_query
+from datetime import datetime, timezone, timedelta
+from db.connection import get_supabase
+
 
 @st.cache_data(ttl=300)
 def get_financial_metrics():
-    """
-    Returns financial summary with REAL month-over-month delta.
-    Compares current calendar month revenue vs last calendar month.
-    """
-    query = """
-    WITH monthly AS (
-        SELECT
-            DATE_TRUNC('month', payment_date) AS month,
-            SUM(total_amount)                  AS revenue,
-            COUNT(DISTINCT id_order)           AS order_count
-        FROM operation.payments
-        WHERE status = 'Completed'
-          AND payment_date >= NOW() - INTERVAL '2 months'
-        GROUP BY 1
-        ORDER BY 1 DESC
-        LIMIT 2
-    )
-    SELECT
-        COALESCE(MAX(CASE WHEN row_num = 1 THEN revenue  END), 0) AS current_revenue,
-        COALESCE(MAX(CASE WHEN row_num = 2 THEN revenue  END), 0) AS prev_revenue,
-        COALESCE(MAX(CASE WHEN row_num = 1 THEN order_count END), 0) AS completed_orders,
-        (SELECT COALESCE(SUM(total_amount), 0) FROM operation.payments WHERE status = 'Completed') AS total_revenue_all
-    FROM (SELECT *, ROW_NUMBER() OVER (ORDER BY month DESC) AS row_num FROM monthly) ranked
-    """
-    df = run_query(query)
-    if df.empty:
-        return {"total_revenue": 0, "completed_orders": 0, "delta_revenue": 0.0,
-                "current_revenue": 0, "prev_revenue": 0}
+    sb = get_supabase()
+    cutoff = (datetime.now(timezone.utc) - timedelta(days=60)).isoformat()
 
-    row = df.iloc[0]
-    cur  = float(row.get("current_revenue", 0) or 0)
-    prev = float(row.get("prev_revenue",    0) or 0)
-    delta = ((cur - prev) / prev * 100) if prev > 0 else 0.0
+    payments = pd.DataFrame(sb.schema("operation").table("payments")
+        .select("id_order, total_amount, payment_date, status")
+        .eq("status", "Completed").gte("payment_date", cutoff).execute().data)
 
-    return {
-        "total_revenue":     float(row.get("total_revenue_all", 0) or 0),
-        "current_revenue":   cur,
-        "prev_revenue":      prev,
-        "completed_orders":  int(row.get("completed_orders", 0) or 0),
-        "delta_revenue":     round(delta, 2),
-    }
+    all_payments = pd.DataFrame(sb.schema("operation").table("payments")
+        .select("total_amount").eq("status", "Completed").execute().data)
+
+    total_revenue = float(all_payments["total_amount"].sum()) if not all_payments.empty else 0.0
+
+    if payments.empty:
+        return {"total_revenue": total_revenue, "completed_orders": 0,
+                "delta_revenue": 0.0, "current_revenue": 0.0, "prev_revenue": 0.0}
+
+    payments["payment_date"] = pd.to_datetime(payments["payment_date"], utc=True)
+    payments["month"] = payments["payment_date"].dt.to_period("M")
+
+    monthly = payments.groupby("month").agg(
+        revenue=("total_amount", "sum"),
+        order_count=("id_order", "nunique")
+    ).sort_index(ascending=False)
+
+    cur  = float(monthly.iloc[0]["revenue"]) if len(monthly) > 0 else 0.0
+    prev = float(monthly.iloc[1]["revenue"]) if len(monthly) > 1 else 0.0
+    delta = round(((cur - prev) / prev * 100) if prev > 0 else 0.0, 2)
+    completed = int(monthly.iloc[0]["order_count"]) if len(monthly) > 0 else 0
+
+    return {"total_revenue": total_revenue, "current_revenue": cur,
+            "prev_revenue": prev, "completed_orders": completed, "delta_revenue": delta}
 
 
 @st.cache_data(ttl=300)
 def get_revenue_analysis():
-    query = """
-    SELECT
-        DATE_TRUNC('month', payment_date) AS month,
-        SUM(total_amount)                 AS revenue
-    FROM operation.payments
-    WHERE status = 'Completed'
-    GROUP BY 1
-    ORDER BY 1 ASC
-    """
-    return run_query(query)
+    sb = get_supabase()
+    resp = sb.schema("operation").table("payments")\
+        .select("total_amount, payment_date").eq("status", "Completed").execute()
+    if not resp.data:
+        return pd.DataFrame()
+
+    df = pd.DataFrame(resp.data)
+    df["payment_date"] = pd.to_datetime(df["payment_date"], utc=True)
+    df["month"] = df["payment_date"].dt.to_period("M").dt.to_timestamp()
+    return df.groupby("month")["total_amount"].sum().reset_index().rename(
+        columns={"month": "month", "total_amount": "revenue"}).sort_values("month")
 
 
 @st.cache_data(ttl=300)
 def get_revenue_by_service():
-    query = """
-    SELECT
-        c.industry AS "Layanan",
-        SUM(p.total_amount) AS "Nilai"
-    FROM operation.payments p
-    JOIN operation.orders  o ON p.id_order  = o.code_order
-    JOIN operation.clients c ON o.id_client = c.code_client
-    WHERE p.status = 'Completed'
-    GROUP BY c.industry
-    ORDER BY "Nilai" DESC
-    """
-    return run_query(query)
+    sb = get_supabase()
+    payments = pd.DataFrame(sb.schema("operation").table("payments")
+        .select("id_order, total_amount").eq("status", "Completed").execute().data)
+    orders = pd.DataFrame(sb.schema("operation").table("orders")
+        .select("code_order, id_client").execute().data)
+    clients = pd.DataFrame(sb.schema("operation").table("clients")
+        .select("code_client, industry").execute().data)
+
+    if payments.empty or orders.empty or clients.empty:
+        return pd.DataFrame()
+
+    df = payments.merge(orders, left_on="id_order", right_on="code_order", how="inner")
+    df = df.merge(clients, left_on="id_client", right_on="code_client", how="inner")
+    result = df.groupby("industry")["total_amount"].sum().reset_index()
+    result.columns = ["Layanan", "Nilai"]
+    return result.sort_values("Nilai", ascending=False)
 
 
 @st.cache_data(ttl=300)
 def get_order_stats():
-    query = """
-    SELECT
-        COUNT(*)                                                      AS total_orders,
-        SUM(CASE WHEN status = 'Completed'   THEN 1 ELSE 0 END)      AS completed,
-        SUM(CASE WHEN status = 'In Completed' THEN 1 ELSE 0 END)     AS in_completed,
-        SUM(CASE WHEN status = 'On Progress' THEN 1 ELSE 0 END)      AS on_progress,
-        SUM(CASE WHEN status = 'Failed'      THEN 1 ELSE 0 END)      AS failed,
-        SUM(CASE WHEN status = 'Open'        THEN 1 ELSE 0 END)      AS open
-    FROM operation.orders
-    """
-    df = run_query(query)
-    if df.empty:
+    sb = get_supabase()
+    resp = sb.schema("operation").table("orders").select("status").execute()
+    if not resp.data:
         return {"total_orders": 0, "completed": 0, "in_completed": 0,
                 "on_progress": 0, "failed": 0, "open": 0}
-    row = df.iloc[0]
-    return {k: int(row.get(k, 0) or 0) for k in
-            ["total_orders", "completed", "in_completed", "on_progress", "failed", "open"]}
+
+    df = pd.DataFrame(resp.data)
+    counts = df["status"].value_counts().to_dict()
+    return {
+        "total_orders":  len(df),
+        "completed":     int(counts.get("Completed", 0)),
+        "in_completed":  int(counts.get("In Completed", 0)),
+        "on_progress":   int(counts.get("On Progress", 0)),
+        "failed":        int(counts.get("Failed", 0)),
+        "open":          int(counts.get("Open", 0)),
+    }
 
 
 @st.cache_data(ttl=1800)
 def get_revenue_cycle_metrics():
-    query = """
-    SELECT
-        DATE_TRUNC('month', o.order_date) AS month,
-        AVG(EXTRACT(DAY FROM (p.payment_date - o.order_date))) AS avg_days_to_cash,
-        SUM(p.total_amount)               AS realized_revenue,
-        SUM(CASE WHEN p.status = 'Completed' THEN 1 ELSE 0 END) AS paid_count,
-        COUNT(o.code_order)               AS total_orders
-    FROM operation.orders o
-    JOIN operation.payments p ON o.code_order = p.id_order
-    WHERE o.order_date >= NOW() - INTERVAL '6 months'
-    GROUP BY 1
-    ORDER BY 1 DESC
-    """
-    return run_query(query)
+    sb = get_supabase()
+    cutoff = (datetime.now(timezone.utc) - timedelta(days=180)).isoformat()
+
+    orders = pd.DataFrame(sb.schema("operation").table("orders")
+        .select("code_order, order_date").gte("order_date", cutoff).execute().data)
+    payments = pd.DataFrame(sb.schema("operation").table("payments")
+        .select("id_order, total_amount, payment_date, status").execute().data)
+
+    if orders.empty or payments.empty:
+        return pd.DataFrame()
+
+    orders["order_date"] = pd.to_datetime(orders["order_date"], utc=True)
+    payments["payment_date"] = pd.to_datetime(payments["payment_date"], utc=True)
+
+    merged = orders.merge(payments, left_on="code_order", right_on="id_order", how="inner")
+    merged["days_to_cash"] = (merged["payment_date"] - merged["order_date"]).dt.days
+    merged["month"] = merged["order_date"].dt.to_period("M").dt.to_timestamp()
+
+    result = merged.groupby("month").agg(
+        avg_days_to_cash=("days_to_cash", "mean"),
+        realized_revenue=("total_amount", "sum"),
+        paid_count=("status", lambda x: (x == "Completed").sum()),
+        total_orders=("code_order", "count")
+    ).reset_index().sort_values("month", ascending=False)
+    return result
 
 
 @st.cache_data(ttl=3600)
 def get_client_stats():
-    query = """
-    SELECT
-        COUNT(code_client) AS total_clients,
-        SUM(CASE WHEN created_at >= NOW() - INTERVAL '30 days' AND status = 'Active'  THEN 1 ELSE 0 END) AS new_clients,
-        SUM(CASE WHEN status <> 'Active' THEN 1 ELSE 0 END) AS deactive_clients
-    FROM operation.clients
-    """
-    df = run_query(query)
-    if df.empty:
+    sb = get_supabase()
+    cutoff = (datetime.now(timezone.utc) - timedelta(days=30)).isoformat()
+    resp = sb.schema("operation").table("clients").select("code_client, status, created_at").execute()
+    if not resp.data:
         return {"total_clients": 0, "new_clients": 0, "deactive_clients": 0}
-    row = df.iloc[0]
-    return {k: int(row.get(k, 0) or 0) for k in ["total_clients", "new_clients", "deactive_clients"]}
+
+    df = pd.DataFrame(resp.data)
+    df["created_at"] = pd.to_datetime(df["created_at"], utc=True)
+    return {
+        "total_clients":  len(df),
+        "new_clients":    int(((df["created_at"] >= cutoff) & (df["status"] == "Active")).sum()),
+        "deactive_clients": int((df["status"] != "Active").sum()),
+    }

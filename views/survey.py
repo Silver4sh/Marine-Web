@@ -2,7 +2,7 @@ import streamlit as st
 import pandas as pd
 from datetime import datetime
 from db.repositories.survey_repo import get_all_surveys, create_survey_report
-from db.connection import run_query
+from db.connection import get_supabase
 from components.cards import render_metric_card
 
 
@@ -93,23 +93,25 @@ def render_create_survey_form():
                     help="Di-generate otomatis berdasarkan tanggal dan waktu. Bisa diubah jika diperlukan."
                 )
 
-                sites_df = run_query(
-                    "SELECT code_site, code_site || ' - ' || location as label "
-                    "FROM operation.sites WHERE status = 'Active'"
-                )
-                site_opts   = sites_df['code_site'].tolist() if not sites_df.empty else []
-                site_labels = sites_df['label'].tolist()    if not sites_df.empty else []
+                sb = get_supabase()
+                sites_resp = sb.schema("operation").table("sites")\
+                    .select("code_site, location").eq("status", "Active").execute()
+                sites_df = pd.DataFrame(sites_resp.data)
+                if not sites_df.empty:
+                    sites_df["label"] = sites_df["code_site"] + " - " + sites_df["location"]
+                site_opts   = sites_df["code_site"].tolist() if not sites_df.empty else []
+                site_labels = sites_df["label"].tolist()    if not sites_df.empty else []
                 id_site = st.selectbox(
                     "Site",
                     options=site_opts,
                     format_func=lambda x: site_labels[site_opts.index(x)] if x in site_opts else x
                 )
 
-                vessels_df = run_query(
-                    "SELECT code_vessel, name FROM operation.vessels WHERE status = 'Active'"
-                )
-                vessel_opts   = vessels_df['code_vessel'].tolist() if not vessels_df.empty else []
-                vessel_labels = vessels_df['name'].tolist()        if not vessels_df.empty else []
+                vessels_resp = sb.schema("operation").table("vessels")\
+                    .select("code_vessel, name").eq("status", "Active").execute()
+                vessels_df = pd.DataFrame(vessels_resp.data)
+                vessel_opts   = vessels_df["code_vessel"].tolist() if not vessels_df.empty else []
+                vessel_labels = vessels_df["name"].tolist()        if not vessels_df.empty else []
                 id_vessel = st.selectbox(
                     "Kapal",
                     options=vessel_opts,

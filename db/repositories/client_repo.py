@@ -1,53 +1,98 @@
 import streamlit as st
-from db.connection import run_query
+import pandas as pd
+from datetime import datetime, timezone, timedelta
+from db.connection import get_supabase
+
 
 @st.cache_data(ttl=300)
 def get_client_stats():
-    query = "SELECT COUNT(code_client) as total_clients, SUM(CASE WHEN created_at <= NOW() - INTERVAL '21 days' and status = 'Active' THEN 1 ELSE 0 END) as new_clients,  SUM(CASE WHEN created_at <= NOW() - INTERVAL '21 days' and status <> 'Active' THEN 1 ELSE 0 END) as deactive_clients FROM operation.clients"
-    df = run_query(query)
-    if df.empty: return {"total_clients": 0, "new_clients": 0, "deactive_clients": 0}
-    return {"total_clients": int(df.iloc[0]["total_clients"]), "new_clients": int(df.iloc[0]["new_clients"]), "deactive_clients": int(df.iloc[0]["deactive_clients"])}
+    sb = get_supabase()
+    resp = sb.schema("operation").table("clients").select("code_client, status, created_at").execute()
+    if not resp.data:
+        return {"total_clients": 0, "new_clients": 0, "deactive_clients": 0}
+
+    df = pd.DataFrame(resp.data)
+    df["created_at"] = pd.to_datetime(df["created_at"], utc=True)
+    cutoff = datetime.now(timezone.utc) - timedelta(days=21)
+
+    total = len(df)
+    new = int(((df["created_at"] <= cutoff) & (df["status"] == "Active")).sum())
+    deactive = int(((df["created_at"] <= cutoff) & (df["status"] != "Active")).sum())
+    return {"total_clients": total, "new_clients": new, "deactive_clients": deactive}
+
 
 @st.cache_data(ttl=300)
 def get_clients_summary():
-    query = "SELECT c.code_client, c.name, c.industry, c.region, c.status, COUNT(DISTINCT o.id) as total_orders, COALESCE(SUM(p.total_amount), 0) as ltv FROM operation.clients c LEFT JOIN operation.orders o ON c.code_client = o.id_client LEFT JOIN operation.payments p ON o.code_order = p.id_order AND p.status = 'Completed' GROUP BY c.code_client, c.name, c.industry, c.region, c.status ORDER BY ltv DESC"
-    return run_query(query)
+    sb = get_supabase()
+
+    clients = pd.DataFrame(sb.schema("operation").table("clients")
+        .select("code_client, name, industry, region, status").execute().data)
+    if clients.empty:
+        return pd.DataFrame()
+
+    orders = pd.DataFrame(sb.schema("operation").table("orders")
+        .select("id, id_client, code_order").execute().data)
+
+    payments = pd.DataFrame(sb.schema("operation").table("payments")
+        .select("id_order, total_amount, status").execute().data)
+
+    # Total orders per client
+    if not orders.empty:
+        order_counts = orders.groupby("id_client")["id"].count().reset_index()
+        order_counts.columns = ["code_client", "total_orders"]
+        clients = clients.merge(order_counts, on="code_client", how="left")
+    else:
+        clients["total_orders"] = 0
+
+    # LTV: sum of completed payments
+    if not orders.empty and not payments.empty:
+        completed = payments[payments["status"] == "Completed"]
+        order_ltv = completed.groupby("id_order")["total_amount"].sum().reset_index()
+        order_ltv.columns = ["code_order", "payment_total"]
+        orders_ltv = orders.merge(order_ltv, on="code_order", how="left")
+        client_ltv = orders_ltv.groupby("id_client")["payment_total"].sum().reset_index()
+        client_ltv.columns = ["code_client", "ltv"]
+        clients = clients.merge(client_ltv, on="code_client", how="left")
+    else:
+        clients["ltv"] = 0
+
+    clients["total_orders"] = clients.get("total_orders", 0).fillna(0).astype(int)
+    clients["ltv"] = clients.get("ltv", 0).fillna(0)
+    return clients.sort_values("ltv", ascending=False)
+
 
 @st.cache_data(ttl=3600)
 def get_client_reliability_scoring():
-    query = """
-    WITH payment_stats AS (
-        SELECT 
-            id_order,
-            SUM(total_amount) as total_paid,
-            MAX(payment_date) as last_payment_date
-        FROM operation.payments
-        WHERE status = 'Completed'
-        GROUP BY 1
-    ),
-    client_metrics AS (
-        SELECT 
-            c.code_client,
-            c.name,
-            COUNT(DISTINCT o.id) as total_orders,
-            COALESCE(SUM(ps.total_paid), 0) as total_revenue,
-            AVG(EXTRACT(DAY FROM (ps.last_payment_date - o.order_date))) as avg_payment_delay_days
-        FROM operation.clients c
-        JOIN operation.orders o ON c.code_client = o.id_client
-        JOIN payment_stats ps ON o.code_order = ps.id_order
-        GROUP BY 1, 2
+    sb = get_supabase()
+
+    clients = pd.DataFrame(sb.schema("operation").table("clients")
+        .select("code_client, name").execute().data)
+    orders = pd.DataFrame(sb.schema("operation").table("orders")
+        .select("id, code_order, id_client, order_date").execute().data)
+    payments = pd.DataFrame(sb.schema("operation").table("payments")
+        .select("id_order, total_amount, payment_date, status")
+        .eq("status", "Completed").execute().data)
+
+    if clients.empty or orders.empty or payments.empty:
+        return pd.DataFrame()
+
+    orders["order_date"] = pd.to_datetime(orders["order_date"], utc=True)
+    payments["payment_date"] = pd.to_datetime(payments["payment_date"], utc=True)
+
+    # Merge payments onto orders
+    merged = orders.merge(payments, left_on="code_order", right_on="id_order", how="inner")
+    merged["days_to_pay"] = (merged["payment_date"] - merged["order_date"]).dt.days
+
+    metrics = merged.groupby("id_client").agg(
+        total_revenue=("total_amount", "sum"),
+        avg_payment_delay=("days_to_pay", "mean")
+    ).reset_index()
+    metrics["avg_payment_delay"] = metrics["avg_payment_delay"].fillna(30)
+
+    result = clients.merge(metrics, left_on="code_client", right_on="id_client", how="inner")
+    result["reliability_score"] = (
+        (result["total_revenue"] / 100_000_000) * 0.6
+        - (result["avg_payment_delay"] / 10) * 0.4
     )
-    SELECT 
-        code_client,
-        name,
-        total_revenue,
-        COALESCE(avg_payment_delay_days, 0) as avg_payment_delay,
-        (
-            (total_revenue / 100000000) * 0.6
-            - 
-            (COALESCE(avg_payment_delay_days, 30) / 10) * 0.4
-        ) as reliability_score
-    FROM client_metrics
-    ORDER BY reliability_score DESC
-    """
-    return run_query(query)
+    return result[["code_client", "name", "total_revenue", "avg_payment_delay", "reliability_score"]]\
+        .sort_values("reliability_score", ascending=False)

@@ -1,36 +1,37 @@
 import streamlit as st
-from sqlalchemy import text
-from db.connection import get_engine
+from db.connection import get_supabase
 from db.repositories.user_repo import update_last_login_optimized
+
 
 def check_login_working(username: str, password: str):
     """Validates credentials against DB. Returns (success: bool, role: str|None)."""
-    engine = get_engine()
-    if engine is None:
-        st.error("❌ Tidak dapat terhubung ke database.")
-        return False, None
-
     try:
-        with engine.connect() as conn:
-            stmt = text("""
-                SELECT um.id_user, u.role
-                FROM operation.user_managements um
-                JOIN operation.users u ON um.id_user = u.code_user
-                WHERE um.id_user = :username
-                  AND trim(um.password) = trim(:password)
-                  AND um.status = 'Active'
-                  AND u.status  = 'Active'
-            """)
-            result = conn.execute(stmt, {"username": username, "password": password})
-            rows = result.fetchall()
+        sb = get_supabase()
+        result = sb.schema("operation").table("user_managements")\
+            .select("id_user, status")\
+            .eq("id_user", username)\
+            .eq("password", password)\
+            .eq("status", "Active")\
+            .execute()
 
-        if rows:
-            role = rows[0][1]
-            update_last_login_optimized(username, password)
-            return True, role
-        else:
+        if not result.data:
             st.error("⚠️ Username atau password salah. Coba lagi.")
             return False, None
+
+        # Get role from users table
+        user = sb.schema("operation").table("users")\
+            .select("role")\
+            .eq("code_user", username)\
+            .eq("status", "Active")\
+            .execute()
+
+        if not user.data:
+            st.error("⚠️ Akun tidak aktif.")
+            return False, None
+
+        role = user.data[0]["role"]
+        update_last_login_optimized(username, password)
+        return True, role
 
     except Exception as e:
         st.error(f"Kesalahan koneksi: {e}")
