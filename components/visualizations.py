@@ -358,14 +358,174 @@ def render_map_content():
         render_vessel_list_column("Maintenance", maint_df, "🛠️", height=320)
 
 
+
 # ---------------------------------------------------------------------------
-# Heatmap helper
+# Area Chart — daily time series with gradient fill (for environment view)
 # ---------------------------------------------------------------------------
+_AREA_COLORS = {
+    "salinitas": ("#38bdf8", "rgba(56,189,248,0.15)"),
+    "turbidity": ("#f59e0b", "rgba(245,158,11,0.15)"),
+    "oxygen":    ("#22c55e", "rgba(34,197,94,0.15)"),
+    "density":   ("#a78bfa", "rgba(167,139,250,0.15)"),
+    "current":   ("#ef4444", "rgba(239,68,68,0.15)"),
+    "tide":      ("#fb923c", "rgba(251,146,60,0.15)"),
+}
+_AREA_DEFAULT = ("#ef4444", "rgba(239,68,68,0.15)")
+
+
+def env_area_chart(
+    df: "pd.DataFrame",
+    date_col: str,
+    value_col: str,
+    title: str = "",
+    height: int = 260,
+) -> "go.Figure":
+    """
+    Smooth area chart for a single environmental parameter.
+
+    Aggregates df by day (mean), then renders:
+      - Filled area from zero to the line
+      - Solid line on top with dot markers
+      - Dark transparent theme matching the design system
+    """
+    import plotly.graph_objects as go
+    import numpy as np
+    import pandas as pd
+
+    line_color, fill_color = _AREA_COLORS.get(value_col, _AREA_DEFAULT)
+
+    # ── Empty guard ───────────────────────────────────────────────────────────
+    if df.empty or value_col not in df.columns or date_col not in df.columns:
+        fig = go.Figure()
+        fig.add_annotation(
+            text="Tidak ada data",
+            xref="paper", yref="paper",
+            x=0.5, y=0.5, showarrow=False,
+            font=dict(color="#475569", size=13, family="Outfit"),
+        )
+        fig.update_layout(
+            paper_bgcolor="rgba(0,0,0,0)",
+            plot_bgcolor="rgba(0,0,0,0)",
+            height=height, margin=dict(t=36, l=0, r=0, b=0),
+        )
+        return fig
+
+    # ── Aggregate daily ───────────────────────────────────────────────────────
+    work = df[[date_col, value_col]].copy()
+    work[date_col]  = pd.to_datetime(work[date_col], errors="coerce")
+    work[value_col] = pd.to_numeric(work[value_col], errors="coerce")
+    work = work.dropna()
+
+    daily = (
+        work.groupby(work[date_col].dt.date)[value_col]
+        .mean()
+        .reset_index()
+    )
+    daily.columns = ["date", "value"]
+    daily["date"] = pd.to_datetime(daily["date"])
+    daily = daily.sort_values("date")
+
+    if daily.empty:
+        fig = go.Figure()
+        fig.update_layout(
+            paper_bgcolor="rgba(0,0,0,0)",
+            plot_bgcolor="rgba(0,0,0,0)",
+            height=height,
+        )
+        return fig
+
+    # ── Build figure ──────────────────────────────────────────────────────────
+    fig = go.Figure()
+
+    # Filled area
+    fig.add_trace(go.Scatter(
+        x=daily["date"],
+        y=daily["value"],
+        mode="lines",
+        fill="tozeroy",
+        fillcolor=fill_color,
+        line=dict(color=line_color, width=2.5, shape="spline", smoothing=1.1),
+        name=value_col.capitalize(),
+        hovertemplate=(
+            "<b>%{x|%d %b %Y}</b><br>"
+            f"{value_col.capitalize()}: <b>%{{y:.2f}}</b><extra></extra>"
+        ),
+    ))
+
+    # Invisible dot markers for hover precision
+    fig.add_trace(go.Scatter(
+        x=daily["date"],
+        y=daily["value"],
+        mode="markers",
+        marker=dict(color=line_color, size=5, opacity=0.7),
+        showlegend=False,
+        hoverinfo="skip",
+    ))
+
+    # Min / max annotations
+    if len(daily) >= 2:
+        vmax = daily.loc[daily["value"].idxmax()]
+        vmin = daily.loc[daily["value"].idxmin()]
+        for v, label, ay in [(vmax, "▲ Max", -28), (vmin, "▼ Min", 28)]:
+            fig.add_annotation(
+                x=v["date"], y=v["value"],
+                text=f"{label}: {v['value']:.1f}",
+                font=dict(color=line_color, size=9, family="Inter"),
+                showarrow=True,
+                arrowhead=0, arrowcolor=line_color, arrowwidth=1,
+                ay=ay, ax=0,
+                bgcolor="rgba(10,12,22,0.80)",
+                bordercolor=line_color,
+                borderwidth=1,
+                borderpad=3,
+            )
+
+    fig.update_layout(
+        title=dict(
+            text=title,
+            font=dict(family="Outfit", size=13, color="#94a3b8"),
+            x=0, xanchor="left",
+        ) if title else dict(text=""),
+        paper_bgcolor="rgba(0,0,0,0)",
+        plot_bgcolor="rgba(14,17,28,0.55)",
+        height=height,
+        margin=dict(t=40 if title else 12, l=50, r=16, b=36),
+        showlegend=False,
+        xaxis=dict(
+            showgrid=False,
+            showline=True,
+            linecolor="rgba(255,255,255,0.07)",
+            tickfont=dict(color="#64748b", size=10, family="Inter"),
+            tickformat="%b %d",
+            zeroline=False,
+        ),
+        yaxis=dict(
+            showgrid=True,
+            gridcolor="rgba(255,255,255,0.04)",
+            gridwidth=1,
+            showline=False,
+            zeroline=False,
+            tickfont=dict(color="#64748b", size=10, family="Inter"),
+        ),
+        hovermode="x unified",
+        hoverlabel=dict(
+            bgcolor="rgba(10,12,22,0.96)",
+            bordercolor=line_color,
+            font=dict(family="Inter", color="#f1f5f9", size=12),
+        ),
+    )
+    return fig
+
+
+# Keep backward compat alias used by environment.py
+def calendar_heatmap(df, date_col, value_col, title="", color_scale=None, height=260):
+    """Alias → area chart (heatmap replaced)."""
+    return env_area_chart(df, date_col, value_col, title=title, height=height)
+
+
 def page_heatmap(df, indikator):
-    if df.empty or indikator not in df.columns:
-        return
-    data = df[['latitude', 'longitude', indikator]].dropna().values.tolist()
-    m = folium.Map(location=[df['latitude'].mean(), df['longitude'].mean()],
-                   zoom_start=5, tiles="CartoDB Dark Matter")
-    HeatMap(data, radius=25, blur=20).add_to(m)
-    st_folium(m, height=400)
+    """Legacy wrapper — kept so existing calls don't break."""
+    pass
+
+
+
