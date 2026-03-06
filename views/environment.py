@@ -27,7 +27,7 @@ def render_chart(df, x_col, y_col, color_col, title):
     if title:
         chart = chart.properties(title=title)
 
-    st.altair_chart(chart.interactive(), width='stretch')
+    st.altair_chart(chart.interactive(), use_container_width=True)
 
 
 def _section_header(icon: str, title: str, subtitle: str = ""):

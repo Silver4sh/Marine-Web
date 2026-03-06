@@ -296,29 +296,28 @@ def render_map_content():
         maint_df  = df[df['status_lower'].str.contains('maintenance|repair|mtc', na=False)]
         active_df = df[~df['status_lower'].str.contains('maintenance|repair|mtc', na=False)]
 
-    c_left, c_center, c_right = st.columns([1, 3, 1])
+    # ── Search bar (full width) ─────────────────────────────────────────────
+    vessel_options = df['code_vessel'].tolist() if not df.empty else []
+    current_sel    = st.session_state.get("search_select")
+    sel_idx        = (vessel_options.index(current_sel) + 1) if current_sel in vessel_options else 0
 
-    with c_left:
-        render_vessel_list_column("Active", active_df, "⚓")
+    chosen = st.selectbox("🔍 Cari Kapal / ID:",
+                          options=["Semua Kapal"] + vessel_options, index=sel_idx)
+    st.session_state["search_select"] = chosen if chosen != "Semua Kapal" else None
+    final = st.session_state["search_select"]
 
-    with c_center:
-        vessel_options = df['code_vessel'].tolist() if not df.empty else []
-        current_sel = st.session_state.get("search_select")
-        sel_idx = (vessel_options.index(current_sel) + 1) if current_sel in vessel_options else 0
+    # ── Map (wide) + Vessel Detail (narrow) ────────────────────────────────
+    c_map, c_detail = st.columns([4, 1])
 
-        chosen = st.selectbox("🔍 Cari Kapal / ID:",
-                              options=["Semua Kapal"] + vessel_options, index=sel_idx)
-        st.session_state["search_select"] = chosen if chosen != "Semua Kapal" else None
-        final = st.session_state["search_select"]
-
+    with c_map:
         center, zoom = [-1.2, 108.5], 5
         if final and not df.empty:
             row = df[df['code_vessel'] == final]
             if not row.empty:
                 center = [row.iloc[0]['latitude'], row.iloc[0]['longitude']]
-                zoom = 10
+                zoom   = 10
 
-        m = folium.Map(location=center, zoom_start=zoom, tiles="CartoDB Dark Matter")
+        m       = folium.Map(location=center, zoom_start=zoom, tiles="CartoDB Dark Matter")
         cluster = MarkerCluster().add_to(m)
 
         view_df = df[df['code_vessel'] == final] if final else df
@@ -337,16 +336,26 @@ def render_map_content():
             except Exception:
                 continue
 
-        st_folium(m, height=650)
+        st_folium(m, height=620, use_container_width=True)
 
+    with c_detail:
         if final and not df.empty:
             row = df[df['code_vessel'] == final]
             if not row.empty:
-                st.markdown("---")
                 render_vessel_detail_section(row.iloc[0])
+        else:
+            st.info("Pilih kapal untuk melihat detail.", icon="⬅️")
 
-    with c_right:
-        render_vessel_list_column("Maintenance", maint_df, "🛠️")
+    # ── Vessel Lists (tabs below map) ───────────────────────────────────────
+    st.divider()
+    tab_active, tab_maint = st.tabs([
+        f"⚓ Armada Aktif ({len(active_df)})",
+        f"🛠️ Dalam Maintenance ({len(maint_df)})"
+    ])
+    with tab_active:
+        render_vessel_list_column("Active", active_df, "⚓", height=320)
+    with tab_maint:
+        render_vessel_list_column("Maintenance", maint_df, "🛠️", height=320)
 
 
 # ---------------------------------------------------------------------------

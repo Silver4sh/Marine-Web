@@ -273,7 +273,7 @@ def render_overview_tab(fleet, orders, financial, role, settings, anomaly_df):
                 )
                 fig.update_layout(showlegend=False, coloraxis_showscale=False)
                 apply_chart_style(fig)
-                st.plotly_chart(fig, width='stretch')
+                st.plotly_chart(fig, use_container_width=True)
 
                 # Revenue target progress bar
                 if role in [ROLE_ADMIN, ROLE_FINANCE, ROLE_MARCOM]:
@@ -301,7 +301,7 @@ def render_overview_tab(fleet, orders, financial, role, settings, anomaly_df):
                     color_discrete_sequence=["#2dd4bf", "#f472b6", "#fbbf24", "#f43f5e"]
                 )
                 apply_chart_style(fig)
-                st.plotly_chart(fig, width='stretch')
+                st.plotly_chart(fig, use_container_width=True)
 
     with c_side:
         # Fleet summary table

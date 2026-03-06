@@ -1020,3 +1020,23 @@ li[role="option"]:hover {
     animation: gradientShift 5s ease infinite, float 4s ease-in-out infinite;
     display: inline-block;
 }
+
+/* --- 34. MAP PAGE ENHANCEMENTS --- */
+
+/* Make folium iframe truly fill its column container */
+[data-testid="stIFrame"] > iframe {
+    width: 100% !important;
+}
+
+/* Vessel detail panel scrollable on small screens */
+[data-testid="stColumn"] > div[style*="overflow"] {
+    max-height: 600px;
+    overflow-y: auto;
+}
+
+/* --- 35. SAFE RENDERING: hide orphan HTML tags if leaked as text --- */
+/* This is a last-resort safety net; proper fix is always in Python code */
+[data-testid="stMarkdownContainer"] > p:empty,
+[data-testid="stMarkdownContainer"] > p:only-child:is(:where(p:has(> :only-child))) {
+    display: none;
+}
