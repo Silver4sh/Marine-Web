@@ -10,11 +10,12 @@ def _get_brand():
         from db.repositories.settings_repo import get_system_settings
         s = get_system_settings()
         name   = s.get("app_name", "⚓ MarineOS") or "⚓ MarineOS"
-        color1 = s.get("theme_color_primary",   s.get("theme_color", "#0ea5e9")) or "#0ea5e9"
-        color2 = s.get("theme_color_secondary", "#818cf8") or "#818cf8"
+        color1 = s.get("theme_color_primary",   s.get("theme_color", "#ef4444")) or "#ef4444"
+        color2 = s.get("theme_color_secondary", "#f59e0b") or "#f59e0b"
     except Exception:
-        name, color1, color2 = "⚓ MarineOS", "#0ea5e9", "#818cf8"
+        name, color1, color2 = "⚓ MarineOS", "#ef4444", "#f59e0b"
     return name, color1, color2
+
 
 
 def sidebar_nav():

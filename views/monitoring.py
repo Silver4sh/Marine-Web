@@ -60,10 +60,10 @@ def _load_dashboard_data(role: str) -> dict:
 def _ai_banner(insight: dict) -> None:
     icon_map  = {"critical": "🚨", "warning": "⚠️", "positive": "✅", "info": "🤖"}
     color_map = {
-        "critical": ("#f43f5e", "rgba(244,63,94,0.12)",  "rgba(244,63,94,0.3)"),
-        "warning":  ("#f59e0b", "rgba(245,158,11,0.12)", "rgba(245,158,11,0.3)"),
-        "positive": ("#22c55e", "rgba(34,197,94,0.12)",  "rgba(34,197,94,0.3)"),
-        "info":     ("#0ea5e9", "rgba(14,165,233,0.1)",  "rgba(14,165,233,0.25)"),
+        "critical": ("#ef4444", "rgba(239,68,68,0.10)",  "rgba(239,68,68,0.28)"),
+        "warning":  ("#f59e0b", "rgba(245,158,11,0.10)", "rgba(245,158,11,0.28)"),
+        "positive": ("#22c55e", "rgba(34,197,94,0.10)",  "rgba(34,197,94,0.28)"),
+        "info":     ("#60a5fa", "rgba(96,165,250,0.08)",  "rgba(96,165,250,0.22)"),
     }
     itype  = insight.get("type", "info")
     icon   = icon_map.get(itype, "🤖")
@@ -269,11 +269,11 @@ def render_overview_tab(fleet, orders, financial, role, settings, anomaly_df):
                     title="Arus Pendapatan Bulanan",
                     template="plotly_dark",
                     color="revenue",
-                    color_continuous_scale=["#0f172a", "#38bdf8"]
+                    color_continuous_scale=["#1a0a0a", "#ef4444"]
                 )
                 fig.update_layout(showlegend=False, coloraxis_showscale=False)
                 apply_chart_style(fig)
-                st.plotly_chart(fig, use_container_width=True)
+                st.plotly_chart(fig, width='stretch')
 
                 # Revenue target progress bar
                 if role in [ROLE_ADMIN, ROLE_FINANCE, ROLE_MARCOM]:
@@ -298,10 +298,10 @@ def render_overview_tab(fleet, orders, financial, role, settings, anomaly_df):
                 fig = px.pie(
                     order_df, values="Count", names="Status", hole=0.7,
                     title="Distribusi Pesanan", template="plotly_dark",
-                    color_discrete_sequence=["#2dd4bf", "#f472b6", "#fbbf24", "#f43f5e"]
+                    color_discrete_sequence=["#ef4444", "#f59e0b", "#fb923c", "#22c55e"]
                 )
                 apply_chart_style(fig)
-                st.plotly_chart(fig, use_container_width=True)
+                st.plotly_chart(fig, width='stretch')
 
     with c_side:
         # Fleet summary table

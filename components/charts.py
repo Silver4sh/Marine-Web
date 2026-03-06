@@ -5,38 +5,38 @@ import streamlit as st
 # ─────────────────────────────────────────────────────────────────────────────
 # Base chart theme
 # ─────────────────────────────────────────────────────────────────────────────
-_COLORS = ["#22d3ee", "#a78bfa", "#f472b6", "#a3e635", "#fbbf24", "#fb923c"]
+_COLORS = ["#ef4444", "#f59e0b", "#fb923c", "#f472b6", "#60a5fa", "#22c55e"]
 
 def apply_chart_style(fig, title: str = None) -> go.Figure:
     """
-    Apply the MarineOS dark-mode Plotly theme.
+    Apply the MarineOS dark-mode Plotly theme — Red & Gold command palette.
     Call this on any Figure before rendering.
     """
     layout_args = dict(
         template="plotly_dark",
         paper_bgcolor="rgba(0,0,0,0)",
         plot_bgcolor="rgba(0,0,0,0)",
-        font=dict(family="Plus Jakarta Sans", size=12, color="#94a3b8"),
+        font=dict(family="Inter", size=12, color="#94a3b8"),
         xaxis=dict(
             showgrid=False,
             showline=True,
-            linecolor="rgba(255,255,255,0.1)",
-            tickfont=dict(family="Plus Jakarta Sans", size=11, color="#cbd5e1"),
+            linecolor="rgba(255,255,255,0.08)",
+            tickfont=dict(family="Inter", size=11, color="#94a3b8"),
         ),
         yaxis=dict(
             showgrid=True,
-            gridcolor="rgba(255,255,255,0.05)",
+            gridcolor="rgba(255,255,255,0.04)",
             gridwidth=1,
             showline=False,
             zeroline=False,
-            tickfont=dict(family="Plus Jakarta Sans", size=11, color="#cbd5e1"),
+            tickfont=dict(family="Inter", size=11, color="#94a3b8"),
         ),
         legend=dict(
             orientation="h",
             y=1.1,
             x=0,
             xanchor="left",
-            font=dict(family="Plus Jakarta Sans", size=11, color="#cbd5e1"),
+            font=dict(family="Inter", size=11, color="#94a3b8"),
             bgcolor="rgba(0,0,0,0)",
         ),
         margin=dict(t=60, l=10, r=10, b=10),
@@ -47,7 +47,7 @@ def apply_chart_style(fig, title: str = None) -> go.Figure:
     if title:
         layout_args["title"] = dict(
             text=title,
-            font=dict(family="Outfit", size=18, weight=600, color="#f8fafc"),
+            font=dict(family="Outfit", size=17, color="#f1f5f9"),
             x=0,
             xanchor="left",
         )
@@ -57,9 +57,9 @@ def apply_chart_style(fig, title: str = None) -> go.Figure:
     fig.update_layout(**layout_args)
     fig.update_traces(
         hoverlabel=dict(
-            bgcolor="rgba(15,23,42,0.9)",
-            bordercolor="rgba(148,163,184,0.2)",
-            font=dict(family="Plus Jakarta Sans", color="#ffffff"),
+            bgcolor="rgba(10,12,22,0.96)",
+            bordercolor="rgba(239,68,68,0.28)",
+            font=dict(family="Inter", color="#ffffff"),
         )
     )
     return fig

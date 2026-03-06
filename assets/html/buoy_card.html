@@ -1,15 +1,16 @@
 <div style="
     background: {bg_gradient};
     border: 1px solid {border_color};
-    border-radius: 20px;
-    padding: 18px;
+    border-radius: 14px;
+    padding: 16px;
     margin-bottom: 10px;
     position: relative;
     overflow: hidden;
-    box-shadow: 0 4px 16px rgba(0,0,0,0.2);
-    backdrop-filter: blur(12px);
-    -webkit-backdrop-filter: blur(12px);
-    transition: all 0.28s cubic-bezier(0.4, 0, 0.2, 1);
+    box-shadow: 0 4px 18px rgba(0,0,0,0.32);
+    backdrop-filter: blur(14px);
+    -webkit-backdrop-filter: blur(14px);
+    transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+    animation: cardEntrance 0.4s ease forwards;
 ">
     <!-- Top status bar -->
     <div style="
@@ -34,10 +35,10 @@
             font-family: 'Outfit', sans-serif; letter-spacing: 0.03em;
         ">{b_id}</div>
         <div style="
-            font-size: 0.78rem; color: #cbd5e1;
+            font-size: 0.78rem; color: #94a3b8;
             margin-top: 4px;
             display: flex; align-items: center; justify-content: center; gap: 4px;
-            font-family: 'Plus Jakarta Sans', sans-serif;
+            font-family: 'Inter', sans-serif;
         ">📍 {loc}</div>
     </div>
 
@@ -67,13 +68,11 @@
         border: 1px solid rgba(255,255,255,0.05);
         font-size: 0.73rem;
     ">
-        <div style="color: #cbd5e1; display:flex; align-items:center; gap:5px;" title="Baterai">
-            🔋<span
-                style="color: #ffffff; font-weight: 600; font-family: 'Plus Jakarta Sans', sans-serif;">{batt}</span>
+        <div style="color: #94a3b8; display:flex; align-items:center; gap:5px;" title="Baterai">
+            🔋<span style="color: #f1f5f9; font-weight: 700; font-family: 'Inter', sans-serif;">{batt}</span>
         </div>
-        <div style="color: #cbd5e1; display:flex; align-items:center; gap:5px;" title="Terakhir Update">
-            🕒 <span
-                style="color: #ffffff; font-weight: 600; font-family: 'Plus Jakarta Sans', sans-serif;">{fmt_update}</span>
+        <div style="color: #94a3b8; display:flex; align-items:center; gap:5px;" title="Terakhir Update">
+            🕒 <span style="color: #f1f5f9; font-weight: 700; font-family: 'Inter', sans-serif;">{fmt_update}</span>
         </div>
     </div>
 </div>
