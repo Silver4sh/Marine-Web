@@ -40,7 +40,7 @@ def _render_line_chart(df, x_col, y_col, color_col, title=""):
     if title:
         chart = chart.properties(title=alt.TitleParams(title, color="#94a3b8", fontSize=12, font="Outfit"))
 
-    st.altair_chart(chart, use_container_width=True)
+    st.altair_chart(chart, width='stretch')
 
 
 def _section_header(icon: str, title: str, subtitle: str = ""):
@@ -104,7 +104,7 @@ def _render_calendar_heatmap_card(df, param: str, date_col="latest_timestamp", h
     """, unsafe_allow_html=True)
 
     fig = calendar_heatmap(df, date_col, param, color_scale=cscale, height=height)
-    st.plotly_chart(fig, use_container_width=True, config={"displayModeBar": False})
+    st.plotly_chart(fig, width='stretch', config={"displayModeBar": False})
 
 
 # ─────────────────────────────────────────────────────────────────────────────
@@ -242,7 +242,7 @@ def view_buoy_detail(b_id, name):
             st.markdown("""<div style="font-family:'Outfit',sans-serif;font-size:0.95rem;
                          font-weight:700;color:#f1f5f9;margin-bottom:10px;">
                          📄 Data Mentah</div>""", unsafe_allow_html=True)
-            st.dataframe(filtered_df, use_container_width=True)
+            st.dataframe(filtered_df, width='stretch')
         else:
             st.info("Tidak ada data dalam rentang tanggal yang dipilih.")
     else:
@@ -287,7 +287,7 @@ def render_buoy_monitoring():
             gauge_chart(comp_score, "Kepatuhan Lingkungan", 100, "%",
                         thresholds=(75, 90), height=160),
             config={"displayModeBar": False},
-            use_container_width=True,
+            width='stretch',
         )
 
     st.divider()
@@ -337,7 +337,7 @@ def render_buoy_monitoring():
                         )
                         st.markdown(card_html, unsafe_allow_html=True)
 
-                    if st.button("Detail 🔍", key=f"btn_detail_{b_id}", use_container_width=True):
+                    if st.button("Detail 🔍", key=f"btn_detail_{b_id}", width='stretch'):
                         st.session_state['buoy_detail_id']   = b_id
                         st.session_state['buoy_detail_name'] = f"Buoy {b_id} — {loc}"
                 else:
@@ -374,7 +374,7 @@ def render_environment_page():
             st.divider()
             col_title, col_close = st.columns([9, 1])
             with col_close:
-                if st.button("✖ Tutup", use_container_width=True):
+                if st.button("✖ Tutup", width='stretch'):
                     st.session_state['buoy_detail_id']   = None
                     st.session_state['buoy_detail_name'] = None
                     st.rerun()
