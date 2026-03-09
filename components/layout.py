@@ -18,6 +18,13 @@ def _get_brand():
 
 
 
+def change_page(page_name):
+    st.session_state.current_page = page_name
+
+def do_logout():
+    st.session_state.logged_in = False
+    st.session_state.username = None
+
 def sidebar_nav():
     app_name, color1, color2 = _get_brand()
 
@@ -83,21 +90,17 @@ def sidebar_nav():
             menu.append("👨‍💼 Admin")
 
         for item in menu:
-            key_btn = f"nav_{item}"
-            if st.button(
+            st.button(
                 item,
-                key=key_btn,
-                type="primary" if st.session_state.current_page == item else "secondary"
-            ):
-                st.session_state.current_page = item
-                st.rerun()
+                key=f"nav_{item}",
+                type="primary" if st.session_state.current_page == item else "secondary",
+                on_click=change_page,
+                args=(item,)
+            )
 
         st.divider()
 
-        if st.button("🚪 Keluar", key="logout"):
-            st.session_state.logged_in = False
-            st.session_state.username = None
-            st.rerun()
+        st.button("🚪 Keluar", key="logout", on_click=do_logout)
 
 
 def transition_loader(page):
@@ -112,7 +115,20 @@ def transition_loader(page):
 
     if should_show_loader:
         loader_placeholder.markdown("""
-            <div class="fullscreen-loader">
+            <style>
+                .fullscreen-loader-auto-hide {
+                    animation: fadeOutLoader 0.5s ease-in-out 1.2s forwards;
+                }
+                @keyframes fadeOutLoader {
+                    to {
+                        opacity: 0;
+                        visibility: hidden;
+                        pointer-events: none;
+                        display: none;
+                    }
+                }
+            </style>
+            <div class="fullscreen-loader fullscreen-loader-auto-hide">
                 <div class="sonar-wrapper">
                     <div class="sonar-emitter"></div>
                     <div class="sonar-wave"></div>
@@ -127,6 +143,6 @@ def transition_loader(page):
 
 
 def close_loader(loader_placeholder, should_show_loader):
-    if should_show_loader:
-        time.sleep(1.2)
-        loader_placeholder.empty()
+    # CSS animation handles the hiding natively without blocking Python threads
+    pass
+

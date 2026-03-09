@@ -336,7 +336,7 @@ def render_map_content():
             except Exception:
                 continue
 
-        st_folium(m, height=620, use_container_width=true)
+        st_folium(m, height=620, width='stretch')
 
     with c_detail:
         if final and not df.empty:

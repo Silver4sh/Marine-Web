@@ -192,7 +192,7 @@ def render_fleet_activity_chart():
         ))
         apply_chart_style(fig, title="Intensitas Operasional Armada")
         fig.update_layout(height=400)
-        st.plotly_chart(fig, use_container_width=true)
+        st.plotly_chart(fig, width='stretch')
     else:
         st.info("Tidak ada data aktivitas.")
 
