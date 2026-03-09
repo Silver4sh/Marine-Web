@@ -2,45 +2,44 @@ import streamlit as st
 import pandas as pd
 from components.helpers import load_html, get_status_color
 
-def render_metric_card(label, value, delta=None, color="green", help_text=None):
-    """Merender kartu metrik."""
+def render_metric_card(label, value, delta=None, color="green", help_text=None, sparkline_data=None):
+    """Merender kartu metrik dengan opsi sparkline (line chart mini)."""
     html_template = load_html("metric_card_simple.html")
     if not html_template:
         st.error("Template kartu metrik hilang")
         return
 
+    # Generate SVG Sparkline if data is provided
+    sparkline_svg = ""
+    if sparkline_data and len(sparkline_data) > 1:
+        # Simple SVG line chart generation
+        width, height = 80, 24
+        mx, mn = max(sparkline_data), min(sparkline_data)
+        rng = (mx - mn) if (mx - mn) != 0 else 1
+        
+        points = []
+        for i, val in enumerate(sparkline_data):
+            x = (i / (len(sparkline_data) - 1)) * width
+            y = height - (((val - mn) / rng) * height)
+            points.append(f"{x},{y}")
+            
+        pts_str = " ".join(points)
+        sparkline_svg = f"""
+        <svg width="100%" height="100%" viewBox="-2 -2 {width+4} {height+4}" preserveAspectRatio="none">
+            <polyline fill="none" stroke="{color}" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" points="{pts_str}" 
+                      style="filter: drop-shadow(0px 2px 4px {color}66);"/>
+        </svg>
+        """
+
     card_html = html_template.replace("{label}", str(label)) \
                              .replace("{value}", str(value)) \
                              .replace("{delta}", str(delta) if delta else "") \
-                             .replace("{color}", color)
-    st.markdown(card_html.replace("\n", " ").strip(), unsafe_allow_html=True)
+                             .replace("{color}", color) \
+                             .replace("{sparkline}", sparkline_svg) \
+                             .replace("{help_text}", help_text if help_text else "") \
+                             .replace("{display_info}", "block" if help_text else "none")
 
-    if help_text:
-        css = """
-        <style>
-        div[data-testid="column"] { position: relative; }
-        div[data-testid="column"] .stPopover {
-            position: absolute;
-            top: 10px;
-            right: 10px;
-            z-index: 10;
-        }
-        div[data-testid="column"] .stPopover button {
-            background: transparent;
-            border: none;
-            color: #64748b;
-            padding: 0.2rem;
-            font-size: 1.2rem;
-        }
-        div[data-testid="column"] .stPopover button:hover {
-            color: #38bdf8;
-            background: rgba(255,255,255,0.05);
-        }
-        </style>
-        """
-        st.markdown(css, unsafe_allow_html=True)
-        with st.popover("ℹ️"):
-            st.markdown(f"**Info Metrik**\n\n{help_text}")
+    st.markdown(card_html.replace("\n", " ").strip(), unsafe_allow_html=True)
 
 def render_vessel_card(row, status_color, highlighted=False):
     v_name = row.get('Vessel Name', 'Unknown')
