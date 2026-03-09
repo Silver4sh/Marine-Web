@@ -295,11 +295,6 @@ def render_overview_tab(fleet, orders, financial, role, settings, anomaly_df, fl
                     cur = financial.get("current_revenue", 0)
                     tgt = float(settings.get("revenue_target_monthly", 5_000_000_000) or 5_000_000_000)
                     kpi_progress_bar("Progress Target Bulanan", cur, tgt)
-
-                # AI caption
-                delta = financial.get("delta_revenue", 0)
-                caption = MarineAIAnalyst.analyze_financials({"delta_revenue": delta})["insights"][0]["desc"]
-                st.caption(f"🤖 {caption}")
             else:
                 st.info("Data pendapatan tidak tersedia.")
         else:
@@ -337,6 +332,32 @@ def render_overview_tab(fleet, orders, financial, role, settings, anomaly_df, fl
             column_config={
                 "Count": st.column_config.ProgressColumn(
                     "Jumlah", format="%d", min_value=0, max_value=max_v
+                )
+            }
+        )
+
+        st.markdown("<br>", unsafe_allow_html=True)
+
+        # Task summary tabel
+        st.markdown("""
+            <div style="font-family:'Outfit',sans-serif; font-size:1rem; font-weight:700;
+                        color:#f0f6ff; margin-bottom:8px;">
+                📋 Ringkasan Task
+            </div>
+        """, unsafe_allow_html=True)
+        
+        # Taking data from order_stats if accessible
+        task_df = pd.DataFrame([
+            {"Status": "Selesai", "Count": orders.get("completed", 0)},
+            {"Status": "Sedang berjalan", "Count": orders.get("on_progress", 0) + orders.get("in_completed", 0)},
+            {"Status": "Gagal", "Count": orders.get("failed", 0)},
+        ])
+        max_t = max(orders.get("total_orders", 10), 1)
+        st.dataframe(
+            task_df, hide_index=True,
+            column_config={
+                "Count": st.column_config.ProgressColumn(
+                    "Jumlah", format="%d", min_value=0, max_value=max_t
                 )
             }
         )

@@ -74,7 +74,9 @@ def main_app():
         elif page == "📋 Survey":
             render_survey_page()
     except Exception as e:
+        import traceback
         st.error(f"Error loading page: {e}")
+        st.code(traceback.format_exc(), language='python')
     finally:
         close_loader(loader_placeholder, should_show_loader)
 

@@ -61,8 +61,10 @@ def render_vessel_card(row, status_color, highlighted=False):
                         .replace("{v_speed}", str(v_speed))
         st.markdown(card_html, unsafe_allow_html=True)
     
-    if st.button("📍 Lokasi", key=f"btn_{v_id}_{row.get('Last Update', '')}"):
+    # Wrap the button and add spacer
+    if st.button("📍 Lokasi", key=f"btn_{v_id}_{row.get('Last Update', '')}", width='stretch'):
         st.session_state["search_select"] = v_id
+    st.markdown("<div style='height: 5px;'></div>", unsafe_allow_html=True)
 
 def render_vessel_list_column(title, df, icon="⚓", height=650):
     st.markdown(f"<h4 style='text-align: center; margin-bottom: 10px;'>{icon} {title}</h4>", unsafe_allow_html=True)
@@ -87,8 +89,13 @@ def render_vessel_detail_section(row):
     heading = row.get('heading', '-')
     lat = row.get('latitude', 0)
     lon = row.get('longitude', 0)
-    last_update = row.get('Last Update', pd.Timestamp.now())
-    mins_ago = int((pd.Timestamp.now() - last_update).total_seconds() / 60)
+    last_update = row.get('Last Update', pd.Timestamp.now(tz='UTC'))
+    try:
+        if pd.isna(last_update):
+            last_update = pd.Timestamp.now(tz='UTC')
+        mins_ago = int((pd.Timestamp.now(tz='UTC') - last_update).total_seconds() / 60)
+    except Exception:
+        mins_ago = 0
     
     st.markdown("### 📋 Ringkasan")
     

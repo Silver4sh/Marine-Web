@@ -296,20 +296,23 @@ def render_map_content():
         maint_df  = df[df['status_lower'].str.contains('maintenance|repair|mtc', na=False)]
         active_df = df[~df['status_lower'].str.contains('maintenance|repair|mtc', na=False)]
 
-    # ── Search bar (full width) ─────────────────────────────────────────────
-    vessel_options = df['code_vessel'].tolist() if not df.empty else []
-    current_sel    = st.session_state.get("search_select")
-    sel_idx        = (vessel_options.index(current_sel) + 1) if current_sel in vessel_options else 0
+    # 1:1:1 ratio or adjust based on preference, map in center needs more space usually. Let's make it [1, 2, 1]
+    tab1, tab2, tab3 = st.columns([1, 2.5, 1])
 
-    chosen = st.selectbox("🔍 Cari Kapal / ID:",
-                          options=["Semua Kapal"] + vessel_options, index=sel_idx)
-    st.session_state["search_select"] = chosen if chosen != "Semua Kapal" else None
-    final = st.session_state["search_select"]
+    with tab1:
+        render_vessel_list_column("Active", active_df, "⚓", height=670)
 
-    # ── Map (wide) + Vessel Detail (narrow) ────────────────────────────────
-    c_map, c_detail = st.columns([4, 1])
+    with tab2:
+        # ── Search bar (full width within center column) ──────────────────────
+        vessel_options = df['code_vessel'].tolist() if not df.empty else []
+        current_sel    = st.session_state.get("search_select")
+        sel_idx        = (vessel_options.index(current_sel) + 1) if current_sel in vessel_options else 0
 
-    with c_map:
+        chosen = st.selectbox("🔍 Cari Kapal / ID:",
+                            options=["Semua Kapal"] + vessel_options, index=sel_idx)
+        st.session_state["search_select"] = chosen if chosen != "Semua Kapal" else None
+        final = st.session_state["search_select"]
+
         center, zoom = [-1.2, 108.5], 5
         if final and not df.empty:
             row = df[df['code_vessel'] == final]
@@ -336,26 +339,16 @@ def render_map_content():
             except Exception:
                 continue
 
-        st_folium(m, height=620, width='stretch')
-
-    with c_detail:
+        st_folium(m, height=530, width='stretch')
+        
         if final and not df.empty:
             row = df[df['code_vessel'] == final]
             if not row.empty:
                 render_vessel_detail_section(row.iloc[0])
-        else:
-            st.info("Pilih kapal untuk melihat detail.", icon="⬅️")
 
-    # ── Vessel Lists (tabs below map) ───────────────────────────────────────
-    st.divider()
-    tab_active, tab_maint = st.tabs([
-        f"⚓ Armada Aktif ({len(active_df)})",
-        f"🛠️ Dalam Maintenance ({len(maint_df)})"
-    ])
-    with tab_active:
-        render_vessel_list_column("Active", active_df, "⚓", height=320)
-    with tab_maint:
-        render_vessel_list_column("Maintenance", maint_df, "🛠️", height=320)
+    with tab3:
+        render_vessel_list_column("Maintenance", maint_df, "🛠️", height=670)
+
 
 
 
