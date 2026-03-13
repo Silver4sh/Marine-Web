@@ -369,7 +369,7 @@ def render_overview_tab(fleet, orders, financial, role, settings, anomaly_df, fl
 
         st.markdown("<br>", unsafe_allow_html=True)
         if role in [ROLE_ADMIN, ROLE_OPERATIONS]:
-            if st.button("🗺️ Buka Peta Kapal", type="primary", width='stretch'):
+            if st.button("🗺️ Buka Peta Kapal", type="primary", use_container_width=True):
                 st.session_state.current_page = "🗺️ Peta Kapal"
                 st.rerun()
 

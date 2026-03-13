@@ -218,7 +218,7 @@ def render_settings_tab():
         cn_pass = st.text_input("Konfirmasi Kata Sandi Baru", type="password", placeholder="Ulangi kata sandi baru")
 
         st.markdown("<br>", unsafe_allow_html=True)
-        submitted = st.form_submit_button("💾 Perbarui Kredensial", type="primary", width='stretch')
+        submitted = st.form_submit_button("💾 Perbarui Kredensial", type="primary", use_container_width=True)
 
         if submitted:
             if n_pass != cn_pass:
