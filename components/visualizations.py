@@ -510,15 +510,421 @@ def env_area_chart(
     return fig
 
 
-# Keep backward compat alias used by environment.py
-def calendar_heatmap(df, date_col, value_col, title="", color_scale=None, height=260):
-    """Alias → area chart (heatmap replaced)."""
-    return env_area_chart(df, date_col, value_col, title=title, height=height)
+def _interp_colorscale(scale, t):
+    """Linearly interpolate a Plotly colorscale at position t ∈ [0,1]."""
+    import re
+    t = max(0.0, min(1.0, float(t)))
+    for i in range(len(scale) - 1):
+        t0, c0 = scale[i][0], scale[i][1]
+        t1, c1 = scale[i + 1][0], scale[i + 1][1]
+        if t0 <= t <= t1:
+            a = (t - t0) / (t1 - t0) if t1 > t0 else 0.0
+            def _p(c):
+                v = [float(x) for x in re.findall(r"[\d.]+", c)]
+                while len(v) < 4: v.append(1.0)
+                return v
+            v0, v1 = _p(c0), _p(c1)
+            r  = v0[0] + a * (v1[0] - v0[0])
+            g  = v0[1] + a * (v1[1] - v0[1])
+            b  = v0[2] + a * (v1[2] - v0[2])
+            aa = v0[3] + a * (v1[3] - v0[3])
+            return f"rgba({r:.0f},{g:.0f},{b:.0f},{aa:.2f})"
+    return scale[-1][1] if scale else "rgba(200,200,200,1)"
+
+
+def calendar_heatmap(df, date_col, value_col, title="",
+                     color_scale=None, height=190, year=None, month=None):
+    """
+    GitHub Contribution Graph–style calendar heatmap (full year).
+
+    Layout  : X = week columns (left→right = time), Y = day of week (Mon top, Sun bottom)
+    Visual  : Plotly Shapes (rect) → pixel-perfect cells with uniform gaps
+    Events  : Invisible go.Scatter → carries YYYY-MM-DD customdata for on_select
+    Colors  : cerah (low value) → pekat (high value); empty = near-black
+    Labels  : Month abbreviations above grid; Mon/Wed/Fri on Y-axis
+    """
+    import plotly.graph_objects as go
+    import pandas as pd
+    import datetime
+
+    # ── Default color scale (GitHub green tone) ───────────────────────────────
+    if not color_scale:
+        color_scale = [
+            [0.0, "rgba(57,211,83,0.25)"],
+            [0.4, "rgba(0,157,63,0.85)"],
+            [1.0, "rgba(0,64,26,1.0)"],
+        ]
+
+    # ── Determine target year (month param kept for API compat, ignored here) ─
+    today = datetime.date.today()
+    if year is None:
+        if not df.empty and date_col in df.columns:
+            ts  = pd.to_datetime(df[date_col], errors="coerce").dropna()
+            year = int(ts.max().year) if not ts.empty else today.year
+        else:
+            year = today.year
+
+    # ── Aggregate daily means for the full year ───────────────────────────────
+    daily: dict = {}
+    if not df.empty and value_col in df.columns and date_col in df.columns:
+        work = df[[date_col, value_col]].copy()
+        work[date_col]  = pd.to_datetime(work[date_col],  errors="coerce")
+        work[value_col] = pd.to_numeric(work[value_col],  errors="coerce")
+        work = work.dropna()
+        work = work[work[date_col].dt.year == year]
+        if not work.empty:
+            for d, v in work.groupby(work[date_col].dt.date)[value_col].mean().items():
+                daily[d] = float(v)
+
+    vmin = min(daily.values()) if daily else 0.0
+    vmax = max(daily.values()) if daily else 1.0
+    if vmin == vmax:
+        vmax = vmin + 1.0
+
+    # ── Calendar structure ────────────────────────────────────────────────────
+    jan1  = datetime.date(year, 1, 1)
+    dec31 = datetime.date(year, 12, 31)
+    # Start from the Monday on or before Jan 1 (aligns weekday columns)
+    start = jan1 - datetime.timedelta(days=jan1.weekday())
+
+    total_days = (dec31 - start).days + 1
+    n_weeks    = (total_days + 6) // 7
+
+    # Y-position mapping: Mon(weekday=0)→y=6 (top), Sun(weekday=6)→y=0 (bottom)
+    # Default Plotly: y increases upward → y=6 renders higher than y=0
+    DOW_Y = {i: 6 - i for i in range(7)}
+
+    GAP = 0.055   # fractional gap between cells (data-units)
+
+    MONTH_SHORT = ["","Jan","Feb","Mar","Apr","Mei","Jun",
+                   "Jul","Agu","Sep","Okt","Nov","Des"]
+    DAY_LABELS  = {6: "Sen", 4: "Rab", 2: "Jum"}  # y-value → label (Mon/Wed/Fri)
+
+    # ── Month-label annotations (above grid, one per month start) ────────────
+    annotations = []
+    for m in range(1, 13):
+        first   = datetime.date(year, m, 1)
+        x_col   = (first - start).days // 7
+        annotations.append(dict(
+            x=x_col, y=7.35,
+            xref="x", yref="y",
+            text=f"<b>{MONTH_SHORT[m]}</b>",
+            showarrow=False,
+            font=dict(size=10, color="#8b949e", family="Inter"),
+            xanchor="left", yanchor="bottom",
+        ))
+
+    # ── Build shapes + scatter click/hover data ───────────────────────────────
+    shapes  = []
+    d_x, d_y, d_cdata, d_hover = [], [], [], []
+    e_x, e_y,          e_hover = [], [],       []
+
+    for offset in range(total_days):
+        d   = start + datetime.timedelta(days=offset)
+        if d > dec31:
+            break
+
+        x   = offset // 7          # week column
+        dow = offset % 7           # weekday (0=Mon ... 6=Sun)
+        y   = float(DOW_Y[dow])    # y: 6=Mon(top) … 0=Sun(bottom)
+
+        x0, x1 = x - 0.5 + GAP, x + 0.5 - GAP
+        y0, y1 = y - 0.5 + GAP, y + 0.5 - GAP
+
+        if d.year != year:
+            # Pre–Jan-1 padding: very faint cell, no interaction
+            shapes.append(dict(type="rect", x0=x0, y0=y0, x1=x1, y1=y1,
+                               fillcolor="rgba(22,27,34,0.30)",
+                               line_width=0, layer="below"))
+            continue
+
+        val = daily.get(d)
+        if val is not None:
+            t    = (val - vmin) / (vmax - vmin)
+            fill = _interp_colorscale(color_scale, t)
+            d_x.append(float(x)); d_y.append(y)
+            d_cdata.append(d.strftime("%Y-%m-%d"))
+            d_hover.append(
+                f"<b>{d.strftime('%A, %d %B %Y')}</b><br>"
+                f"{value_col.capitalize()}: <b>{val:.2f}</b>"
+            )
+        else:
+            fill = "rgba(22,27,34,0.90)"    # dark cell = no data
+            e_x.append(float(x)); e_y.append(y)
+            e_hover.append(
+                f"<b>{d.strftime('%A, %d %B %Y')}</b><br>"
+                "<span style='color:#8b949e'>Tidak ada data</span>"
+            )
+
+        shapes.append(dict(type="rect", x0=x0, y0=y0, x1=x1, y1=y1,
+                           fillcolor=fill, line_width=0, layer="below"))
+
+    # ── Figure ────────────────────────────────────────────────────────────────
+    fig = go.Figure()
+
+    # Invisible hover-only for empty days
+    if e_x:
+        fig.add_trace(go.Scatter(
+            x=e_x, y=e_y, mode="markers",
+            marker=dict(size=10, opacity=0, color="rgba(0,0,0,0)"),
+            hovertext=e_hover,
+            hovertemplate="%{hovertext}<extra></extra>",
+            showlegend=False,
+        ))
+
+    # Invisible hover+click for data days (carries customdata = date string)
+    if d_x:
+        fig.add_trace(go.Scatter(
+            x=d_x, y=d_y, mode="markers",
+            marker=dict(size=10, opacity=0, color="rgba(0,0,0,0)"),
+            customdata=d_cdata,
+            hovertext=d_hover,
+            hovertemplate="%{hovertext}<extra></extra>",
+            showlegend=False,
+        ))
+
+    # ── Title ─────────────────────────────────────────────────────────────────
+    ttl = str(year)
+    if title:
+        ttl += f"  ·  {title}"
+
+    fig.update_layout(
+        title=dict(
+            text=ttl,
+            x=0, xanchor="left",
+            font=dict(size=13, family="Outfit", color="#8b949e"),
+            pad=dict(b=2),
+        ),
+        shapes=shapes,
+        annotations=annotations,
+        paper_bgcolor="rgba(0,0,0,0)",
+        plot_bgcolor="rgba(13,17,23,0.85)",
+        height=height,
+        margin=dict(t=46, l=38, r=6, b=8),
+        xaxis=dict(
+            range=[-0.5, n_weeks - 0.5],
+            fixedrange=True,
+            showgrid=False, zeroline=False, showline=False,
+            showticklabels=False,
+        ),
+        yaxis=dict(
+            range=[-0.5, 7.8],   # 7.8 gives room for month-label annotations
+            fixedrange=True,
+            showgrid=False, zeroline=False, showline=False,
+            # Tick labels: only Mon / Wed / Fri
+            tickmode="array",
+            tickvals=list(DAY_LABELS.keys()),
+            ticktext=list(DAY_LABELS.values()),
+            tickfont=dict(size=9, color="#8b949e", family="Inter"),
+        ),
+        clickmode="event+select",
+        dragmode=False,
+        hovermode="closest",
+    )
+    return fig
 
 
 def page_heatmap(df, indikator):
-    """Legacy wrapper — kept so existing calls don't break."""
     pass
 
+    """
+    GitHub Contribution–style monthly calendar heatmap.
+
+    Visual  : Plotly shapes (rect) — pixel-perfect, perfectly square cells.
+    Events  : Invisible go.Scatter — customdata carries YYYY-MM-DD for on_select.
+    Colors  : bright/light = low value → dark/saturated = high value.
+    No data : near-black fill, dim day number.
+    """
+    import plotly.graph_objects as go
+    import pandas as pd
+    import calendar as cal_lib
+    import datetime
+
+    # ── Default color scale ───────────────────────────────────────────────────
+    if not color_scale:
+        color_scale = [
+            [0.0, "rgba(235,255,245,1)"],
+            [0.5, "rgba(64,196,99,1)"],
+            [1.0, "rgba(21,68,37,1)"],
+        ]
+
+    # ── Target year / month ──────────────────────────────────────────────────
+    if year is None or month is None:
+        if not df.empty and date_col in df.columns:
+            ts  = pd.to_datetime(df[date_col], errors="coerce").dropna()
+            ref = ts.max() if not ts.empty else pd.Timestamp.now()
+        else:
+            ref = pd.Timestamp.now()
+        year  = year  if year  is not None else ref.year
+        month = month if month is not None else ref.month
+
+    MONTH_ID = ["","Januari","Februari","Maret","April","Mei","Juni",
+                "Juli","Agustus","September","Oktober","November","Desember"]
+
+    # ── Aggregate daily data for this month ───────────────────────────────────
+    daily: dict = {}
+    if not df.empty and value_col in df.columns and date_col in df.columns:
+        work = df[[date_col, value_col]].copy()
+        work[date_col]  = pd.to_datetime(work[date_col],  errors="coerce")
+        work[value_col] = pd.to_numeric(work[value_col],  errors="coerce")
+        work = work.dropna()
+        work = work[(work[date_col].dt.year == year) & (work[date_col].dt.month == month)]
+        if not work.empty:
+            for d, v in work.groupby(work[date_col].dt.date)[value_col].mean().items():
+                daily[d] = float(v)
+
+    vmin = min(daily.values()) if daily else 0.0
+    vmax = max(daily.values()) if daily else 1.0
+    if vmin == vmax:
+        vmax = vmin + 1.0
+
+    # ── Calendar structure ────────────────────────────────────────────────────
+    weeks    = cal_lib.monthcalendar(year, month)   # Mon=0 … Sun=6, 0=padding
+    n_weeks  = len(weeks)
+    DAY_ABBR = ["Sen", "Sel", "Rab", "Kam", "Jum", "Sab", "Min"]
+    GAP      = 0.06   # gap between cells (in data units)
+
+    # ── Day-name header annotations ───────────────────────────────────────────
+    # We place them above the top row (y = n_weeks)
+    annotations = []
+    for dow, name in enumerate(DAY_ABBR):
+        annotations.append(dict(
+            x=dow, y=n_weeks + 0.25,
+            xref="x", yref="y",
+            text=f"<span style='font-size:10px;font-family:Inter;color:#64748b'><b>{name}</b></span>",
+            showarrow=False,
+            xanchor="center", yanchor="bottom",
+        ))
+
+    # ── Build shapes + scatter data ───────────────────────────────────────────
+    shapes  = []
+    d_x, d_y, d_cdata, d_hover = [], [], [], []
+    e_x, e_y,          e_hover = [], [],       []
+
+    for w_idx, week in enumerate(weeks):
+        # Top week (w_idx=0) → highest y value; bottom week → y=0
+        y_c = float(n_weeks - 1 - w_idx)
+
+        for dow, day_num in enumerate(week):
+            if day_num == 0:
+                continue  # padding day outside this month
+
+            x_c = float(dow)
+            d   = datetime.date(year, month, day_num)
+            val = daily.get(d)
+
+            # Cell rectangle bounds
+            x0, x1 = x_c - 0.5 + GAP, x_c + 0.5 - GAP
+            y0, y1 = y_c - 0.5 + GAP, y_c + 0.5 - GAP
+
+            if val is not None:
+                t     = (val - vmin) / (vmax - vmin)
+                fill  = _interp_colorscale(color_scale, t)
+                # Decide text color: dark text on very light cells, white on dark
+                txt_c = "rgba(20,28,45,0.85)" if t < 0.4 else "rgba(255,255,255,0.88)"
+                d_x.append(x_c); d_y.append(y_c)
+                d_cdata.append(d.strftime("%Y-%m-%d"))
+                d_hover.append(
+                    f"<b>{d.strftime('%A, %d %B %Y')}</b><br>"
+                    f"{value_col.capitalize()}: <b>{val:.2f}</b>"
+                )
+            else:
+                fill  = "rgba(13,16,28,0.95)"      # near-black for no-data
+                txt_c = "#2d3748"
+                e_x.append(x_c); e_y.append(y_c)
+                e_hover.append(
+                    f"<b>{d.strftime('%A, %d %B %Y')}</b><br>"
+                    "<span style='color:#64748b'>Tidak ada data</span>"
+                )
+
+            # Filled rectangle — the cell visual
+            shapes.append(dict(
+                type="rect",
+                x0=x0, y0=y0, x1=x1, y1=y1,
+                fillcolor=fill,
+                line_width=0,
+                layer="below",
+            ))
+            # Day number inside cell
+            annotations.append(dict(
+                x=x_c, y=y_c,
+                xref="x", yref="y",
+                text=f"<span style='font-size:9px;font-family:Inter;font-weight:600;'>"
+                     f"{day_num}</span>",
+                showarrow=False,
+                xanchor="center", yanchor="middle",
+            ))
+
+    # ── Figure ────────────────────────────────────────────────────────────────
+    fig = go.Figure()
+
+    # Invisible hover-only scatter for empty days
+    if e_x:
+        fig.add_trace(go.Scatter(
+            x=e_x, y=e_y, mode="markers",
+            marker=dict(size=36, opacity=0, color="rgba(0,0,0,0)"),
+            hovertext=e_hover,
+            hovertemplate="%{hovertext}<extra></extra>",
+            showlegend=False,
+        ))
+
+    # Invisible hover+click scatter for data days (carries customdata)
+    if d_x:
+        fig.add_trace(go.Scatter(
+            x=d_x, y=d_y, mode="markers",
+            marker=dict(size=36, opacity=0, color="rgba(0,0,0,0)"),
+            customdata=d_cdata,
+            hovertext=d_hover,
+            hovertemplate="%{hovertext}<extra></extra>",
+            showlegend=False,
+        ))
+
+    # ── Dynamic height (auto-fit to week count for square cells) ─────────────
+    # Approx: header(day names) 30px + n weeks * ~52px + bottom padding
+    auto_h = 40 + n_weeks * 56 + 20   # increases proportionally
+    chart_h = height if height is not None else auto_h
+
+    # ── Month + param label ────────────────────────────────────────────────────
+    ttl = f"{MONTH_ID[month]} {year}"
+    if title:
+        ttl += f"  ·  {title}"
+
+    fig.update_layout(
+        title=dict(
+            text=ttl,
+            x=0, xanchor="left",
+            font=dict(size=13, family="Outfit", color="#94a3b8"),
+            pad=dict(b=0),
+        ),
+        shapes=shapes,
+        annotations=annotations,
+        paper_bgcolor="rgba(0,0,0,0)",
+        plot_bgcolor="rgba(13,16,26,0.75)",
+        height=chart_h,
+        margin=dict(t=46, l=6, r=6, b=8),
+        xaxis=dict(
+            range=[-0.5, 6.5],
+            fixedrange=True,
+            showgrid=False, zeroline=False, showline=False,
+            showticklabels=False,
+            constrain="domain",
+        ),
+        yaxis=dict(
+            # +0.7 headroom for the day-name header annotations
+            range=[-0.5, n_weeks + 0.7],
+            fixedrange=True,
+            showgrid=False, zeroline=False, showline=False,
+            showticklabels=False,
+            scaleanchor="x",   # ← forces square cells regardless of chart size!
+            scaleratio=1,
+            constrain="domain",
+        ),
+        clickmode="event+select",
+        dragmode=False,
+        hovermode="closest",
+    )
+    return fig
 
 
+def page_heatmap(df, indikator):
+    pass

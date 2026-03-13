@@ -5,8 +5,8 @@ from db.connection import sb_table
 from db.repositories.user_repo import update_last_login_optimized
 
 # ── Security constants ─────────────────────────────────────────────────────────
-_MAX_ATTEMPTS  = 5          # max failed logins before lockout
-_LOCKOUT_SECS  = 300        # lockout duration: 5 minutes
+_MAX_ATTEMPTS  = 3          # max failed logins before lockout
+_LOCKOUT_SECS  = 300        # lockout duration: 3 minutes
 _MAX_INPUT_LEN = 64         # max length for username / password input
 
 

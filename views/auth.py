@@ -109,7 +109,7 @@ def render_login_page():
             )
 
             st.markdown("<br>", unsafe_allow_html=True)
-            submit_button = st.form_submit_button("🚀  Masuk ke Sistem", width='stretch')
+            submit_button = st.form_submit_button("🚀  Masuk ke Sistem")
 
             if submit_button:
                 if username and password:
