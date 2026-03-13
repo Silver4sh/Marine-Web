@@ -32,41 +32,110 @@
     "></div>
 
     <!-- Label row -->
-    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom: 12px;">
-        <span style="
+    <div
+        style="display:flex; justify-content:space-between; align-items:center; margin-bottom: 12px; position: relative;">
+        <div style="display:flex; align-items:center; gap:6px;">
+            <span style="
+                font-family: 'Outfit', sans-serif;
+                font-size: 0.72rem; color: #94a3b8;
+                font-weight: 700; letter-spacing: 0.09em; text-transform: uppercase;
+            ">{label}</span>
+
+            <!-- Tooltip Hover Area -->
+            <style>
+                .metric-info-icon {
+                    color: #64748b;
+                    font-size: 0.8rem;
+                    cursor: help;
+                    transition: color 0.2s;
+                }
+
+                .metric-info-icon:hover {
+                    color: #38bdf8;
+                }
+
+                .metric-tooltip {
+                    visibility: hidden;
+                    opacity: 0;
+                    position: absolute;
+                    top: 100%;
+                    left: 0;
+                    margin-top: 8px;
+                    padding: 10px 14px;
+                    background: rgba(15, 23, 42, 0.95);
+                    border: 1px solid rgba(56, 189, 248, 0.3);
+                    border-radius: 8px;
+                    color: #cbd5e1;
+                    font-family: 'Inter', sans-serif;
+                    font-size: 0.75rem;
+                    line-height: 1.4;
+                    width: max-content;
+                    max-width: 200px;
+                    z-index: 50;
+                    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.5);
+                    transform: translateY(-5px);
+                    transition: all 0.2s ease;
+                }
+
+                .metric-info-wrapper {
+                    position: relative;
+                }
+
+                .metric-info-wrapper:hover .metric-tooltip {
+                    visibility: visible;
+                    opacity: 1;
+                    transform: translateY(0);
+                }
+            </style>
+
+            <div class="metric-info-wrapper" style="display:{display_info};">
+                <div class="metric-info-icon">ℹ️</div>
+                <div class="metric-tooltip">
+                    <strong style="color: #f8fafc; display: block; margin-bottom: 4px;">Info Metrik</strong>
+                    {help_text}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Main Content Row -->
+    <div style="display: flex; justify-content: space-between; align-items: flex-end; margin-bottom: 14px; gap: 10px;">
+        <!-- Value -->
+        <div style="
             font-family: 'Outfit', sans-serif;
-            font-size: 0.72rem; color: #94a3b8;
-            font-weight: 700; letter-spacing: 0.09em; text-transform: uppercase;
-        ">{label}</span>
-        <!-- Status dot -->
+            font-size: 2.1rem; font-weight: 800;
+            color: #f1f5f9;
+            letter-spacing: -0.03em; line-height: 1.1;
+        ">{value}</div>
+
+        <!-- Sparkline Container (Right Side) -->
+        <div
+            style="flex-grow: 1; height: 35px; min-width: 60px; display: flex; align-items: flex-end; justify-content: flex-end;">
+            {sparkline}
+        </div>
+    </div>
+
+    <!-- Bottom Row: Delta badge & Status Dot -->
+    <div style="display: flex; justify-content: space-between; align-items: center;">
+        <div style="display: flex; align-items: center; gap: 6px;">
+            <span style="
+                font-family: 'Inter', sans-serif;
+                font-size: 0.78rem; font-weight: 600; color: {color};
+                background: {color}18;
+                padding: 4px 10px; border-radius: 99px;
+                border: 1px solid {color}30;
+                white-space: nowrap;
+                overflow: hidden;
+                text-overflow: ellipsis;
+                max-width: 100%;
+            ">{delta}</span>
+        </div>
+
+        <!-- Status dot moved to bottom right -->
         <div style="
             width: 8px; height: 8px; border-radius: 50%;
             background: {color}; box-shadow: 0 0 8px {color};
             animation: dotBlink 1.8s ease-in-out infinite;
         "></div>
-    </div>
-
-    <!-- Value -->
-    <div style="
-        font-family: 'Outfit', sans-serif;
-        font-size: 2.1rem; font-weight: 800;
-        color: #f1f5f9;
-        letter-spacing: -0.03em; line-height: 1.1;
-        margin-bottom: 14px;
-    ">{value}</div>
-
-    <!-- Delta badge -->
-    <div style="display: flex; align-items: center; gap: 6px;">
-        <span style="
-            font-family: 'Inter', sans-serif;
-            font-size: 0.78rem; font-weight: 600; color: {color};
-            background: {color}18;
-            padding: 4px 10px; border-radius: 99px;
-            border: 1px solid {color}30;
-            white-space: nowrap;
-            overflow: hidden;
-            text-overflow: ellipsis;
-            max-width: 100%;
-        ">{delta}</span>
     </div>
 </div>

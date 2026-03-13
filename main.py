@@ -2,9 +2,6 @@ import logging
 import time
 import streamlit as st
 
-# ── Suppress 'missing ScriptRunContext' noise from background threads ──────────
-# Supabase-py (httpx / realtime) spins up internal threads that don't hold a
-# Streamlit script context.  These are harmless, but flood the log in production.
 class _NoCtxFilter(logging.Filter):
     def filter(self, record: logging.LogRecord) -> bool:
         return "missing ScriptRunContext" not in record.getMessage()
@@ -77,7 +74,9 @@ def main_app():
         elif page == "📋 Survey":
             render_survey_page()
     except Exception as e:
+        import traceback
         st.error(f"Error loading page: {e}")
+        st.code(traceback.format_exc(), language='python')
     finally:
         close_loader(loader_placeholder, should_show_loader)
 

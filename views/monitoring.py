@@ -6,8 +6,8 @@ from concurrent.futures import ThreadPoolExecutor
 from components.cards import render_metric_card, render_vessel_list_column, render_vessel_card
 from components.charts import apply_chart_style, gauge_chart, kpi_progress_bar
 from components.helpers import get_status_color
-from db.repositories.fleet_repo import get_fleet_status, get_operational_anomalies
-from db.repositories.finance_repo import get_order_stats, get_financial_metrics, get_revenue_analysis
+from db.repositories.fleet_repo import get_fleet_status, get_operational_anomalies, get_fleet_daily_activity
+from db.repositories.finance_repo import get_order_stats, get_financial_metrics, get_revenue_analysis, get_revenue_cycle_metrics
 from db.repositories.client_repo import get_clients_summary
 from db.repositories.settings_repo import get_system_settings
 from services.ai_service import MarineAIAnalyst
@@ -29,10 +29,12 @@ def _load_dashboard_data(role: str) -> dict:
         "settings":  get_system_settings,
         "clients":   get_clients_summary,
         "anomalies": get_operational_anomalies,
+        "fleet_daily": get_fleet_daily_activity,
     }
     if role in [ROLE_ADMIN, ROLE_FINANCE, ROLE_MARCOM]:
         task_defs["financial"] = get_financial_metrics
         task_defs["revenue"]   = get_revenue_analysis
+        task_defs["rev_cycle"] = get_revenue_cycle_metrics
 
     # Capture the Streamlit script context from the main thread so it can
     # be propagated to worker threads — prevents "missing ScriptRunContext" warnings.
@@ -145,7 +147,7 @@ def _render_anomaly_feed(anomaly_df: pd.DataFrame) -> None:
 
 
 # ── Overview tab ───────────────────────────────────────────────────────────────
-def render_overview_tab(fleet, orders, financial, role, settings, anomaly_df):
+def render_overview_tab(fleet, orders, financial, role, settings, anomaly_df, fleet_daily=None, rev_cycle=None):
     # Page header
     st.markdown("""
         <div class="page-header">
@@ -158,6 +160,15 @@ def render_overview_tab(fleet, orders, financial, role, settings, anomaly_df):
     """, unsafe_allow_html=True)
 
     # ── Top metric cards ───────────────────────────────────────────────────────
+    # --- Kalkulasi Trend Historis (Sparklines) ---
+    fleet_trend, order_trend, rev_trend = None, None, None
+    if fleet_daily is not None and not fleet_daily.empty:
+        fleet_trend = fleet_daily.groupby("day_num")["code_vessel"].nunique().tolist()
+    if rev_cycle is not None and not rev_cycle.empty:
+        df_rev = rev_cycle.sort_values("month")
+        order_trend = df_rev["total_orders"].tolist()[-6:]
+        rev_trend = df_rev["realized_revenue"].tolist()[-6:]
+
     c1, c2, c3, c4 = st.columns(4)
     total_v = max(fleet.get("total_vessels", 1), 1)
     oper    = fleet.get("operating", 0)
@@ -168,13 +179,15 @@ def render_overview_tab(fleet, orders, financial, role, settings, anomaly_df):
         render_metric_card(
             "Kapal Beroperasi", oper,
             f"{maint} dalam Perawatan", "#fbbf24",
-            help_text="Jumlah kapal aktif saat ini berdasarkan status terakhir."
+            help_text="Jumlah kapal aktif saat ini berdasarkan status terakhir.",
+            sparkline_data=fleet_trend
         )
     with c2:
         pending = orders.get("on_progress", 0) + orders.get("in_completed", 0)
         render_metric_card(
             "Pesanan Aktif", pending, "Perlu Tindakan", "#f472b6",
-            help_text="Total pesanan yang sedang berjalan atau belum diselesaikan."
+            help_text="Total pesanan yang sedang berjalan atau belum diselesaikan.",
+            sparkline_data=order_trend
         )
     with c3:
         if role in [ROLE_ADMIN, ROLE_FINANCE, ROLE_MARCOM]:
@@ -185,13 +198,15 @@ def render_overview_tab(fleet, orders, financial, role, settings, anomaly_df):
             render_metric_card(
                 "Pendapatan Bulan Ini", rev_str, f"{delta:+.1f}% vs bulan lalu",
                 delta_clr,
-                help_text="Pendapatan bulan berjalan dibanding bulan lalu."
+                help_text="Pendapatan bulan berjalan dibanding bulan lalu.",
+                sparkline_data=rev_trend
             )
         else:
             health = 100 - round((maint / total_v) * 100)
             render_metric_card(
                 "Kesehatan Armada", f"{health}%", "Siap Operasi", "#38bdf8",
-                help_text="Persentase kapal yang tidak dalam perawatan."
+                help_text="Persentase kapal yang tidak dalam perawatan.",
+                sparkline_data=fleet_trend  # Menggunakan trend operasi kapal sebagai proxy kesehatan
             )
     with c4:
         anomaly_count = len(anomaly_df) if anomaly_df is not None and not anomaly_df.empty else 0
@@ -273,18 +288,13 @@ def render_overview_tab(fleet, orders, financial, role, settings, anomaly_df):
                 )
                 fig.update_layout(showlegend=False, coloraxis_showscale=False)
                 apply_chart_style(fig)
-                st.plotly_chart(fig, use_container_width=true)
+                st.plotly_chart(fig, width='stretch')
 
                 # Revenue target progress bar
                 if role in [ROLE_ADMIN, ROLE_FINANCE, ROLE_MARCOM]:
                     cur = financial.get("current_revenue", 0)
                     tgt = float(settings.get("revenue_target_monthly", 5_000_000_000) or 5_000_000_000)
                     kpi_progress_bar("Progress Target Bulanan", cur, tgt)
-
-                # AI caption
-                delta = financial.get("delta_revenue", 0)
-                caption = MarineAIAnalyst.analyze_financials({"delta_revenue": delta})["insights"][0]["desc"]
-                st.caption(f"🤖 {caption}")
             else:
                 st.info("Data pendapatan tidak tersedia.")
         else:
@@ -301,7 +311,7 @@ def render_overview_tab(fleet, orders, financial, role, settings, anomaly_df):
                     color_discrete_sequence=["#ef4444", "#f59e0b", "#fb923c", "#22c55e"]
                 )
                 apply_chart_style(fig)
-                st.plotly_chart(fig, use_container_width=true)
+                st.plotly_chart(fig, width='stretch')
 
     with c_side:
         # Fleet summary table
@@ -328,12 +338,38 @@ def render_overview_tab(fleet, orders, financial, role, settings, anomaly_df):
 
         st.markdown("<br>", unsafe_allow_html=True)
 
+        # Task summary tabel
+        st.markdown("""
+            <div style="font-family:'Outfit',sans-serif; font-size:1rem; font-weight:700;
+                        color:#f0f6ff; margin-bottom:8px;">
+                📋 Ringkasan Task
+            </div>
+        """, unsafe_allow_html=True)
+        
+        # Taking data from order_stats if accessible
+        task_df = pd.DataFrame([
+            {"Status": "Selesai", "Count": orders.get("completed", 0)},
+            {"Status": "Sedang berjalan", "Count": orders.get("on_progress", 0) + orders.get("in_completed", 0)},
+            {"Status": "Gagal", "Count": orders.get("failed", 0)},
+        ])
+        max_t = max(orders.get("total_orders", 10), 1)
+        st.dataframe(
+            task_df, hide_index=True,
+            column_config={
+                "Count": st.column_config.ProgressColumn(
+                    "Jumlah", format="%d", min_value=0, max_value=max_t
+                )
+            }
+        )
+
+        st.markdown("<br>", unsafe_allow_html=True)
+
         # ── Live anomaly feed ──────────────────────────────────────────────────
         _render_anomaly_feed(anomaly_df)
 
         st.markdown("<br>", unsafe_allow_html=True)
         if role in [ROLE_ADMIN, ROLE_OPERATIONS]:
-            if st.button("🗺️ Buka Peta Kapal", type="primary"):
+            if st.button("🗺️ Buka Peta Kapal", type="primary", width='stretch'):
                 st.session_state.current_page = "🗺️ Peta Kapal"
                 st.rerun()
 
@@ -347,7 +383,8 @@ def render_monitoring_view():
 
     render_overview_tab(
         data["fleet"], data["orders"], data["financial"],
-        role, data["settings"], data["anomalies"]
+        role, data["settings"], data["anomalies"],
+        data.get("fleet_daily"), data.get("rev_cycle")
     )
 
     # ── AI Cognitive Analysis section ──────────────────────────────────────────
