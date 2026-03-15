@@ -123,3 +123,153 @@ def render_vessel_detail_section(row):
         st.dataframe(path_df, hide_index=True)
     else:
         st.info("Belum ada data riwayat perjalanan.")
+
+
+# ──────────────────────────────────────────────────────────────────────────────
+# Dredging Operations KPI Cards
+# ──────────────────────────────────────────────────────────────────────────────
+
+def render_dredging_kpi(
+    volume_m3: float = 0.0,
+    volume_target_m3: float = 5000.0,
+    depth_actual_m: float = 0.0,
+    depth_target_m: float = 7.0,
+    pump_efficiency_pct: float = 0.0,
+    pump_downtime_pct: float = 0.0,
+    turbidity_ntu: float = 0.0,
+    turbidity_limit_ntu: float = 50.0,
+):
+    """
+    Render 4 KPI cards khusus operasional pengerukan sedimentasi.
+
+    Cards:
+      1. Volume Sedimen Terangkat (m³)  + wave-bar progress harian
+      2. Kedalaman Aktual vs Target (m LWS) + depth-chip status
+      3. Efisiensi Pompa Pasir (Dredger) + sonar-badge status
+      4. Kekeruhan Air (Turbidity NTU)  + compliance indicator
+
+    Usage:
+        from components.cards import render_dredging_kpi
+        render_dredging_kpi(volume_m3=1240, volume_target_m3=5000, ...)
+    """
+    # ── Computed helpers ─────────────────────────────────────────────────────
+    vol_pct  = min(100, int((volume_m3 / max(volume_target_m3, 1)) * 100))
+    dep_pct  = min(100, int((abs(depth_actual_m) / max(abs(depth_target_m), 0.1)) * 100))
+    eff_pct  = min(100, int(pump_efficiency_pct))
+
+    # Turbidity: green ≤50, warning 50-80, danger >80
+    if turbidity_ntu <= turbidity_limit_ntu:
+        turb_color = "#2DD4BF";  turb_label = "Aman";       turb_badge = "sonar-badge--active"
+    elif turbidity_ntu <= turbidity_limit_ntu * 1.6:
+        turb_color = "#FACC15";  turb_label = "Waspada";    turb_badge = "sonar-badge--warning"
+    else:
+        turb_color = "#F97316";  turb_label = "Melanggar";  turb_badge = "sonar-badge--danger"
+
+    # Depth chip class
+    if dep_pct < 50:
+        depth_chip_cls = "depth-chip--shallow"
+        depth_status   = f"⚠️ {dep_pct}% dari target"
+    elif dep_pct < 85:
+        depth_chip_cls = "depth-chip--silt"
+        depth_status   = f"🔄 {dep_pct}% dari target"
+    else:
+        depth_chip_cls = "depth-chip--target"
+        depth_status   = f"✅ {dep_pct}% dari target"
+
+    # Efficiency chip
+    if eff_pct >= 80:
+        eff_badge = "sonar-badge--active";  eff_label = "Optimal"
+    elif eff_pct >= 55:
+        eff_badge = "sonar-badge--warning"; eff_label = "Normal"
+    else:
+        eff_badge = "sonar-badge--danger";  eff_label = "Rendah"
+
+    # ── Render 4 columns ─────────────────────────────────────────────────────
+    c1, c2, c3, c4 = st.columns(4, gap="small")
+
+    # ── Card 1: Volume Sedimen Terangkat ─────────────────────────────────────
+    with c1:
+        st.markdown(f"""
+        <div class="marine-card" style="min-height:148px;">
+            <div style="font-size:0.70rem;color:#8fafc5;font-family:'Inter',sans-serif;
+                        letter-spacing:.06em;text-transform:uppercase;margin-bottom:6px;">
+                🪣 Volume Sedimen Terangkat
+            </div>
+            <div style="font-family:'Outfit',sans-serif;font-size:1.80rem;font-weight:800;
+                        color:#e2eff8;line-height:1;margin-bottom:2px;">
+                {volume_m3:,.0f}
+                <span style="font-size:.85rem;color:#8fafc5;font-weight:400;">m³</span>
+            </div>
+            <div style="font-size:0.72rem;color:#4a6882;margin-bottom:10px;">
+                Target harian: <b style="color:#E9C46A;">{volume_target_m3:,.0f} m³</b>
+            </div>
+            <div class="wave-bar" style="--pct:{vol_pct}%;"></div>
+            <div style="font-size:.68rem;color:#8fafc5;margin-top:4px;text-align:right;">
+                {vol_pct}% tercapai
+            </div>
+        </div>
+        """, unsafe_allow_html=True)
+
+    # ── Card 2: Kedalaman Aktual vs Target ───────────────────────────────────
+    with c2:
+        st.markdown(f"""
+        <div class="marine-card" style="min-height:148px;">
+            <div style="font-size:0.70rem;color:#8fafc5;font-family:'Inter',sans-serif;
+                        letter-spacing:.06em;text-transform:uppercase;margin-bottom:6px;">
+                ⚓ Kedalaman Aktual vs Target
+            </div>
+            <div style="font-family:'Outfit',sans-serif;font-size:1.80rem;font-weight:800;
+                        color:#e2eff8;line-height:1;margin-bottom:2px;">
+                {depth_actual_m:.1f}
+                <span style="font-size:.85rem;color:#8fafc5;font-weight:400;">m LWS</span>
+            </div>
+            <div style="font-size:0.72rem;color:#4a6882;margin-bottom:10px;">
+                Target: <b style="color:#2DD4BF;">{depth_target_m:.1f} m LWS</b>
+            </div>
+            <div style="background:rgba(12,22,38,0.60);border-radius:8px;
+                        padding:6px 10px;border:1px solid rgba(45,212,191,0.10);">
+                <span class="depth-chip {depth_chip_cls}">{depth_status}</span>
+            </div>
+        </div>
+        """, unsafe_allow_html=True)
+
+    # ── Card 3: Efisiensi Pompa (Dredger) ───────────────────────────────────
+    with c3:
+        st.markdown(f"""
+        <div class="marine-card" style="min-height:148px;">
+            <div style="font-size:0.70rem;color:#8fafc5;font-family:'Inter',sans-serif;
+                        letter-spacing:.06em;text-transform:uppercase;margin-bottom:6px;">
+                ⚙️ Efisiensi Pompa Pasir
+            </div>
+            <div style="font-family:'Outfit',sans-serif;font-size:1.80rem;font-weight:800;
+                        color:#e2eff8;line-height:1;margin-bottom:2px;">
+                {eff_pct}
+                <span style="font-size:.85rem;color:#8fafc5;font-weight:400;">%</span>
+            </div>
+            <div style="font-size:0.72rem;color:#4a6882;margin-bottom:10px;">
+                Downtime: <b style="color:#F97316;">{pump_downtime_pct:.1f}%</b>
+            </div>
+            <span class="sonar-badge {eff_badge}">{eff_label}</span>
+        </div>
+        """, unsafe_allow_html=True)
+
+    # ── Card 4: Turbidity / Kekeruhan Air ────────────────────────────────────
+    with c4:
+        st.markdown(f"""
+        <div class="marine-card" style="min-height:148px;border-top-color:{turb_color};">
+            <div style="font-size:0.70rem;color:#8fafc5;font-family:'Inter',sans-serif;
+                        letter-spacing:.06em;text-transform:uppercase;margin-bottom:6px;">
+                💧 Kekeruhan Air (Turbidity)
+            </div>
+            <div style="font-family:'Outfit',sans-serif;font-size:1.80rem;font-weight:800;
+                        color:{turb_color};line-height:1;margin-bottom:2px;">
+                {turbidity_ntu:.1f}
+                <span style="font-size:.85rem;color:#8fafc5;font-weight:400;">NTU</span>
+            </div>
+            <div style="font-size:0.72rem;color:#4a6882;margin-bottom:10px;">
+                Batas: <b style="color:#8fafc5;">{turbidity_limit_ntu:.0f} NTU</b>
+            </div>
+            <span class="sonar-badge {turb_badge}">{turb_label}</span>
+        </div>
+        """, unsafe_allow_html=True)
+

@@ -29,10 +29,10 @@ def render_survey_list():
     # ── Premium metric cards ───────────────────────────────────────────────────
     c1, c2, c3 = st.columns(3)
     with c1:
-        render_metric_card("Total Laporan", len(df), "Sejak awal", "#818cf8")
+        render_metric_card("Total Laporan", len(df), "", "#818cf8")
     with c2:
         vessel_cnt = df['vessel_name'].nunique() if 'vessel_name' in df.columns else 0
-        render_metric_card("Kapal Berbeda", vessel_cnt, "Tersurvei", "#0ea5e9")
+        render_metric_card("Kapal Berbeda", vessel_cnt, "", "#0ea5e9")
     with c3:
         latest_str = "—"
         if 'date_survey' in df.columns:
@@ -42,7 +42,7 @@ def render_survey_list():
                     latest_str = latest.strftime("%d %b %Y")
             except Exception:
                 pass
-        render_metric_card("Survei Terbaru", latest_str, "Pembaruan Terakhir", "#34d399")
+        render_metric_card("Tanggal Survei Terbaru", latest_str, "", "#34d399")
 
     st.divider()
 

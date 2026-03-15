@@ -109,7 +109,7 @@ def _show_hourly_detail_modal(df: pd.DataFrame, param: str, date_str: str, date_
                     .configure(background="rgba(0,0,0,0)")
                     .interactive()
                 )
-                st.altair_chart(chart, use_container_width=True)
+                st.altair_chart(chart, width='stretch')
             else:
                 st.info("Tidak ada nilai valid untuk beragregasi.")
         else:
@@ -143,8 +143,8 @@ def _render_heatmap_card(df, param: str, date_col="latest_timestamp", height=190
     key   = f"heatmap_{param}_{key_suffix}" if key_suffix else f"heatmap_{param}"
     event = st.plotly_chart(
         fig,
-        use_container_width=True,
-        config={"displayModeBar": False},
+        width='stretch',
+        config={"displayModeBar": False, "responsive": True},
         on_select="rerun",
         selection_mode="points",
         key=key,
@@ -174,7 +174,7 @@ def _year_nav(session_key: str):
     year = _get_target_year(session_key)
     c_prev, c_lbl, c_next = st.columns([1, 5, 1])
     with c_prev:
-        if st.button("◀", key=f"{session_key}_prev", use_container_width=True):
+        if st.button("◀", key=f"{session_key}_prev", width='stretch'):
             st.session_state[session_key] = st.session_state.get(session_key, 0) - 1
             st.rerun()
     with c_lbl:
@@ -184,7 +184,7 @@ def _year_nav(session_key: str):
             unsafe_allow_html=True,
         )
     with c_next:
-        if st.button("▶", key=f"{session_key}_next", use_container_width=True):
+        if st.button("▶", key=f"{session_key}_next", width='stretch'):
             st.session_state[session_key] = st.session_state.get(session_key, 0) + 1
             st.rerun()
     return year
@@ -307,7 +307,7 @@ def view_buoy_detail(b_id, name):
             st.markdown("""<div style="font-family:'Outfit',sans-serif;font-size:0.95rem;
                          font-weight:700;color:#f1f5f9;margin-bottom:10px;">
                          📄 Data Mentah</div>""", unsafe_allow_html=True)
-            st.dataframe(filtered_df, use_container_width=True)
+            st.dataframe(filtered_df, width='stretch')
         else:
             st.info("Tidak ada data dalam rentang tanggal yang dipilih.")
     else:
@@ -346,8 +346,8 @@ def render_buoy_monitoring():
         st.plotly_chart(
             gauge_chart(comp_score, "Kepatuhan Lingkungan", 100, "%", 
                         thresholds=(75, 90), height=160),
-            config={"displayModeBar": False},
-            use_container_width=True,
+            config={"displayModeBar": False, "responsive": True},
+            width='stretch',
         )
 
     st.divider()
@@ -396,7 +396,7 @@ def render_buoy_monitoring():
                         )
                         st.markdown(card_html, unsafe_allow_html=True)
 
-                    if st.button("Detail 🔍", key=f"btn_detail_{b_id}", use_container_width=True):
+                    if st.button("Detail 🔍", key=f"btn_detail_{b_id}", width='stretch'):
                         st.session_state["buoy_detail_id"]   = b_id
                         st.session_state["buoy_detail_name"] = f"Buoy {b_id} — {loc}"
                 else:
@@ -432,7 +432,7 @@ def render_environment_page():
             st.divider()
             col_title, col_close = st.columns([9, 1])
             with col_close:
-                if st.button("✖ Tutup", use_container_width=True):
+                if st.button("✖ Tutup", width='stretch'):
                     st.session_state["buoy_detail_id"]   = None
                     st.session_state["buoy_detail_name"] = None
                     st.rerun()
