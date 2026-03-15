@@ -6,7 +6,7 @@ from db.repositories.finance_repo import get_financial_metrics, get_revenue_anal
 from db.repositories.client_repo import get_client_stats
 from db.repositories.fleet_repo import get_logistics_performance, get_fleet_daily_activity
 from services.analytics_service import calculate_advanced_forecast, calculate_correlation, calculate_moving_average
-from components.charts import apply_chart_style
+from components.charts import apply_chart_style, seabed_crosssection_chart, dredging_gantt_chart, water_quality_scatter
 from services.ai_service import MarineAIAnalyst
 
 # --- FRAGMENTS FOR GRANULAR UPDATES ---
@@ -209,70 +209,91 @@ def render_analytics_page():
         </div>
     """, unsafe_allow_html=True)
 
-    # 1. AI Insight Banner
-    fin_metrics = get_financial_metrics()
-    ai_fin = MarineAIAnalyst.analyze_financials(fin_metrics)
+    tab_fin, tab_ops = st.tabs(["💹 Analitik Keuangan", "⛏️ Operasional Pengerukan"])
 
-    if ai_fin['insights']:
-        insight = ai_fin['insights'][0]
-        itype = insight.get('type', 'info')
-        color_map = {
-            "critical": ("#f43f5e", "rgba(244,63,94,0.1)",  "rgba(244,63,94,0.3)"),
-            "warning":  ("#f59e0b", "rgba(245,158,11,0.1)", "rgba(245,158,11,0.3)"),
-            "positive": ("#22c55e", "rgba(34,197,94,0.1)",  "rgba(34,197,94,0.3)"),
-            "info":     ("#0ea5e9", "rgba(14,165,233,0.08)","rgba(14,165,233,0.25)"),
-        }
-        accent, bg, border = color_map.get(itype, color_map["info"])
-
-        st.markdown(f"""
-            <div style="
-                background: linear-gradient(90deg, {bg} 0%, rgba(15,23,42,0) 100%);
-                border: 1px solid {border};
-                border-left: 4px solid {accent};
-                border-radius: 14px;
-                padding: 16px 20px;
-                margin-bottom: 24px;
-                display: flex; gap: 14px; align-items: flex-start;
-                animation: slideDown 0.45s ease forwards;
-            ">
-                <div style="font-size:1.8rem; flex-shrink:0; animation: float 4s ease-in-out infinite;">🤖</div>
-                <div>
-                    <div style="font-weight:700; color:#f0f6ff; font-family:'Outfit',sans-serif; margin-bottom:4px; font-size:0.95rem;">{insight['title']}</div>
-                    <div style="color:#8ba3c0; font-size:0.9rem; line-height:1.55;">{insight['desc']}</div>
-                </div>
+    with tab_ops:
+        st.markdown("""
+            <div style="display:flex;align-items:center;gap:8px;margin:8px 0 16px;">
+                <span style="font-size:1.1rem;">⛏️</span>
+                <div style="font-family:'Outfit',sans-serif;font-size:0.95rem;
+                            font-weight:800;color:#e2eff8;">Analitik Visual Pengerukan Sedimentasi</div>
             </div>
         """, unsafe_allow_html=True)
+        c_cs, c_gantt = st.columns(2, gap="medium")
+        with c_cs:
+            st.plotly_chart(seabed_crosssection_chart(), width='stretch',
+                            config={"responsive": True, "displayModeBar": False})
+        with c_gantt:
+            st.plotly_chart(dredging_gantt_chart(), width='stretch',
+                            config={"responsive": True, "displayModeBar": False})
+        st.plotly_chart(water_quality_scatter(), width='stretch',
+                        config={"responsive": True, "displayModeBar": False})
 
-    # 2. Key Metrics Strip
-    render_overview_strip()
-    st.divider()
+    with tab_fin:
+        # 1. AI Insight Banner
+        fin_metrics = get_financial_metrics()
+        ai_fin = MarineAIAnalyst.analyze_financials(fin_metrics)
 
-    # 3. Main Content Grid
-    c_main, c_side = st.columns([2, 1])
+        if ai_fin['insights']:
+            insight = ai_fin['insights'][0]
+            itype = insight.get('type', 'info')
+            color_map = {
+                "critical": ("#f43f5e", "rgba(244,63,94,0.1)",  "rgba(244,63,94,0.3)"),
+                "warning":  ("#f59e0b", "rgba(245,158,11,0.1)", "rgba(245,158,11,0.3)"),
+                "positive": ("#22c55e", "rgba(34,197,94,0.1)",  "rgba(34,197,94,0.3)"),
+                "info":     ("#0ea5e9", "rgba(14,165,233,0.08)","rgba(14,165,233,0.25)"),
+            }
+            accent, bg, border = color_map.get(itype, color_map["info"])
 
-    with c_main:
-        _section_header("💹", "Proyeksi Pendapatan", "AI-powered 6-month forecast")
-        render_revenue_forecast()
-        st.markdown("<br>", unsafe_allow_html=True)
-        _section_header("🔗", "Analisis Korelasi", "Pearson correlation matrix")
-        render_correlation_section()
+            st.markdown(f"""
+                    <div style="
+                        background: linear-gradient(90deg, {bg} 0%, rgba(15,23,42,0) 100%);
+                        border: 1px solid {border};
+                        border-left: 4px solid {accent};
+                        border-radius: 14px;
+                        padding: 16px 20px;
+                        margin-bottom: 24px;
+                        display: flex; gap: 14px; align-items: flex-start;
+                        animation: slideDown 0.45s ease forwards;
+                    ">
+                        <div style="font-size:1.8rem; flex-shrink:0; animation: float 4s ease-in-out infinite;">🤖</div>
+                        <div>
+                            <div style="font-weight:700; color:#f0f6ff; font-family:'Outfit',sans-serif; margin-bottom:4px; font-size:0.95rem;">{insight['title']}</div>
+                            <div style="color:#8ba3c0; font-size:0.9rem; line-height:1.55;">{insight['desc']}</div>
+                        </div>
+                    </div>
+                """, unsafe_allow_html=True)
 
-    with c_side:
-        _section_header("🗓️", "Aktivitas Armada", "Heatmap intensitas operasional")
-        render_fleet_activity_chart()
+            # 2. Key Metrics Strip
+            render_overview_strip()
+            st.divider()
 
-        st.markdown("<br>", unsafe_allow_html=True)
-        _section_header("🚚", "Kinerja Logistik")
-        log_df = get_logistics_performance()
-        if not log_df.empty:
-            st.dataframe(
-                log_df[['destination', 'avg_delay_hours']],
-                column_config={
-                    "destination":      "Rute / Tujuan",
-                    "avg_delay_hours":  st.column_config.NumberColumn("Delay (Jam)", format="%.1f")
-                },
-                hide_index=True,
-                height=250
-            )
-        else:
-            st.caption("Data logistik belum tersedia.")
+            # 3. Main Content Grid
+            c_main, c_side = st.columns([2, 1])
+
+        with c_main:
+            _section_header("💹", "Proyeksi Pendapatan", "AI-powered 6-month forecast")
+            render_revenue_forecast()
+            st.markdown("<br>", unsafe_allow_html=True)
+            _section_header("🔗", "Analisis Korelasi", "Pearson correlation matrix")
+            render_correlation_section()
+
+        with c_side:
+            _section_header("🗓️", "Aktivitas Armada", "Heatmap intensitas operasional")
+            render_fleet_activity_chart()
+
+            st.markdown("<br>", unsafe_allow_html=True)
+            _section_header("🚚", "Kinerja Logistik")
+            log_df = get_logistics_performance()
+            if not log_df.empty:
+                st.dataframe(
+                    log_df[['destination', 'avg_delay_hours']],
+                    column_config={
+                        "destination":      "Rute / Tujuan",
+                        "avg_delay_hours":  st.column_config.NumberColumn("Delay (Jam)", format="%.1f")
+                    },
+                    hide_index=True,
+                    height=250
+                )
+            else:
+                st.caption("Data logistik belum tersedia.")

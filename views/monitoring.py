@@ -3,7 +3,7 @@ import pandas as pd
 import plotly.express as px
 from concurrent.futures import ThreadPoolExecutor
 
-from components.cards import render_metric_card, render_vessel_list_column, render_vessel_card
+from components.cards import render_metric_card, render_vessel_list_column, render_vessel_card, render_dredging_kpi
 from components.charts import apply_chart_style, gauge_chart, kpi_progress_bar
 from components.helpers import get_status_color
 from db.repositories.fleet_repo import get_fleet_status, get_operational_anomalies, get_fleet_daily_activity
@@ -94,12 +94,7 @@ def _render_anomaly_feed(anomaly_df: pd.DataFrame) -> None:
         <div style="display:flex; align-items:center; gap:8px; margin-bottom:10px;">
             <span style="font-size:1.1rem;">🔴</span>
             <div style="font-family:'Outfit',sans-serif; font-size:0.95rem;
-                        font-weight:800; color:#f0f6ff;">Live Anomaly Feed</div>
-            <div style="font-size:0.7rem; color:#f43f5e; font-weight:600;
-                        background:rgba(244,63,94,0.12); padding:2px 8px;
-                        border-radius:99px; border:1px solid rgba(244,63,94,0.3);">
-                LIVE
-            </div>
+                        font-weight:800; color:#f0f6ff;">Anomaly Feed</div>
         </div>
     """, unsafe_allow_html=True)
 
@@ -244,7 +239,7 @@ def render_overview_tab(fleet, orders, financial, role, settings, anomaly_df, fl
     with g3:
         health_pct = 100 - round((maint / total_v) * 100)
         st.plotly_chart(
-            gauge_chart(float(health_pct), "Kesehatan Armada", 100, "%",
+            gauge_chart(float(health_pct), "Armada Beroperasi", 100, "%",
                         thresholds=(60, 85), height=180), config={"displayModeBar": False}
         )
     with g4:
@@ -253,7 +248,7 @@ def render_overview_tab(fleet, orders, financial, role, settings, anomaly_df, fl
             cur_rev    = financial.get("current_revenue", 0)
             rev_pct    = min((cur_rev / rev_target) * 100 if rev_target > 0 else 0, 150)
             st.plotly_chart(
-                gauge_chart(round(rev_pct, 1), "Pencapaian Revenue", 150, "%",
+                gauge_chart(round(rev_pct, 1), "Pencapaian Revenue", 100, "%",
                             thresholds=(50, 100), height=180), config={"displayModeBar": False}
             )
         else:
@@ -272,13 +267,14 @@ def render_overview_tab(fleet, orders, financial, role, settings, anomaly_df, fl
         st.markdown("""
             <div style="font-family:'Outfit',sans-serif; font-size:1rem; font-weight:700;
                         color:#f0f6ff; margin-bottom:12px;">
-                📈 Tren Operasional
+                📈 Tren Operasional & Analisis Kualitas Air
             </div>
         """, unsafe_allow_html=True)
 
         if role in [ROLE_ADMIN, ROLE_FINANCE, ROLE_MARCOM]:
             rev_df = get_revenue_analysis()
             if not rev_df.empty:
+                import plotly.express as px
                 fig = px.bar(
                     rev_df, x="month", y="revenue",
                     title="Arus Pendapatan Bulanan",
@@ -287,6 +283,7 @@ def render_overview_tab(fleet, orders, financial, role, settings, anomaly_df, fl
                     color_continuous_scale=["#1a0a0a", "#ef4444"]
                 )
                 fig.update_layout(showlegend=False, coloraxis_showscale=False)
+                from components.charts import apply_chart_style
                 apply_chart_style(fig)
                 st.plotly_chart(fig, width='stretch')
 
@@ -294,6 +291,7 @@ def render_overview_tab(fleet, orders, financial, role, settings, anomaly_df, fl
                 if role in [ROLE_ADMIN, ROLE_FINANCE, ROLE_MARCOM]:
                     cur = financial.get("current_revenue", 0)
                     tgt = float(settings.get("revenue_target_monthly", 5_000_000_000) or 5_000_000_000)
+                    from components.charts import kpi_progress_bar
                     kpi_progress_bar("Progress Target Bulanan", cur, tgt)
             else:
                 st.info("Data pendapatan tidak tersedia.")
@@ -305,13 +303,19 @@ def render_overview_tab(fleet, orders, financial, role, settings, anomaly_df, fl
                     {"Status": "Berjalan", "Count": orders.get("on_progress",  0)},
                     {"Status": "Gagal",    "Count": orders.get("failed",       0)},
                 ])
+                import plotly.express as px
                 fig = px.pie(
                     order_df, values="Count", names="Status", hole=0.7,
                     title="Distribusi Pesanan", template="plotly_dark",
                     color_discrete_sequence=["#ef4444", "#f59e0b", "#fb923c", "#22c55e"]
                 )
+                from components.charts import apply_chart_style
                 apply_chart_style(fig)
                 st.plotly_chart(fig, width='stretch')
+
+        # Append scatter plot that wasn't asked to be deleted
+        from components.charts import water_quality_scatter
+        st.plotly_chart(water_quality_scatter(), width='stretch', config={"displayModeBar": False})
 
     with c_side:
         # Fleet summary table
@@ -366,13 +370,6 @@ def render_overview_tab(fleet, orders, financial, role, settings, anomaly_df, fl
 
         # ── Live anomaly feed ──────────────────────────────────────────────────
         _render_anomaly_feed(anomaly_df)
-
-        st.markdown("<br>", unsafe_allow_html=True)
-        if role in [ROLE_ADMIN, ROLE_OPERATIONS]:
-            if st.button("🗺️ Buka Peta Kapal", type="primary", use_container_width=True):
-                st.session_state.current_page = "🗺️ Peta Kapal"
-                st.rerun()
-
 
 # ── Main page entry ────────────────────────────────────────────────────────────
 def render_monitoring_view():

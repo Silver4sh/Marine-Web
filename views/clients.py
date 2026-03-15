@@ -86,7 +86,7 @@ def render_map(df):
     st_folium(m, height=500)
 
 
-def _section_header(icon, title, subtitle=""):
+def _section_header(icon, title, subtitle=" "):
     sub = f'<div style="font-size:0.78rem;color:#8ba3c0;margin-top:2px;">{subtitle}</div>' if subtitle else ""
     st.markdown(f"""
         <div style="display:flex;align-items:center;gap:10px;margin-bottom:12px;margin-top:6px;">

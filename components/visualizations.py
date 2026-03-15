@@ -1,4 +1,4 @@
-from components.helpers import get_status_color, create_google_arrow_icon
+from components.helpers import get_status_color, create_google_arrow_icon, create_dredger_icon, create_sand_marker_icon, create_dumping_icon
 from components.cards import render_vessel_list_column, render_vessel_detail_section
 from db.repositories.fleet_repo import get_vessel_position, get_path_vessel
 from config.settings import inject_custom_css
@@ -320,26 +320,43 @@ def render_map_content():
                 center = [row.iloc[0]['latitude'], row.iloc[0]['longitude']]
                 zoom   = 10
 
-        m       = folium.Map(location=center, zoom_start=zoom, tiles="CartoDB Dark Matter")
-        cluster = MarkerCluster().add_to(m)
+        # ── Time-lapse Simulation Slider ──────────────────────────────────────────
+        st.markdown("""
+            <div style="font-family:'Outfit',sans-serif; font-size:0.95rem; font-weight:700;
+                        color:#8fafc5; margin-bottom:4px; margin-top:10px;">
+                ⏳ Time-lapse Simulasi Pengerukan
+            </div>
+        """, unsafe_allow_html=True)
+        
+        # Month mapping
+        months = ["Bulan Lalu", "Minggu Lalu", "Saat Ini", "Minggu Depan", "Bulan Depan"]
+        sim_val = st.select_slider(
+            "Pilih waktu simulasi batimetri:", 
+            options=months, 
+            value="Saat Ini",
+            label_visibility="collapsed"
+        )
+        
+        # Map sim_val to a depth offset (-2 to +2)
+        offset_map = {"Bulan Lalu": -2, "Minggu Lalu": -1, "Saat Ini": 0, "Minggu Depan": 1, "Bulan Depan": 2}
+        depth_offset = offset_map.get(sim_val, 0)
+        
+        # Wavy Progress Bar for loading simulation
+        st.markdown(f"""
+            <div class="wave-bar" style="height:4px; margin-bottom:12px; width: {20 * (depth_offset + 3)}%;"></div>
+        """, unsafe_allow_html=True)
 
+        # Provide a vessel_df with only the filtered vessels
         view_df = df[df['code_vessel'] == final] if final else df
-        for _, row in view_df.iterrows():
-            try:
-                vid   = row.get('code_vessel')
-                color = get_status_color(row.get('Status'))
-                folium.Marker(
-                    [row['latitude'], row['longitude']],
-                    icon=create_google_arrow_icon(row.get('heading', 0), color),
-                    popup=f"<b>{vid}</b><br>{row.get('Status')}"
-                ).add_to(cluster)
-
-                if vid == final:
-                    add_history_path_to_map(m, get_path_vessel(vid), color, vid, show_timelapse=True)
-            except Exception:
-                continue
-
-        st_folium(m, height=530, width='stretch')
+        
+        # Render the enhanced bathymetric map instead of the standard markers map
+        render_bathymetric_map(
+            vessel_df=view_df,
+            center=center,
+            zoom=zoom,
+            height=500,
+            depth_year_offset=depth_offset
+        )
         
         if final and not df.empty:
             row = df[df['code_vessel'] == final]
@@ -533,7 +550,7 @@ def _interp_colorscale(scale, t):
 
 
 def calendar_heatmap(df, date_col, value_col, title="",
-                     color_scale=None, height=190, year=None, month=None):
+                     color_scale=None, height=None, year=None, month=None):
     """
     GitHub Contribution Graph–style calendar heatmap (full year).
 
@@ -659,6 +676,46 @@ def calendar_heatmap(df, date_col, value_col, title="",
         shapes.append(dict(type="rect", x0=x0, y0=y0, x1=x1, y1=y1,
                            fillcolor=fill, line_width=0, layer="below"))
 
+    # ── Legend row (below grid at y = -1.1) ─────────────────────────────────
+    LY = -1.1      # y-center of legend row
+    LX_START = 1   # x-start for legend
+
+    # ① No-data square
+    shapes.append(dict(type="rect",
+                       x0=LX_START - 0.5 + GAP, x1=LX_START + 0.5 - GAP,
+                       y0=LY - 0.5 + GAP,        y1=LY + 0.5 - GAP,
+                       fillcolor="rgba(22,27,34,0.90)", line_width=0, layer="below"))
+    annotations.append(dict(
+        x=LX_START + 0.75, y=LY,
+        xref="x", yref="y",
+        text="<span style='font-size:9px;color:#8b949e;font-family:Inter'>Tidak ada data</span>",
+        showarrow=False, xanchor="left", yanchor="middle",
+    ))
+
+    # ② Gradient squares: Rendah → Tinggi (5 steps)
+    N_STEPS     = 5
+    GRAD_START  = LX_START + 6   # x offset after 'Tidak ada data' label
+    annotations.append(dict(
+        x=GRAD_START - 1.0, y=LY,
+        xref="x", yref="y",
+        text="<span style='font-size:9px;color:#8b949e;font-family:Inter'>Rendah</span>",
+        showarrow=False, xanchor="right", yanchor="middle",
+    ))
+    for i in range(N_STEPS):
+        t    = i / (N_STEPS - 1)
+        fill = _interp_colorscale(color_scale, t)
+        gx   = GRAD_START + i
+        shapes.append(dict(type="rect",
+                           x0=gx - 0.5 + GAP, x1=gx + 0.5 - GAP,
+                           y0=LY - 0.5 + GAP,  y1=LY + 0.5 - GAP,
+                           fillcolor=fill, line_width=0, layer="below"))
+    annotations.append(dict(
+        x=GRAD_START + N_STEPS - 0.25, y=LY,
+        xref="x", yref="y",
+        text="<span style='font-size:9px;color:#8b949e;font-family:Inter'>Tinggi</span>",
+        showarrow=False, xanchor="left", yanchor="middle",
+    ))
+
     # ── Figure ────────────────────────────────────────────────────────────────
     fig = go.Figure()
 
@@ -699,23 +756,28 @@ def calendar_heatmap(df, date_col, value_col, title="",
         annotations=annotations,
         paper_bgcolor="rgba(0,0,0,0)",
         plot_bgcolor="rgba(13,17,23,0.85)",
-        height=height,
-        margin=dict(t=46, l=38, r=6, b=8),
+        autosize=True,    # ← let height auto-fit to maintain square aspect ratio
+        margin=dict(t=46, l=38, r=16, b=8),
         xaxis=dict(
             range=[-0.5, n_weeks - 0.5],
             fixedrange=True,
             showgrid=False, zeroline=False, showline=False,
             showticklabels=False,
+            constrain="domain",
         ),
         yaxis=dict(
-            range=[-0.5, 7.8],   # 7.8 gives room for month-label annotations
+            # -1.75 gives room for legend row; 7.8 gives room for month labels
+            range=[-1.75, 7.8],
             fixedrange=True,
             showgrid=False, zeroline=False, showline=False,
-            # Tick labels: only Mon / Wed / Fri
             tickmode="array",
             tickvals=list(DAY_LABELS.keys()),
             ticktext=list(DAY_LABELS.values()),
             tickfont=dict(size=9, color="#8b949e", family="Inter"),
+            # ← forces square cells: 1 y-unit = 1 x-unit in pixels
+            scaleanchor="x",
+            scaleratio=1,
+            constrain="domain",
         ),
         clickmode="event+select",
         dragmode=False,
@@ -727,18 +789,7 @@ def calendar_heatmap(df, date_col, value_col, title="",
 def page_heatmap(df, indikator):
     pass
 
-    """
-    GitHub Contribution–style monthly calendar heatmap.
 
-    Visual  : Plotly shapes (rect) — pixel-perfect, perfectly square cells.
-    Events  : Invisible go.Scatter — customdata carries YYYY-MM-DD for on_select.
-    Colors  : bright/light = low value → dark/saturated = high value.
-    No data : near-black fill, dim day number.
-    """
-    import plotly.graph_objects as go
-    import pandas as pd
-    import calendar as cal_lib
-    import datetime
 
     # ── Default color scale ───────────────────────────────────────────────────
     if not color_scale:
@@ -928,3 +979,243 @@ def page_heatmap(df, indikator):
 
 def page_heatmap(df, indikator):
     pass
+
+
+# ---------------------------------------------------------------------------
+# Task 2 — Peta Batimetri (Depth Visualization)
+# ---------------------------------------------------------------------------
+
+def render_bathymetric_map(
+    vessel_df=None,
+    center=None,
+    zoom=10,
+    height=540,
+    depth_year_offset=0,   # used by Task-5 time-lapse slider
+):
+    """
+    Folium peta batimetri pengerukan sedimentasi laut.
+
+    Features:
+      • Simulated HeatMap overlay kedalaman (kuning=dangkal → biru tua=dalam)
+      • LayerControl untuk 3 layer toggle:
+          – 🏖️ Titik Tumpukan Pasir (sand accumulation spots)
+          – ⛵  Rute Pengerukan      (dredging route polyline)
+          – 🗑️  Lokasi Pembuangan   (dumping area polygon)
+      • Ikon kapal keruk (Dredger SVG) menggantikan ikon kapal standar
+      • Legend kedalaman di sisi kanan bawah peta
+    """
+    import math
+
+    # ── Default center (Selat Makassar / demoy) ─────────────────────────────
+    if center is None:
+        if vessel_df is not None and not vessel_df.empty:
+            lat_col = next((c for c in ["latitude","lat"] if c in vessel_df.columns), None)
+            lon_col = next((c for c in ["longitude","lon","lng"] if c in vessel_df.columns), None)
+            if lat_col and lon_col:
+                center = [vessel_df[lat_col].mean(), vessel_df[lon_col].mean()]
+        if center is None:
+            center = [-1.50, 108.80]   # default: Kalimantan coast
+
+    clat, clon = center
+
+    # ── Base map ─────────────────────────────────────────────────────────────
+    m = folium.Map(
+        location=center,
+        zoom_start=zoom,
+        tiles="CartoDB Dark Matter",
+        control_scale=True,
+    )
+
+    # ── Tambah tile layer batimetri (ESRI Ocean Basemap) ─────────────────────
+    folium.TileLayer(
+        tiles="https://server.arcgisonline.com/ArcGIS/rest/services/Ocean/World_Ocean_Base/MapServer/tile/{z}/{y}/{x}",
+        attr="ESRI Ocean Basemap",
+        name="🌊 Ocean Basemap",
+        overlay=False,
+        control=True,
+        opacity=0.65,
+    ).add_to(m)
+
+    # ── Simulated Bathymetry HeatMap ─────────────────────────────────────────
+    # Generate synthetic depth grid ± 0.25° around center
+    # Nilai: rendah = dangkal (sedimen), tinggi = dalam (sudah bersih)
+    # depth_year_offset mensimulasikan progress pengerukan (makin besar = makin dalam)
+    heat_data = []
+    offset_bonus = depth_year_offset * 0.15   # time-lapse: tahun ke depan = lebih bersih
+    for dlat in np.linspace(-0.28, 0.28, 30):
+        for dlon in np.linspace(-0.28, 0.28, 30):
+            # Dummy depth model: deeper toward center (channel), shallow at edges
+            r = math.sqrt(dlat**2 + dlon**2)
+            depth = max(0.1, 1.0 - r * 3.0 + np.random.normal(0, 0.08) + offset_bonus)
+            heat_data.append([clat + dlat, clon + dlon, depth])
+
+    HeatMap(
+        heat_data,
+        min_opacity=0.30,
+        radius=18,
+        blur=20,
+        gradient={
+            "0.0": "#1E3A8A",   # biru tua — dalam / bersih
+            "0.35": "#0ea5e9",  # biru langit — medium
+            "0.60": "#E9C46A",  # pasir kuning — dangkal / sedimen
+            "0.85": "#F97316",  # oranye — sedimen tebal
+            "1.0":  "#FACC15",  # kuning safety — kritis / sangat dangkal
+        },
+        name="🌡️ Kedalaman (Batimetri)",
+    ).add_to(m)
+
+    # ── Layer 1: Titik Tumpukan Pasir ─────────────────────────────────────────
+    sand_group = folium.FeatureGroup(name="🏖️ Titik Tumpukan Pasir", show=True)
+    sand_spots = [
+        (clat + 0.06,  clon - 0.10, "Zona A: Sedimen Tebal 2.3m"),
+        (clat - 0.04,  clon + 0.08, "Zona B: Sedimen 1.8m"),
+        (clat + 0.12,  clon + 0.05, "Zona C: Sedimen 3.1m (Kritis)"),
+        (clat - 0.10,  clon - 0.06, "Zona D: Sedimen 0.9m"),
+    ]
+    for lat, lon, label in sand_spots:
+        # Generate some mock geological data for the tooltip
+        import random
+        mud_pct = random.randint(15, 45)
+        density = round(random.uniform(1.2, 1.8), 2)
+        sed_type = random.choice(["Lumpur Pasir", "Pasir Halus", "Pasir Kasar"])
+        
+        folium.Marker(
+            [lat, lon],
+            icon=create_sand_marker_icon(size=14),
+            tooltip=folium.Tooltip(f"""
+                <div style='font-family:Outfit,sans-serif;background:rgba(9,14,24,0.95);
+                     color:#38BDF8;padding:12px;border-radius:8px;
+                     border:1px solid #2DD4BF;font-size:0.85rem;
+                     box-shadow: 0 0 15px rgba(45,212,191,0.2);'>
+                  <b style='color:#E9C46A; font-size: 0.95rem; border-bottom: 1px solid rgba(233,196,106,0.5); padding-bottom:4px; display:block; margin-bottom:6px;'>
+                    🧭 Sonar Scan: {label}
+                  </b>
+                  <table style='width:100%; color:#e2eff8;'>
+                    <tr><td style='color:#8fafc5; padding-right:8px;'>Tipe Sedimen</td><td><b>{sed_type}</b></td></tr>
+                    <tr><td style='color:#8fafc5;'>Kadar Lumpur</td><td><b>{mud_pct}%</b></td></tr>
+                    <tr><td style='color:#8fafc5;'>Kepadatan</td><td><b>{density} t/m³</b></td></tr>
+                  </table>
+                  <div style='margin-top:8px; font-size:0.75rem; color:#2DD4BF; text-align:center;'>
+                    <i>● Sonar Ping Active</i>
+                  </div>
+                </div>""", sticky=True),
+            popup=folium.Popup(f"<b>{label}</b>", max_width=200),
+        ).add_to(sand_group)
+    sand_group.add_to(m)
+
+    # ── Layer 2: Rute Pengerukan ──────────────────────────────────────────────
+    route_group = folium.FeatureGroup(name="⛵ Rute Pengerukan", show=True)
+    dredge_route = [
+        [clat + 0.18, clon - 0.18],
+        [clat + 0.12, clon - 0.05],
+        [clat + 0.06, clon + 0.05],
+        [clat - 0.02, clon + 0.12],
+        [clat - 0.10, clon + 0.18],
+    ]
+    folium.PolyLine(
+        dredge_route,
+        color="#2DD4BF",
+        weight=4,
+        opacity=0.85,
+        dash_array="8 4",
+        tooltip=folium.Tooltip(
+            "<div style='font-family:Outfit,sans-serif;background:#0e1824;color:#2DD4BF;"
+            "padding:6px 10px;border-radius:8px;border:1px solid rgba(45,212,191,0.3);font-size:0.80rem;'>"
+            "<b>⛵ Rute Pengerukan Aktif</b></div>", sticky=True),
+    ).add_to(route_group)
+    # Start/end markers
+    for pt, lbl, clr in [(dredge_route[0], "🚢 Mulai", "#2DD4BF"),
+                          (dredge_route[-1], "🏁 Selesai", "#E9C46A")]:
+        folium.Marker(pt, icon=folium.DivIcon(
+            html=f'<div style="background:{clr};color:#090e18;font-family:Outfit,sans-serif;'
+                 f'font-size:9px;font-weight:700;padding:2px 5px;border-radius:4px;'
+                 f'white-space:nowrap;">{lbl}</div>',
+            icon_size=(70, 18), icon_anchor=(35, 9)
+        )).add_to(route_group)
+    route_group.add_to(m)
+
+    # ── Layer 3: Lokasi Pembuangan (Dumping Area) ─────────────────────────────
+    dump_group = folium.FeatureGroup(name="🗑️ Lokasi Pembuangan", show=True)
+    dump_polygon = [
+        [clat - 0.22, clon + 0.22],
+        [clat - 0.18, clon + 0.30],
+        [clat - 0.28, clon + 0.32],
+        [clat - 0.30, clon + 0.24],
+    ]
+    folium.Polygon(
+        dump_polygon,
+        color="#F97316",
+        weight=2,
+        fill=True,
+        fill_color="#F97316",
+        fill_opacity=0.18,
+        tooltip=folium.Tooltip(
+            "<div style='font-family:Outfit,sans-serif;background:#0e1824;color:#F97316;"
+            "padding:6px 10px;border-radius:8px;border:1px solid rgba(249,115,22,0.3);font-size:0.80rem;'>"
+            "<b>🗑️ Zona Pembuangan Sedimen</b><br>Kapasitas: 50,000 m³</div>", sticky=True),
+    ).add_to(dump_group)
+    folium.Marker(
+        [clat - 0.24, clon + 0.27],
+        icon=create_dumping_icon(size=14),
+        popup=folium.Popup("<b>Lokasi Pembuangan Utama</b><br>50,000 m³ kapasitas", max_width=200),
+    ).add_to(dump_group)
+    dump_group.add_to(m)
+
+    # ── Dredger vessel markers ────────────────────────────────────────────────
+    if vessel_df is not None and not vessel_df.empty:
+        lat_col = next((c for c in ["latitude","lat"] if c in vessel_df.columns), "latitude")
+        lon_col = next((c for c in ["longitude","lon","lng"] if c in vessel_df.columns), "longitude")
+        hdg_col = next((c for c in ["heading","course"] if c in vessel_df.columns), None)
+        id_col  = next((c for c in ["code_vessel","vessel_id","id"] if c in vessel_df.columns), None)
+
+        vessel_group = folium.FeatureGroup(name="⛏️ Kapal Keruk (Dredger)", show=True)
+        for _, row in vessel_df.iterrows():
+            try:
+                lat = float(row[lat_col]); lon = float(row[lon_col])
+                hdg = float(row[hdg_col]) if hdg_col else 0
+                vid = str(row[id_col]) if id_col else "—"
+                folium.Marker(
+                    [lat, lon],
+                    icon=create_dredger_icon(heading=hdg, fill_color="#2DD4BF", size=22),
+                    tooltip=folium.Tooltip(
+                        f"<div style='font-family:Outfit,sans-serif;background:#0e1824;"
+                        f"color:#2DD4BF;padding:8px 12px;border-radius:8px;"
+                        f"border:1px solid rgba(45,212,191,0.3);font-size:0.82rem;'>"
+                        f"<b>⛏️ {vid}</b><br>Hdg: {hdg:.0f}°</div>", sticky=True),
+                    popup=folium.Popup(f"<b>Kapal Keruk: {vid}</b>", max_width=200),
+                ).add_to(vessel_group)
+            except Exception:
+                continue
+        vessel_group.add_to(m)
+
+    # ── Depth Legend ──────────────────────────────────────────────────────────
+    legend_html = """
+    <div style="
+        position:fixed; bottom:30px; right:12px; z-index:9999;
+        background:rgba(9,14,24,0.88); border:1px solid rgba(45,212,191,0.20);
+        border-radius:10px; padding:10px 14px;
+        font-family:'Outfit',sans-serif; font-size:0.72rem; color:#8fafc5;
+        backdrop-filter:blur(8px);
+    ">
+        <div style="font-weight:700;color:#e2eff8;margin-bottom:6px;">⚓ Legenda Kedalaman</div>
+        <div style="display:flex;align-items:center;gap:6px;margin-bottom:3px;">
+            <div style="width:14px;height:14px;border-radius:3px;background:#1E3A8A;"></div>
+            <span>Dalam / Bersih</span></div>
+        <div style="display:flex;align-items:center;gap:6px;margin-bottom:3px;">
+            <div style="width:14px;height:14px;border-radius:3px;background:#0ea5e9;"></div>
+            <span>Sedang</span></div>
+        <div style="display:flex;align-items:center;gap:6px;margin-bottom:3px;">
+            <div style="width:14px;height:14px;border-radius:3px;background:#E9C46A;"></div>
+            <span>Dangkal / Sedimen</span></div>
+        <div style="display:flex;align-items:center;gap:6px;">
+            <div style="width:14px;height:14px;border-radius:3px;background:#FACC15;"></div>
+            <span>Kritis (Sangat Dangkal)</span></div>
+    </div>
+    """
+    m.get_root().html.add_child(Element(legend_html))
+
+    # ── LayerControl ──────────────────────────────────────────────────────────
+    folium.LayerControl(collapsed=False, position="topright").add_to(m)
+
+    st_folium(m, height=height, width='stretch')
+

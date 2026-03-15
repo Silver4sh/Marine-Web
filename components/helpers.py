@@ -40,3 +40,73 @@ def create_circle_icon(fill_color, size=10):
     d = size * 2
     svg = f"""<svg width="{d}" height="{d}" viewBox="0 0 {d} {d}" style="filter: drop-shadow(1px 1px 2px rgba(0,0,0,0.5));"><circle cx="{d/2}" cy="{d/2}" r="{d/2-2}" fill="{fill_color}" stroke="white" stroke-width="2"/></svg>"""
     return folium.DivIcon(html=svg, icon_size=(d, d), icon_anchor=(d/2, d/2))
+
+
+def create_dredger_icon(heading=0, fill_color="#2DD4BF", size=26):
+    """
+    Membuat ikon SVG kapal keruk (dredger) yang berputar sesuai heading.
+    Shape: badan kapal persegi + lengan crane + semburan pasir.
+    """
+    w = size * 2
+    h = size * 2
+    svg = f"""
+    <svg width="{w}" height="{h}" viewBox="0 0 {w} {h}"
+         style="filter:drop-shadow(0 2px 5px rgba(0,0,0,0.6));"
+         xmlns="http://www.w3.org/2000/svg">
+      <g transform="rotate({heading},{w/2},{h/2})">
+        <!-- Hull (badan kapal) -->
+        <rect x="{w*0.22}" y="{h*0.42}" width="{w*0.56}" height="{h*0.36}"
+              rx="3" fill="{fill_color}" stroke="white" stroke-width="1.5"/>
+        <!-- Bow (haluan runcing) -->
+        <polygon points="{w*0.50},{h*0.18} {w*0.22},{h*0.42} {w*0.78},{h*0.42}"
+                 fill="{fill_color}" stroke="white" stroke-width="1.5"/>
+        <!-- Cabin (anjungan) -->
+        <rect x="{w*0.38}" y="{h*0.50}" width="{w*0.24}" height="{h*0.16}"
+              rx="2" fill="rgba(255,255,255,0.25)" stroke="rgba(255,255,255,0.4)" stroke-width="1"/>
+        <!-- Crane arm -->
+        <line x1="{w*0.62}" y1="{h*0.55}" x2="{w*0.82}" y2="{h*0.38}"
+              stroke="#E9C46A" stroke-width="2" stroke-linecap="round"/>
+        <!-- Crane bucket -->
+        <circle cx="{w*0.82}" cy="{h*0.36}" r="{w*0.06}"
+                fill="#D4A373" stroke="white" stroke-width="1"/>
+        <!-- Suction pipe (selang) -->
+        <line x1="{w*0.35}" y1="{h*0.78}" x2="{w*0.35}" y2="{h*0.92}"
+              stroke="#38BDF8" stroke-width="2.5" stroke-linecap="round"/>
+        <!-- Bow dot -->
+        <circle cx="{w*0.50}" cy="{h*0.22}" r="{w*0.04}"
+                fill="white" opacity="0.9"/>
+      </g>
+    </svg>
+    """
+    return folium.DivIcon(html=svg, icon_size=(w, h), icon_anchor=(w/2, h/2))
+
+
+def create_sand_marker_icon(size=14):
+    """Ikon marker tumpukan pasir — lingkaran kuning bergelombang."""
+    d = size * 2
+    svg = f"""
+    <svg width="{d}" height="{d}" viewBox="0 0 {d} {d}"
+         style="filter:drop-shadow(0 1px 3px rgba(0,0,0,0.5));">
+      <circle cx="{d/2}" cy="{d/2}" r="{d/2-2}"
+              fill="#E9C46A" stroke="#D4A373" stroke-width="2" opacity="0.92"/>
+      <text x="{d/2}" y="{d/2+4}" text-anchor="middle"
+            font-size="{int(d*0.45)}px" fill="#090e18" font-family="Arial">⚠</text>
+    </svg>
+    """
+    return folium.DivIcon(html=svg, icon_size=(d, d), icon_anchor=(d/2, d/2))
+
+
+def create_dumping_icon(size=14):
+    """Ikon marker lokasi pembuangan sedimen — segitiga oranye."""
+    d = size * 2
+    svg = f"""
+    <svg width="{d}" height="{d}" viewBox="0 0 {d} {d}"
+         style="filter:drop-shadow(0 1px 3px rgba(0,0,0,0.5));">
+      <polygon points="{d/2},2 {d-2},{d-2} 2,{d-2}"
+               fill="#F97316" stroke="white" stroke-width="1.5" opacity="0.92"/>
+      <text x="{d/2}" y="{d-4}" text-anchor="middle"
+            font-size="{int(d*0.40)}px" fill="white" font-family="Arial">D</text>
+    </svg>
+    """
+    return folium.DivIcon(html=svg, icon_size=(d, d), icon_anchor=(d/2, d/2))
+

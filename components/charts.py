@@ -198,3 +198,196 @@ def kpi_progress_bar(
         </div>
     </div>
     """, unsafe_allow_html=True)
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Task 4 — Dredging Charts
+# ─────────────────────────────────────────────────────────────────────────────
+
+def seabed_crosssection_chart(
+    distance_m=None,
+    before_depth=None,
+    after_depth=None,
+    title="✂️ Profil Potongan Melintang Dasar Laut",
+) -> go.Figure:
+    """
+    Grafik cross-section dasar laut sebelum (abu-abu) vs sesudah (teal) pengerukan.
+
+    Args:
+        distance_m   : list jarak horizontal (m). Default: 0–500m, 20 titik.
+        before_depth : list kedalaman sebelum dikeruk (negatif = di bawah LWS).
+        after_depth  : list kedalaman sesudah dikeruk.
+    """
+    import numpy as np
+    if distance_m is None:
+        distance_m = list(range(0, 501, 25))
+    n = len(distance_m)
+    if before_depth is None:
+        np.random.seed(42)
+        before_depth = [-3.0 - np.random.uniform(0, 1.5) - 0.8 * abs(i - n // 2) / (n // 2)
+                       for i in range(n)]
+    if after_depth is None:
+        after_depth = [b - np.random.uniform(1.5, 3.0) for b in before_depth]
+
+    fig = go.Figure()
+
+    # Before fill (sedimen abu-abu)
+    fig.add_trace(go.Scatter(
+        x=distance_m, y=before_depth,
+        fill="tozeroy",
+        fillcolor="rgba(74,104,130,0.25)",
+        line=dict(color="#4a6882", width=2, dash="dot"),
+        name="Sebelum Keruk",
+        hovertemplate="Jarak: %{x}m<br>Kedalaman: %{y:.1f}m LWS<extra></extra>",
+    ))
+
+    # After fill (bersih — teal)
+    fig.add_trace(go.Scatter(
+        x=distance_m, y=after_depth,
+        fill="tozeroy",
+        fillcolor="rgba(45,212,191,0.18)",
+        line=dict(color="#2DD4BF", width=2.5),
+        name="Sesudah Keruk",
+        hovertemplate="Jarak: %{x}m<br>Kedalaman: %{y:.1f}m LWS<extra></extra>",
+    ))
+
+    # Target line
+    target_val = min(after_depth)
+    fig.add_hline(
+        y=target_val,
+        line=dict(color="#E9C46A", width=1.5, dash="dash"),
+        annotation_text=f"Target: {target_val:.1f}m LWS",
+        annotation_position="top right",
+        annotation_font=dict(color="#E9C46A", size=10),
+    )
+
+    apply_chart_style(fig, title=title)
+    fig.update_layout(
+        height=280,
+        yaxis=dict(title="Kedalaman (m LWS)", autorange=True),
+        xaxis=dict(title="Jarak Horizontal (m)"),
+        legend=dict(orientation="h", y=1.12, x=0),
+        hovermode="x unified",
+        margin=dict(t=55, l=50, r=16, b=42),
+    )
+    return fig
+
+
+def dredging_gantt_chart(schedule_data=None, title="📅 Jadwal Pengerukan Zona") -> go.Figure:
+    """
+    Gantt-style timeline chart untuk jadwal pengerukan multi-zona.
+    schedule_data: list of dicts with keys: zone, start, end, status
+    """
+    import plotly.express as px
+    from datetime import datetime, timedelta
+
+    if schedule_data is None:
+        base = datetime(2025, 3, 1)
+        schedule_data = [
+            {"Zona": "Zona A", "Mulai": base,               "Selesai": base + timedelta(days=18),
+             "Status": "Selesai",  "Volume (m³)": 12000},
+            {"Zona": "Zona B", "Mulai": base + timedelta(days=12), "Selesai": base + timedelta(days=35),
+             "Status": "Aktif",    "Volume (m³)": 8500},
+            {"Zona": "Zona C", "Mulai": base + timedelta(days=30), "Selesai": base + timedelta(days=55),
+             "Status": "Terjadwal","Volume (m³)": 15000},
+            {"Zona": "Zona D", "Mulai": base + timedelta(days=50), "Selesai": base + timedelta(days=70),
+             "Status": "Terjadwal","Volume (m³)": 9200},
+        ]
+    import pandas as pd
+    df = pd.DataFrame(schedule_data)
+
+    color_map = {
+        "Selesai":   "#2DD4BF",
+        "Aktif":     "#FACC15",
+        "Terjadwal": "#4a6882",
+        "Tunda":     "#F97316",
+    }
+
+    fig = px.timeline(
+        df,
+        x_start="Mulai", x_end="Selesai",
+        y="Zona", color="Status",
+        color_discrete_map=color_map,
+        hover_data={"Volume (m³)": True, "Status": True},
+        labels={"Zona": "", "Mulai": "Mulai", "Selesai": "Selesai"},
+    )
+    fig.update_yaxes(autorange="reversed")
+    apply_chart_style(fig, title=title)
+    fig.update_layout(
+        height=260,
+        margin=dict(t=55, l=70, r=16, b=30),
+        legend=dict(orientation="h", y=1.12, x=0),
+        xaxis_title="",
+    )
+    return fig
+
+
+def water_quality_scatter(
+    df=None,
+    op_col="jam_operasi",
+    ntu_col="turbidity_ntu",
+    tss_col="tss_mgl",
+    vol_col="volume_m3",
+    title="💧 Kualitas Air vs Operasional",
+) -> go.Figure:
+    """
+    Scatter plot: jam operasional pengerukan vs kekeruhan (NTU).
+    Ukuran titik = volume pasir diangkat. Warna = status compliance.
+    """
+    import numpy as np
+    if df is None or df.empty if hasattr(df, "empty") else df is None:
+        import pandas as pd
+        np.random.seed(7)
+        hrs = np.arange(0, 24, 0.5)
+        ntu = 15 + 25 * np.sin(np.pi * hrs / 12) + np.random.normal(0, 5, len(hrs))
+        tss = ntu * 1.8 + np.random.normal(0, 8, len(hrs))
+        vol = np.random.uniform(50, 400, len(hrs))
+        df = pd.DataFrame({op_col: hrs, ntu_col: ntu, tss_col: tss, vol_col: vol})
+
+    limit = 50.0
+    df["_color"] = df[ntu_col].apply(
+        lambda v: "#2DD4BF" if v <= limit else ("#FACC15" if v <= limit * 1.6 else "#F97316")
+    )
+    df["_label"] = df[ntu_col].apply(
+        lambda v: "Aman" if v <= limit else ("Waspada" if v <= limit * 1.6 else "Melanggar")
+    )
+
+    fig = go.Figure()
+    for status, clr in [("Aman", "#2DD4BF"), ("Waspada", "#FACC15"), ("Melanggar", "#F97316")]:
+        sub = df[df["_label"] == status]
+        if sub.empty:
+            continue
+        fig.add_trace(go.Scatter(
+            x=sub[op_col], y=sub[ntu_col],
+            mode="markers",
+            name=status,
+            marker=dict(
+                size=sub[vol_col] / sub[vol_col].max() * 22 + 6,
+                color=clr,
+                opacity=0.78,
+                line=dict(width=1, color="rgba(255,255,255,0.25)"),
+            ),
+            hovertemplate=(
+                f"Jam: %{{x:.1f}}<br>{ntu_col}: %{{y:.1f}} NTU<br>"
+                f"Volume: %{{customdata:.0f}} m³<extra>{status}</extra>"
+            ),
+            customdata=sub[vol_col],
+        ))
+
+    # Batas limit line
+    fig.add_hline(
+        y=limit, line=dict(color="#FACC15", width=1.5, dash="dash"),
+        annotation_text="Batas 50 NTU",
+        annotation_font=dict(color="#FACC15", size=10),
+    )
+
+    apply_chart_style(fig, title=title)
+    fig.update_layout(
+        height=300,
+        xaxis=dict(title="Jam Operasional"),
+        yaxis=dict(title="Turbidity (NTU)"),
+        margin=dict(t=55, l=50, r=16, b=42),
+        legend=dict(orientation="h", y=1.12, x=0),
+    )
+    return fig
+
