@@ -1,0 +1,7 @@
+version: 2
+updates:
+  - package-ecosystem: "npm" # Ganti "npm" dengan "pip" (Python), "gomod" (Go), atau "maven" (Java)
+    directory: "/"
+    schedule:
+      interval: "weekly" # Bisa diganti "daily" atau "monthly"
+    open-pull-requests-limit: 5 # Membatasi agar tidak terlalu banyak PR sekaligus
