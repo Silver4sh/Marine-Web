@@ -1,8 +1,12 @@
 """db/repos/maintenance.py — Maintenance Tracker repository for MarineOS"""
 from __future__ import annotations
+import datetime
+import logging
 import streamlit as st
 import pandas as pd
 from db.connection import sb_table
+
+logger = logging.getLogger(__name__)
 
 
 @st.cache_data(ttl=120)
@@ -13,7 +17,7 @@ def get_all_maintenance() -> pd.DataFrame:
             return pd.DataFrame()
         return pd.DataFrame(res.data)
     except Exception as e:
-        print(f"[maintenance] get_all_maintenance error: {e}")
+        logger.error("get_all_maintenance error: %s", e)
         return pd.DataFrame()
 
 
@@ -21,9 +25,8 @@ def get_all_maintenance() -> pd.DataFrame:
 def get_upcoming_maintenance(days_ahead: int = 30) -> pd.DataFrame:
     """Fetch maintenance scheduled within the next N days."""
     try:
-        import datetime
-        today   = datetime.date.today()
-        cutoff  = today + datetime.timedelta(days=days_ahead)
+        today  = datetime.date.today()
+        cutoff = today + datetime.timedelta(days=days_ahead)
         res = (
             sb_table("operation", "vessel_maintenance")
             .select("*")
@@ -36,7 +39,7 @@ def get_upcoming_maintenance(days_ahead: int = 30) -> pd.DataFrame:
             return pd.DataFrame()
         return pd.DataFrame(res.data)
     except Exception as e:
-        print(f"[maintenance] get_upcoming_maintenance error: {e}")
+        logger.error("get_upcoming_maintenance error: %s", e)
         return pd.DataFrame()
 
 

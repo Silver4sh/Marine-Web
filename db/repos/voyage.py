@@ -1,8 +1,11 @@
 """db/repos/voyage.py — Voyage data repository for MarineOS"""
 from __future__ import annotations
+import logging
 import streamlit as st
 import pandas as pd
 from db.connection import sb_table
+
+logger = logging.getLogger(__name__)
 
 _VOYAGE_STATUS = ["Planned", "Underway", "Arrived", "Completed", "Cancelled"]
 
@@ -16,7 +19,7 @@ def get_all_voyages() -> pd.DataFrame:
             return pd.DataFrame()
         return pd.DataFrame(res.data)
     except Exception as e:
-        print(f"[voyage] get_all_voyages error: {e}")
+        logger.error("get_all_voyages error: %s", e)
         return pd.DataFrame()
 
 
@@ -35,7 +38,7 @@ def get_active_voyages() -> pd.DataFrame:
             return pd.DataFrame()
         return pd.DataFrame(res.data)
     except Exception as e:
-        print(f"[voyage] get_active_voyages error: {e}")
+        logger.error("get_active_voyages error: %s", e)
         return pd.DataFrame()
 
 
