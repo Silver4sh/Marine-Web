@@ -1,24 +1,23 @@
+"""db/repos/environ.py — moved from db/repositories/environ_repo.py"""
 import streamlit as st
 import pandas as pd
 import numpy as np
 from datetime import datetime, timezone, timedelta
 from db.connection import sb_table
 
-_EMPTY = pd.DataFrame()
-_MAX_ROWS = 5_000  # cap sensor history fetch
+_EMPTY    = pd.DataFrame()
+_MAX_ROWS = 5_000
 
 
 @st.cache_data(ttl=60)
 def get_data_water() -> pd.DataFrame:
-    bsh   = pd.DataFrame(sb_table("ocean", "buoy_sensor_histories")
+    bsh = pd.DataFrame(sb_table("ocean", "buoy_sensor_histories")
         .select("id_buoy, salinitas, turbidity, current, oxygen, tide, density, created_at")
         .order("created_at", desc=True).limit(_MAX_ROWS).execute().data)
     if bsh.empty:
         return _EMPTY
-
     buoys = pd.DataFrame(sb_table("ocean", "buoys").select("code_buoy, id_site").execute().data)
     sites = pd.DataFrame(sb_table("operation", "sites").select("code_site, latitude, longitude").execute().data)
-
     df = bsh.merge(buoys, left_on="id_buoy", right_on="code_buoy", how="left")\
             .merge(sites, left_on="id_site",  right_on="code_site",  how="left")\
             .rename(columns={"created_at": "latest_timestamp"})
@@ -30,22 +29,18 @@ def get_data_water() -> pd.DataFrame:
 def get_environmental_anomalies() -> pd.DataFrame:
     cutoff_30 = (datetime.now(timezone.utc) - timedelta(days=30)).isoformat()
     cutoff_7  = (datetime.now(timezone.utc) - timedelta(days=7)).isoformat()
-
     hist = pd.DataFrame(sb_table("ocean", "buoy_sensor_histories")
         .select("id_buoy, salinitas, turbidity, created_at")
         .gte("created_at", cutoff_30).limit(_MAX_ROWS).execute().data)
     if hist.empty:
         return _EMPTY
-
     stats = hist.groupby("id_buoy").agg(
         avg_sal=("salinitas", "mean"), std_sal=("salinitas", "std"),
         avg_tur=("turbidity", "mean"), std_tur=("turbidity", "std"),
     ).reset_index()
-
     recent = hist[hist["created_at"] >= cutoff_7].merge(stats, on="id_buoy", how="left")
     recent["sal_z_score"] = (recent["salinitas"] - recent["avg_sal"]) / recent["std_sal"].replace(0, np.nan)
     recent["tur_z_score"] = (recent["turbidity"] - recent["avg_tur"]) / recent["std_tur"].replace(0, np.nan)
-
     return recent[
         (recent["sal_z_score"].abs() > 2) | (recent["tur_z_score"].abs() > 2)
     ][["id_buoy", "created_at", "salinitas", "turbidity",
@@ -57,14 +52,11 @@ def get_buoy_fleet() -> pd.DataFrame:
     buoys = pd.DataFrame(sb_table("ocean", "buoys").select("code_buoy, status, id_site").execute().data)
     if buoys.empty:
         return _EMPTY
-
     sites      = pd.DataFrame(sb_table("operation", "sites").select("code_site, location").execute().data)
     last_reads = pd.DataFrame(sb_table("ocean", "buoy_sensor_histories")
         .select("id_buoy, created_at").order("created_at", desc=True).limit(500).execute().data)
-
     last_per_buoy = last_reads.groupby("id_buoy")["created_at"].first().reset_index()
     last_per_buoy.columns = ["code_buoy", "last_update"]
-
     df = buoys.merge(sites, left_on="id_site", right_on="code_site", how="left")\
               .merge(last_per_buoy, on="code_buoy", how="left")
     df["battery"] = "85%"
@@ -87,11 +79,9 @@ def get_environmental_compliance_dashboard() -> pd.DataFrame:
         .limit(_MAX_ROWS).execute()
     if not resp.data:
         return _EMPTY
-
     df = pd.DataFrame(resp.data)
-    df["created_at"] = pd.to_datetime(df["created_at"], utc=True)
+    df["created_at"]   = pd.to_datetime(df["created_at"], utc=True)
     df["monitor_date"] = df["created_at"].dt.floor("D")
-
     result = df.groupby("monitor_date").agg(
         total_readings=("turbidity", "count"),
         high_turbidity_events=("turbidity", lambda x: (x > 50).sum()),

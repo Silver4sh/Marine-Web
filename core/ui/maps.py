@@ -1,7 +1,7 @@
-from components.helpers import get_status_color, create_google_arrow_icon, create_dredger_icon, create_sand_marker_icon, create_dumping_icon
-from components.cards import render_vessel_list_column, render_vessel_detail_section
-from db.repositories.fleet_repo import get_vessel_position, get_path_vessel
-from config.settings import inject_custom_css
+from core.ui.helpers import get_status_color, create_google_arrow_icon, create_dredger_icon, create_sand_marker_icon, create_dumping_icon
+from core.ui.cards import render_vessel_list_column, render_vessel_detail_section
+from db.repos.fleet import get_vessel_position, get_path_vessel
+from core.config import inject_custom_css
 from folium.plugins import MarkerCluster, HeatMap
 from folium import Element
 from streamlit_folium import st_folium

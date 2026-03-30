@@ -7,10 +7,10 @@ from folium.plugins import MarkerCluster
 from streamlit_folium import st_folium
 import random
 
-from db.repositories.client_repo import get_clients_summary, get_client_reliability_scoring
-from components.charts import apply_chart_style
-from components.cards import render_metric_card
-from services.ai_service import MarineAIAnalyst
+from db.repos.client import get_clients_summary, get_client_reliability_scoring
+from core.ui.charts import apply_chart_style
+from core.ui.cards import render_metric_card
+from core.services.ai import MarineAIAnalyst
 
 
 def enrich_client_data(df):
@@ -197,7 +197,7 @@ def render_clients_page():
         else:
             filtered_df = filtered_df.sort_values('name')
 
-        from components.helpers import render_beautiful_table
+        from core.ui.helpers import render_beautiful_table
         disp_df = filtered_df[['name', 'industry', 'region', 'projects_active', 'ltv', 'churn_risk']].copy()
         disp_df.rename(columns={
             "name": "Nama Klien", "industry": "Industri", "region": "Wilayah", 
@@ -241,7 +241,7 @@ def render_clients_page():
                                   coloraxis_showscale=False, height=420)
             st.plotly_chart(fig_rel, width='stretch')
 
-            from components.helpers import render_beautiful_table
+            from core.ui.helpers import render_beautiful_table
             disp_rel = rel_df[["name", "total_revenue", "avg_payment_delay", "reliability_score"]].copy()
             disp_rel.rename(columns={
                 "name": "Klien", "total_revenue": "Total Revenue (IDR)", 
