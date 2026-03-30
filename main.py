@@ -23,8 +23,13 @@ from core.views.monitoring  import render_monitoring_view
 from core.views.analytics   import render_analytics_page
 from core.views.clients     import render_clients_page
 from core.views.admin       import render_admin_page
+from core.views.client_portal import render_client_portal
 from core.views.environment import render_environment_page
 from core.views.survey      import render_survey_page
+from core.views.alerts      import render_alerts_page
+from core.views.voyage      import render_voyage_page
+from core.views.maintenance import render_maintenance_page
+from core.views.kpi_dashboard import render_kpi_dashboard
 from core.ui.maps           import render_map_content
 from core.config            import inject_custom_css
 from core.ui.layout         import sidebar_nav, transition_loader, close_loader
@@ -54,13 +59,18 @@ def main_app():
     page = st.session_state.current_page
     loader_placeholder, should_show_loader = transition_loader(page)
     try:
-        if   page == "🏠 Monitoring":  render_monitoring_view()
-        elif page == "🌊 Lingkungan":  render_environment_page()
-        elif page == "🗺️ Peta Kapal": render_map_content()
-        elif page == "📈 Analitik":    render_analytics_page()
-        elif page == "👥 Klien":       render_clients_page()
-        elif page == "👨‍💼 Admin":     render_admin_page()
-        elif page == "📋 Survey":      render_survey_page()
+        if   page == "🏠 Monitoring":   render_monitoring_view()
+        elif page == "🌊 Lingkungan":   render_environment_page()
+        elif page == "🗺️ Peta Kapal":  render_map_content()
+        elif page == "📈 Analitik":     render_analytics_page()
+        elif page == "👥 Klien":        render_clients_page()
+        elif page == "👨‍💼 Admin":      render_admin_page()
+        elif page == "📋 Survey":       render_survey_page()
+        elif page == "🔔 Alert":        render_alerts_page()
+        elif page == "🗓️ Voyage":      render_voyage_page()
+        elif page == "🛠️ Maintenance": render_maintenance_page()
+        elif page == "📊 KPI":          render_kpi_dashboard()
+        elif page == "🌐 Portal Klien": render_client_portal()
     except Exception as e:
         import traceback
         st.error(f"Error loading page: {e}")

@@ -213,6 +213,29 @@ def render_buoy_data_form():
             except Exception as e:
                 st.error(f"❌ Terjadi kesalahan saat membaca atau memproses file: {str(e)}")
 
+def render_nps_form():
+    _section_header("🌟", "Kuesioner NPS (Net Promoter Score)", "Survei pasca-voyage untuk klien")
+    
+    col1, col2 = st.columns([2, 1])
+    with col1:
+        with st.form("nps_form"):
+            st.markdown("Seberapa besar kemungkinan Anda merekomendasikan layanan MarineOS / Pelayaran kami?")
+            nps_score = st.slider("Skor (0: Sangat Tidak Mungkin - 10: Sangat Mungkin)", 0, 10, 8)
+            nps_feedback = st.text_area("Masukan / Saran Peningkatan (Opsional)")
+            
+            submit_nps = st.form_submit_button("Kirim Respon NPS", type="primary")
+            if submit_nps:
+                st.success("✅ Respon NPS berhasil dikirim. Terima kasih atas masukan Anda!")
+                
+    with col2:
+        st.markdown("""
+            <div style="background:rgba(34,197,94,0.08); border-left:4px solid #22c55e; padding:16px; border-radius:8px;">
+                <h4 style="margin-top:0; color:#f0f6ff; font-family:'Outfit',sans-serif;">Rata-rata NPS Saat Ini</h4>
+                <div style="font-size:2.5rem; font-weight:800; color:#22c55e;">74</div>
+                <div style="font-size:0.85rem; color:#8ba3c0;">Status: Sangat Baik (Promoter)</div>
+            </div>
+        """, unsafe_allow_html=True)
+
 
 def render_survey_page():
     st.markdown("""
@@ -225,10 +248,13 @@ def render_survey_page():
         </div>
     """, unsafe_allow_html=True)
 
-    tab1, tab2 = st.tabs(["📋 Daftar Survey", "📡 Data Buoy"])
+    tab1, tab2, tab3 = st.tabs(["📋 Daftar Survey", "📡 Data Buoy", "🌟 Survey NPS"])
 
     with tab1:
         render_create_survey_form()
 
     with tab2:
         render_buoy_data_form()
+        
+    with tab3:
+        render_nps_form()

@@ -1008,6 +1008,27 @@ def render_bathymetric_map(
         opacity=0.65,
     ).add_to(m)
 
+    # ── Weather Overlay (Fase 2) ──────────────────────────────────────────────
+    folium.TileLayer(
+        tiles="https://tile.openweathermap.org/map/precipitation_new/{z}/{x}/{y}.png?appid=b1b15e88fa797225412429c1c50c122a",
+        attr="OpenWeatherMap",
+        name="🌧️ Peta Curah Hujan",
+        overlay=True,
+        control=True,
+        show=False,
+        opacity=0.5,
+    ).add_to(m)
+    
+    folium.TileLayer(
+        tiles="https://tile.openweathermap.org/map/wind_new/{z}/{x}/{y}.png?appid=b1b15e88fa797225412429c1c50c122a",
+        attr="OpenWeatherMap",
+        name="💨 Peta Angin",
+        overlay=True,
+        control=True,
+        show=False,
+        opacity=0.5,
+    ).add_to(m)
+
 
 
 
@@ -1019,12 +1040,18 @@ def render_bathymetric_map(
         hdg_col = next((c for c in ["heading","course"] if c in vessel_df.columns), None)
         id_col  = next((c for c in ["code_vessel","vessel_id","id"] if c in vessel_df.columns), None)
 
+        from core.services.weather import get_vessel_weather
+        
         vessel_group = folium.FeatureGroup(name="⛏️ Kapal Keruk (Dredger)", show=True)
         for _, row in vessel_df.iterrows():
             try:
                 lat = float(row[lat_col]); lon = float(row[lon_col])
                 hdg = float(row[hdg_col]) if hdg_col else 0
                 vid = str(row[id_col]) if id_col else "—"
+                
+                # Fetch mini weather
+                w = get_vessel_weather(lat, lon)
+                
                 folium.Marker(
                     [lat, lon],
                     icon=create_dredger_icon(heading=hdg, fill_color="#2DD4BF", size=22),
@@ -1032,7 +1059,8 @@ def render_bathymetric_map(
                         f"<div style='font-family:Outfit,sans-serif;background:#0e1824;"
                         f"color:#2DD4BF;padding:8px 12px;border-radius:8px;"
                         f"border:1px solid rgba(45,212,191,0.3);font-size:0.82rem;'>"
-                        f"<b>⛏️ {vid}</b><br>Hdg: {hdg:.0f}°</div>", sticky=True),
+                        f"<b>⛏️ {vid}</b><br>Hdg: {hdg:.0f}°<hr style='margin:4px 0; border:none; border-top:1px solid #1e293b;'/>"
+                        f"Cuaca: {w['icon']} {w['condition']} ({w['temperature']}°C)<br>Ombak: {w['wave_height']}m | Angin: {w['wind_speed']}kn</div>", sticky=True),
                     popup=folium.Popup(f"<b>Kapal Keruk: {vid}</b>", max_width=200),
                 ).add_to(vessel_group)
             except Exception:

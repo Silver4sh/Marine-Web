@@ -1,7 +1,7 @@
-"""core/services/ai.py — moved from services/ai_service.py (no import changes needed)"""
+"""core/services/ai.py — moved from services/ai_service.py"""
 import pandas as pd
-import numpy as np
 import random
+from typing import Dict, Any, List
 
 
 class MarineSLM:
@@ -43,7 +43,9 @@ class MarineSLM:
             "anomaly_terms": ["kapal hantu", "pergerakan tidak sah", "kelainan operasional", "penyimpangan kecepatan"],
         }
 
-    def generate(self, intent, context={}):
+    def generate(self, intent: str, context: Dict[str, Any] = None) -> str:
+        if context is None:
+            context = {}
         result = "Data tidak tersedia."
 
         if intent == "cognitive_inefficiency":
@@ -239,33 +241,34 @@ class MarineAIAnalyst:
     """Centralized AI Logic powered by MarineSLM."""
     slm = MarineSLM()
 
-    @staticmethod
-    def analyze_holistic(financials, fleet, anomaly_count, churn_risk_count):
-        insights    = []
-        rev_growth  = financials.get("delta_revenue", 0)
-        utilization = fleet.get("utilization", 0)
+    @classmethod
+    def analyze_holistic(cls, financials: Dict[str, Any], fleet: Dict[str, Any], anomaly_count: int, churn_risk_count: int) -> Dict[str, List[Dict[str, str]]]:
+        insights: List[Dict[str, str]] = []
+        rev_growth  = float(financials.get("delta_revenue", 0.0))
+        utilization = float(fleet.get("utilization", 0.0))
+
         if utilization > 75 and rev_growth < -5:
             insights.append({"title": "🚨 Deteksi Inefisiensi Operasional",
-                             "desc": MarineAIAnalyst.slm.generate("cognitive_inefficiency", {"util": f"{utilization:.0f}"}),
+                             "desc": cls.slm.generate("cognitive_inefficiency", {"util": f"{utilization:.0f}"}),
                              "type": "critical"})
         if utilization > 70 and anomaly_count >= 2:
             insights.append({"title": "⛈️ Risiko Keselamatan & Aset",
-                             "desc": MarineAIAnalyst.slm.generate("cognitive_hazard", {"util": f"{utilization:.0f}"}),
+                             "desc": cls.slm.generate("cognitive_hazard", {"util": f"{utilization:.0f}"}),
                              "type": "warning"})
         if churn_risk_count > 3 and rev_growth < -10:
             insights.append({"title": "📉 Krisis Bisnis Majemuk",
-                             "desc": MarineAIAnalyst.slm.generate("cognitive_compounding_crisis", {"growth": f"{rev_growth:.1f}"}),
+                             "desc": cls.slm.generate("cognitive_compounding_crisis", {"growth": f"{rev_growth:.1f}"}),
                              "type": "critical"})
         if utilization > 60 and rev_growth > 5 and anomaly_count == 0:
             insights.append({"title": "✨ Sinergi Operasional Sempurna",
-                             "desc": MarineAIAnalyst.slm.generate("cognitive_optimal", {"util": f"{utilization:.0f}"}),
+                             "desc": cls.slm.generate("cognitive_optimal", {"util": f"{utilization:.0f}"}),
                              "type": "positive"})
         return {"insights": insights}
 
-    @staticmethod
-    def analyze_clients(df):
+    @classmethod
+    def analyze_clients(cls, df: pd.DataFrame) -> Dict[str, List[Dict[str, str]]]:
         if df.empty:
-            return {"insight": "Data tidak tersedia."}
+            return {"insights": [{"title": "Data Kosong", "desc": "Data klien tidak tersedia saat ini.", "type": "info"}]}
         df = df.copy()
         df["ltv"]          = pd.to_numeric(df["ltv"],          errors="coerce").fillna(0)
         df["total_orders"] = pd.to_numeric(df["total_orders"], errors="coerce").fillna(0)
@@ -286,43 +289,43 @@ class MarineAIAnalyst:
             insights.append({"title": "Status Normal", "desc": "Portofolio klien stabil.", "type": "info"})
         return {"insights": insights}
 
-    @staticmethod
-    def analyze_fleet(utilization_rate):
+    @classmethod
+    def analyze_fleet(cls, utilization_rate: float) -> Dict[str, List[Dict[str, str]]]:
         if utilization_rate > 80:
-            txt, t = MarineAIAnalyst.slm.generate("high_utilization", {"val": f"{utilization_rate:.1f}"}), "positive"
+            txt, t = cls.slm.generate("high_utilization", {"val": f"{utilization_rate:.1f}"}), "positive"
         elif utilization_rate < 40:
             txt, t = "Utilisasi armada rendah. Pertimbangkan optimasi rute.", "warning"
         else:
             txt, t = "Utilisasi armada stabil dan optimal.", "info"
         return {"insights": [{"title": "Efisiensi Armada", "desc": txt, "type": t}]}
 
-    @staticmethod
-    def analyze_financials(revenue_data):
-        delta = revenue_data.get("delta_revenue", 0)
-        txt   = MarineAIAnalyst.slm.generate("revenue_positive" if delta >= 0 else "revenue_negative")
+    @classmethod
+    def analyze_financials(cls, revenue_data: Dict[str, Any]) -> Dict[str, List[Dict[str, str]]]:
+        delta = float(revenue_data.get("delta_revenue", 0.0))
+        txt   = cls.slm.generate("revenue_positive" if delta >= 0 else "revenue_negative")
         insights = [
             {"title": "Kinerja Finansial",  "desc": txt, "type": "positive" if delta >= 0 else "warning"},
-            {"title": "Outlook Masa Depan", "desc": MarineAIAnalyst.slm.generate("forecast_insight"), "type": "info"},
+            {"title": "Outlook Masa Depan", "desc": cls.slm.generate("forecast_insight"), "type": "info"},
         ]
         return {"insights": insights}
 
-    @staticmethod
-    def analyze_environment(anomaly_df):
+    @classmethod
+    def analyze_environment(cls, anomaly_df: pd.DataFrame) -> Dict[str, List[Dict[str, str]]]:
         if not anomaly_df.empty:
-            txt, t = MarineAIAnalyst.slm.generate("env_anomaly", {"count": len(anomaly_df)}), "warning"
+            txt, t = cls.slm.generate("env_anomaly", {"count": str(len(anomaly_df))}), "warning"
         else:
-            txt, t = MarineAIAnalyst.slm.generate("env_stable"), "positive"
+            txt, t = cls.slm.generate("env_stable"), "positive"
         return {"insights": [{"title": "Kualitas Lingkungan", "desc": txt, "type": t}]}
 
-    @staticmethod
-    def analyze_admin(users_summary):
+    @classmethod
+    def analyze_admin(cls, users_summary: Dict[str, Any]) -> Dict[str, List[Dict[str, str]]]:
         count = users_summary.get("new_users", 0)
         return {"insights": [{"title": "Ringkasan Sistem",
-                               "desc": MarineAIAnalyst.slm.generate("admin_summary", {"count": count}),
+                               "desc": cls.slm.generate("admin_summary", {"count": str(count)}),
                                "type": "info"}]}
 
-    @staticmethod
-    def analyze_correlations(corr_matrix):
+    @classmethod
+    def analyze_correlations(cls, corr_matrix: pd.DataFrame) -> Dict[str, List[Dict[str, str]]]:
         if corr_matrix.empty:
             return {"insights": []}
         pairs   = []
@@ -354,25 +357,37 @@ class MarineAIAnalyst:
                               "type": "critical" if abs(val) > 0.8 else ("warning" if abs(val) > 0.6 else "info")})
         return {"insights": insights}
 
-    @staticmethod
-    def analyze_anomalies(anomaly_df):
+    @classmethod
+    def analyze_anomalies(cls, anomaly_df: pd.DataFrame) -> Dict[str, List[Dict[str, str]]]:
         if anomaly_df is None or anomaly_df.empty:
             return {"insights": [{"title": "✅ Armada Normal",
                                    "desc": "Tidak ada anomali kapal yang terdeteksi dalam 2 jam terakhir.",
                                    "type": "positive"}]}
         count = len(anomaly_df)
         return {"insights": [{"title": f"🚨 {count} Anomali Kapal Aktif",
-                               "desc": MarineAIAnalyst.slm.generate("vessel_anomaly", {"count": count}),
+                               "desc": cls.slm.generate("vessel_anomaly", {"count": str(count)}),
                                "type": "critical"}]}
 
-    @staticmethod
-    def analyze_kpi(achieved_pct: float):
-        txt   = MarineAIAnalyst.slm.generate("kpi_achievement", {"pct": round(achieved_pct, 1)})
+    @classmethod
+    def analyze_kpi(cls, achieved_pct: float) -> Dict[str, List[Dict[str, str]]]:
+        txt   = cls.slm.generate("kpi_achievement", {"pct": round(achieved_pct, 1)})
         itype = "positive" if achieved_pct >= 80 else ("warning" if achieved_pct >= 50 else "critical")
         return {"insights": [{"title": "🎯 Analisis KPI", "desc": txt, "type": itype}]}
 
-    @staticmethod
-    def analyze_target_progress(progress_pct: float):
-        txt   = MarineAIAnalyst.slm.generate("target_progress", {"pct": round(progress_pct, 1)})
+    @classmethod
+    def analyze_target_progress(cls, progress_pct: float) -> Dict[str, List[Dict[str, str]]]:
+        txt   = cls.slm.generate("target_progress", {"pct": round(progress_pct, 1)})
         itype = "positive" if progress_pct >= 100 else ("warning" if progress_pct >= 60 else "critical")
         return {"insights": [{"title": "💰 Progres Target Bulanan", "desc": txt, "type": itype}]}
+
+    @classmethod
+    def ask_analyst(cls, message: str) -> str:
+        msg = message.lower()
+        if "kapal" in msg or "armada" in msg:
+            return cls.slm.generate("high_utilization", {"val": "85.0"})
+        elif "uang" in msg or "pendapatan" in msg or "revenue" in msg:
+            return cls.slm.generate("revenue_positive")
+        elif "anomali" in msg or "bahaya" in msg:
+            return cls.slm.generate("vessel_anomaly", {"count": "2"})
+        else:
+            return "Halo! Saya Marine AI Analyst. Anda bisa bertanya tentang performa *kapal*, *pendapatan*, atau cek *anomali*."

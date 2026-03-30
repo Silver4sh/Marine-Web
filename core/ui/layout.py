@@ -2,6 +2,7 @@
 import time
 import streamlit as st
 from core.config import ROLE_ADMIN, ROLE_OPERATIONS, ROLE_MARCOM, ROLE_FINANCE
+from core.services.alert import get_unacknowledged_count
 
 
 def _get_brand():
@@ -77,20 +78,36 @@ def sidebar_nav():
 
         st.divider()
         role = st.session_state.user_role
+        # Build alert label with unread badge
+        unread = get_unacknowledged_count()
+        alert_label = f"🔔 Alert ({unread})" if unread > 0 else "🔔 Alert"
+
         menu = ["🏠 Monitoring", "🌊 Lingkungan"]
         if role in [ROLE_ADMIN, ROLE_OPERATIONS]:
-            menu.extend(["🗺️ Peta Kapal", "📋 Survey"])
+            menu.extend(["🗺️ Peta Kapal", "🗓️ Voyage", "🛠️ Maintenance", "📋 Survey"])
         if role in [ROLE_ADMIN, ROLE_MARCOM, ROLE_FINANCE]:
             menu.extend(["👥 Klien", "📈 Analitik"])
+        if role in [ROLE_ADMIN, ROLE_FINANCE, ROLE_MARCOM]:
+            menu.append("📊 KPI")
         if role == ROLE_ADMIN:
             menu.append("👨‍💼 Admin")
+        # Alert always visible to all roles
+        menu.append(alert_label)
+
         for item in menu:
+            # Match current page even if alert label has count suffix
+            is_active = (
+                st.session_state.current_page == item
+                or (item.startswith("🔔 Alert") and st.session_state.current_page == "🔔 Alert")
+            )
+            # Normalize alert page name on click
+            target = "🔔 Alert" if item.startswith("🔔 Alert") else item
             st.button(
                 item,
                 key=f"nav_{item}",
-                type="primary" if st.session_state.current_page == item else "secondary",
+                type="primary" if is_active else "secondary",
                 on_click=change_page,
-                args=(item,),
+                args=(target,),
             )
         st.divider()
         st.button("🚪 Keluar", key="logout", on_click=do_logout)
