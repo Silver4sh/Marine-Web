@@ -396,7 +396,7 @@ def render_buoy_monitoring():
                         )
                         st.markdown(card_html, unsafe_allow_html=True)
 
-                    if st.button("Detail 🔍", key=f"btn_detail_{b_id}", width='stretch'):
+                    if st.button("Detail 🔍", key=f"btn_detail_{b_id}"):
                         st.session_state["buoy_detail_id"]   = b_id
                         st.session_state["buoy_detail_name"] = f"Buoy {b_id} — {loc}"
                 else:
