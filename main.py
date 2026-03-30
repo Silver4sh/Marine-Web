@@ -8,6 +8,8 @@ class _NoCtxFilter(logging.Filter):
 logging.getLogger("streamlit.runtime.scriptrunner_utils.script_run_context")\
     .addFilter(_NoCtxFilter())
 
+logger = logging.getLogger(__name__)
+
 
 # ── Page config (must be first Streamlit call) ────────────────────────────────
 st.set_page_config(
@@ -38,7 +40,7 @@ from core.ui.layout         import sidebar_nav, transition_loader, close_loader
 try:
     inject_custom_css()
 except Exception as e:
-    print(f"Gagal memuat gaya: {e}")
+    logger.error("Gagal memuat gaya: %s", e)
 
 # ── Session state defaults ────────────────────────────────────────────────────
 _DEFAULTS = {

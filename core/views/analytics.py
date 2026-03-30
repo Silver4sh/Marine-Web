@@ -285,33 +285,33 @@ def render_analytics_page():
                     </div>
                 """, unsafe_allow_html=True)
 
-            # 2. Key Metrics Strip
-            render_overview_strip()
+        # 2. Key Metrics Strip
+        render_overview_strip()
+        
+        # ── Tombol Export Laporan (Fase 3: Laporan Otomatis) ──
+        st.markdown("<br>", unsafe_allow_html=True)
+        exp_col1, exp_col2 = st.columns([8, 2])
+        with exp_col2:
+            from core.services.report import generate_excel_report
             
-            # ── Tombol Export Laporan (Fase 3: Laporan Otomatis) ──
-            st.markdown("<br>", unsafe_allow_html=True)
-            exp_col1, exp_col2 = st.columns([8, 2])
-            with exp_col2:
-                from core.services.report import generate_excel_report
-                
-                # Menyiapkan data untuk export
-                fin_df = pd.DataFrame([fin_metrics]) if isinstance(fin_metrics, dict) else pd.DataFrame()
-                ord_df = pd.DataFrame([get_order_stats()])
-                excel_data = generate_excel_report({"Financial": fin_df, "Orders": ord_df})
-                
-                st.download_button(
-                    label="📥 Export Report (Excel)",
-                    data=excel_data,
-                    file_name="MarineOS_Executive_Report.xlsx",
-                    mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-                    type="primary",
-                    use_container_width=True
-                )
+            # Menyiapkan data untuk export
+            fin_df = pd.DataFrame([fin_metrics]) if isinstance(fin_metrics, dict) else pd.DataFrame()
+            ord_df = pd.DataFrame([get_order_stats()])
+            excel_data = generate_excel_report({"Financial": fin_df, "Orders": ord_df})
             
-            st.divider()
+            st.download_button(
+                label="📥 Export Report (Excel)",
+                data=excel_data,
+                file_name="MarineOS_Executive_Report.xlsx",
+                mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+                type="primary",
+                use_container_width=True
+            )
+        
+        st.divider()
 
-            # 3. Main Content Grid
-            c_main, c_side = st.columns([2, 1])
+        # 3. Main Content Grid
+        c_main, c_side = st.columns([2, 1])
 
         with c_main:
             _section_header("💹", "Proyeksi Pendapatan", "AI-powered 6-month forecast")
