@@ -6,8 +6,9 @@ ROLE_ADMIN      = "Admin"
 ROLE_OPERATIONS = "Operations"
 ROLE_MARCOM     = "MarCom"
 ROLE_FINANCE    = "Finance"
+ROLE_CLIENT     = "Client"
 
-ALL_ROLES = [ROLE_ADMIN, ROLE_OPERATIONS, ROLE_MARCOM, ROLE_FINANCE]
+ALL_ROLES = [ROLE_ADMIN, ROLE_OPERATIONS, ROLE_MARCOM, ROLE_FINANCE, ROLE_CLIENT]
 
 # ── Asset paths ───────────────────────────────────────────────────────────────
 _BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))

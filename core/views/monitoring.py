@@ -14,9 +14,13 @@ from core.services.ai import MarineAIAnalyst
 from core.config import ROLE_ADMIN, ROLE_FINANCE, ROLE_MARCOM, ROLE_OPERATIONS
 
 import threading
+import logging
+from typing import Dict, Any
 from streamlit.runtime.scriptrunner import add_script_run_ctx, get_script_run_ctx
 
-def _load_dashboard_data(role: str) -> dict:
+logger = logging.getLogger(__name__)
+
+def _load_dashboard_data(role: str) -> Dict[str, Any]:
     """Fire off all data fetches in parallel for maximum responsiveness."""
     results = {
         "fleet": {}, "orders": {}, "financial": {}, "settings": {},
@@ -53,7 +57,7 @@ def _load_dashboard_data(role: str) -> dict:
             try:
                 results[key] = future.result(timeout=15)
             except Exception as e:
-                print(f"[monitoring] Failed to load {key}: {e}")
+                logger.error("Gagal saat memuat data bagian [%s]: %s", key, e)
 
     return results
 
@@ -432,3 +436,37 @@ def render_monitoring_view():
         for i, ins in enumerate(all_insights[:6]):
             with cols[i % len(cols)]:
                 _ai_banner(ins)
+
+    # ── Tanya AI Analyst (Chatbot UI) ──────────────────────────────────────────
+    st.divider()
+    st.markdown("""
+        <div style="display:flex; align-items:center; gap:10px; margin-bottom:14px;">
+            <span style="font-size:1.3rem;">💬</span>
+            <div>
+                <div style="font-family:'Outfit',sans-serif; font-size:1.0rem;
+                            font-weight:800; color:#f0f6ff;">Interaksi dengan Marine AI Analyst</div>
+                <div style="font-size:0.75rem; color:#8ba3c0;">Tanyakan tentang armada, pendapatan, atau anomali</div>
+            </div>
+        </div>
+    """, unsafe_allow_html=True)
+
+    if "ai_chat_history" not in st.session_state:
+        st.session_state.ai_chat_history = []
+
+    for msg in st.session_state.ai_chat_history:
+        with st.chat_message(msg["role"], avatar="🛥️" if msg["role"] == "user" else "🤖"):
+            st.write(msg["content"])
+
+    if prompt := st.chat_input("Tanyakan sesuatu ke AI... (contoh: 'gimana pendapatan', 'kondisi armada')"):
+        st.session_state.ai_chat_history.append({"role": "user", "content": prompt})
+        st.rerun()
+
+    # Process pending message if history last is user
+    if st.session_state.ai_chat_history and st.session_state.ai_chat_history[-1]["role"] == "user":
+        prompt = st.session_state.ai_chat_history[-1]["content"]
+        with st.chat_message("assistant", avatar="🤖"):
+            with st.spinner("Marine AI Analyst sedang memproses..."):
+                resp = MarineAIAnalyst.ask_analyst(prompt)
+                st.write(resp)
+        st.session_state.ai_chat_history.append({"role": "assistant", "content": resp})
+

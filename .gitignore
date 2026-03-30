@@ -2,7 +2,6 @@
 .env
 .devcontainer
 .vscode
-.agents
 
 # Python cache
 __pycache__/
@@ -23,3 +22,6 @@ env/
 .DS_Store
 Thumbs.db
 *.resolved
+
+# Agent config
+.agent

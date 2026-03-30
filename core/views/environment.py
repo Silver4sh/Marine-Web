@@ -47,6 +47,7 @@ _PARAM_META = {
     "density":   {"label": "⚗️ Densitas",    "unit": "σₜ",   "color": [[0,"rgba(237,233,254,1)"],[0.5,"rgba(139,92,246,0.9)"],[1,"rgba(88,28,135,1)"]]},
     "current":   {"label": "🌊 Arus",         "unit": "m/s",  "color": [[0,"rgba(224,242,254,1)"],[0.5,"rgba(14,165,233,0.9)"],[1,"rgba(12,74,110,1)"]]},
     "tide":      {"label": "🌊 Pasang Surut", "unit": "m",    "color": [[0,"rgba(204,251,241,1)"],[0.5,"rgba(20,184,166,0.9)"],[1,"rgba(19,78,74,1)"]]},
+    "wave_height": {"label": "🌊 Tinggi Gelombang", "unit": "m", "color": [[0,"rgba(204,251,241,1)"],[0.5,"rgba(14,165,233,0.9)"],[1,"rgba(30,58,138,1)"]]}
 }
 
 

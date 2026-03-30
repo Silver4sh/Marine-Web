@@ -209,7 +209,28 @@ def render_analytics_page():
         </div>
     """, unsafe_allow_html=True)
 
-    tab_fin, tab_ops = st.tabs(["💹 Analitik Keuangan", "⛏️ Operasional Pengerukan"])
+    tab_fin, tab_ops, tab_cost = st.tabs(["💹 Analitik Keuangan", "⛏️ Operasional Pengerukan", "💰 Biaya Operasional"])
+
+    with tab_cost:
+        st.markdown("""
+            <div style="display:flex;align-items:center;gap:8px;margin:8px 0 16px;">
+                <span style="font-size:1.1rem;">💰</span>
+                <div style="font-family:'Outfit',sans-serif;font-size:0.95rem;
+                            font-weight:800;color:#e2eff8;">Analisis Biaya Operasional Voyage</div>
+            </div>
+        """, unsafe_allow_html=True)
+        from db.repos.cost import get_voyage_costs
+        cost_df = get_voyage_costs()
+        if not cost_df.empty:
+            cost_long = pd.melt(cost_df, id_vars=['vessel_name', 'month'], 
+                                value_vars=['fuel_cost', 'crew_cost', 'maintenance_cost'],
+                                var_name='cost_type', value_name='amount')
+            fig_cost = px.bar(cost_long, x='month', y='amount', color='cost_type', barmode='group', facet_col='vessel_name', template='plotly_dark')
+            from core.ui.charts import apply_chart_style
+            apply_chart_style(fig_cost, title="Rincian Komponen Biaya per Kapal")
+            st.plotly_chart(fig_cost, width="stretch")
+        else:
+            st.info("Data biaya operasional tidak tersedia.")
 
     with tab_ops:
         st.markdown("""
@@ -266,6 +287,27 @@ def render_analytics_page():
 
             # 2. Key Metrics Strip
             render_overview_strip()
+            
+            # ── Tombol Export Laporan (Fase 3: Laporan Otomatis) ──
+            st.markdown("<br>", unsafe_allow_html=True)
+            exp_col1, exp_col2 = st.columns([8, 2])
+            with exp_col2:
+                from core.services.report import generate_excel_report
+                
+                # Menyiapkan data untuk export
+                fin_df = pd.DataFrame([fin_metrics]) if isinstance(fin_metrics, dict) else pd.DataFrame()
+                ord_df = pd.DataFrame([get_order_stats()])
+                excel_data = generate_excel_report({"Financial": fin_df, "Orders": ord_df})
+                
+                st.download_button(
+                    label="📥 Export Report (Excel)",
+                    data=excel_data,
+                    file_name="MarineOS_Executive_Report.xlsx",
+                    mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+                    type="primary",
+                    use_container_width=True
+                )
+            
             st.divider()
 
             # 3. Main Content Grid

@@ -120,6 +120,13 @@ def render_login_page():
                         st.session_state.logged_in = True
                         st.session_state.username = username
                         st.session_state.user_role = user_role
+                        
+                        from core.config import ROLE_CLIENT
+                        if user_role == ROLE_CLIENT:
+                            st.session_state.current_page = "🌐 Portal Klien"
+                        else:
+                            st.session_state.current_page = "🏠 Monitoring"
+                            
                         st.toast(f"✅ Selamat datang, {username}!", icon="🚢")
                         st.rerun()
                     else:
