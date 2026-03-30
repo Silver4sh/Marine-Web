@@ -286,14 +286,14 @@ def render_analytics_page():
             _section_header("🚚", "Kinerja Logistik")
             log_df = get_logistics_performance()
             if not log_df.empty:
-                st.dataframe(
-                    log_df[['destination', 'avg_delay_hours']],
-                    column_config={
-                        "destination":      "Rute / Tujuan",
-                        "avg_delay_hours":  st.column_config.NumberColumn("Delay (Jam)", format="%.1f")
-                    },
-                    hide_index=True,
-                    height=250
-                )
+                from components.helpers import render_beautiful_table
+                log_df_disp = log_df[['destination', 'avg_delay_hours']].copy()
+                log_df_disp.rename(columns={"destination": "Rute / Tujuan", "avg_delay_hours": "Delay (Jam)"}, inplace=True)
+                render_beautiful_table(log_df_disp, col_config={
+                    "Delay (Jam)": {
+                        "type": "progress", "max_val": max(1, float(log_df['avg_delay_hours'].max())),
+                        "format": "{:.1f}", "default_color": "#facc15", "align": "right"
+                    }
+                })
             else:
                 st.caption("Data logistik belum tersedia.")

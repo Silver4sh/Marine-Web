@@ -162,14 +162,22 @@ def render_user_management_tab():
         _render_delete_user_panel(st.session_state.admin_delete_user)
 
     if not users_df.empty:
-        st.dataframe(
-            users_df[['username', 'role', 'user_status', 'last_login']],
-            column_config={
-                "username":    "ID Pengguna",
-                "user_status": st.column_config.Column("Status", width="small"),
-                "last_login":  st.column_config.DatetimeColumn("Terakhir Login", format="D MMM, HH:mm")
-            }
-        )
+        from components.helpers import render_beautiful_table
+        
+        users_disp = users_df[['username', 'role', 'user_status', 'last_login']].copy()
+        users_disp['last_login'] = pd.to_datetime(users_disp['last_login']).dt.strftime('%d %b, %H:%M')
+        users_disp.rename(columns={
+            "username": "ID Pengguna",
+            "role": "Peran",
+            "user_status": "Status",
+            "last_login": "Terakhir Login"
+        }, inplace=True)
+        
+        render_beautiful_table(users_disp, col_config={
+            "Status": {"type": "badge", "color_map": {"Active": "#22c55e", "Inactive": "#94a3b8"}},
+            "Peran": {"type": "badge", "color_map": {"Admin": "#818cf8", "Operations": "#38bdf8", "Finance": "#f59e0b", "Marcom": "#f43f5e"}},
+            "ID Pengguna": {"type": "text", "width": "25%"}
+        })
 
         st.divider()
         _section_header("🛠️", "Tindakan Pengguna")
@@ -237,13 +245,12 @@ def render_audit_tab():
     _section_header("📜", "Log Audit", "Rekam jejak aktivitas sistem terkini")
     df = get_logs()
     if not df.empty:
-        st.dataframe(
-            df,
-            hide_index=True,
-            column_config={
-                "changed_at": st.column_config.DatetimeColumn("Timestamp", format="D MMM YYYY, HH:mm")
-            }
-        )
+        from components.helpers import render_beautiful_table
+        df_disp = df.copy()
+        if 'changed_at' in df_disp.columns:
+            df_disp['changed_at'] = pd.to_datetime(df_disp['changed_at']).dt.strftime('%d %b %Y, %H:%M')
+            df_disp.rename(columns={"changed_at": "Timestamp"}, inplace=True)
+        render_beautiful_table(df_disp)
     else:
         st.info("Tidak ada log audit ditemukan.")
 

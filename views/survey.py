@@ -57,19 +57,25 @@ def render_survey_list():
         )
         df = df[mask]
 
-    st.dataframe(
-        df,
-        column_config={
-            "date_survey":   st.column_config.DatetimeColumn("Tanggal", format="D MMM YYYY"),
-            "project_name":  "Proyek",
-            "code_report":   "Kode",
-            "site_name":     "Site",
-            "vessel_name":   "Kapal",
-            "surveyor_name": "Surveyor",
-            "comment":       "Komentar"
-        },
-        hide_index=True
-    )
+    from components.helpers import render_beautiful_table
+    df_disp = df[['date_survey', 'project_name', 'code_report', 'site_name', 'vessel_name', 'surveyor_name', 'comment']].copy()
+    try:
+        df_disp['date_survey'] = pd.to_datetime(df_disp['date_survey']).dt.strftime('%d %b %Y')
+    except Exception:
+        pass
+    df_disp.rename(columns={
+        "date_survey":   "Tanggal",
+        "project_name":  "Proyek",
+        "code_report":   "Kode",
+        "site_name":     "Site",
+        "vessel_name":   "Kapal",
+        "surveyor_name": "Surveyor",
+        "comment":       "Komentar"
+    }, inplace=True)
+    
+    render_beautiful_table(df_disp, col_config={
+        "Kode": {"type": "badge"}
+    })
 
 
 def render_create_survey_form():
@@ -189,7 +195,11 @@ def render_buoy_data_form():
                     df = df.set_index('TIMESTAMP')
 
                 st.subheader("Informasi Gelombang & Level Air (Mapped Data)")
-                st.dataframe(df)
+                from components.helpers import render_beautiful_table
+                df_disp = df.copy()
+                if df_disp.index.name == 'TIMESTAMP':
+                    df_disp.reset_index(inplace=True)
+                render_beautiful_table(df_disp)
 
                 csv_data = df.to_csv(index=True).encode('utf-8')
                 st.download_button(
