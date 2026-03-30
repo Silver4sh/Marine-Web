@@ -1,0 +1,29 @@
+name: Continuous Integration (CI)
+
+on:
+  push:
+    branches: [ main, master ]
+  pull_request:
+    branches: [ main, master ]
+
+jobs:
+  build_and_test:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      # Bagian ini untuk mengecek apakah ada kesalahan penulisan (Linting)
+      # Memastikan kode Anda rapi dan sesuai standar
+      - name: Check syntax and security
+        run: |
+          echo "Memeriksa kualitas kode..."
+          # Jika Anda pakai Python, bisa ganti ke: flake8 .
+          # Jika Anda pakai JS/Node, bisa ganti ke: npm run lint
+
+      # Bagian ini untuk memastikan aplikasi bisa 'build' tanpa error
+      - name: Build check
+        run: |
+          echo "Simulasi build project Marine-Web..."
+          # Sesuaikan perintah build Anda di sini, misal: npm run build

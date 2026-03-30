@@ -1,0 +1,19 @@
+[pr_reviewer]
+# Bot akan otomatis memberikan ulasan setiap kali Anda membuat PR
+ad_hoc_review = true
+# Memberikan skor keamanan (0-10) untuk kode Anda
+require_security_analysis = true
+# Memberikan estimasi waktu yang dibutuhkan orang lain untuk membaca PR Anda
+require_estimate_effort_to_review = true
+# Memberikan saran perbaikan kode yang bisa langsung di-klik
+require_relevant_tests = false
+
+[pr_description]
+# Bot akan otomatis menulis deskripsi PR agar Anda tidak capek mengetik
+publish_description_as_comment = false
+add_custom_instructions = "Gunakan bahasa Indonesia yang santai namun profesional."
+
+[pr_agent]
+# Memastikan bot memberikan saran perbaikan (code snippets)
+# Sangat membantu untuk belajar coding yang lebih rapi
+pr_code_suggestions = true
