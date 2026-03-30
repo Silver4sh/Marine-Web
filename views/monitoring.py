@@ -5,7 +5,7 @@ from concurrent.futures import ThreadPoolExecutor
 
 from components.cards import render_metric_card, render_vessel_list_column, render_vessel_card, render_dredging_kpi
 from components.charts import apply_chart_style, gauge_chart, kpi_progress_bar
-from components.helpers import get_status_color
+from components.helpers import get_status_color, render_beautiful_table
 from db.repositories.fleet_repo import get_fleet_status, get_operational_anomalies, get_fleet_daily_activity
 from db.repositories.finance_repo import get_order_stats, get_financial_metrics, get_revenue_analysis, get_revenue_cycle_metrics
 from db.repositories.client_repo import get_clients_summary
@@ -331,14 +331,12 @@ def render_overview_tab(fleet, orders, financial, role, settings, anomaly_df, fl
             {"Status": "Perawatan",  "Count": fleet.get("maintenance",  0)},
         ])
         max_v = max(fleet.get("total_vessels", 10), 1)
-        st.dataframe(
-            fleet_df, hide_index=True,
-            column_config={
-                "Count": st.column_config.ProgressColumn(
-                    "Jumlah", format="%d", min_value=0, max_value=max_v
-                )
-            }
-        )
+        fleet_df.rename(columns={"Count": "Jumlah"}, inplace=True)
+        render_beautiful_table(fleet_df, col_config={
+            "Jumlah": {"type": "progress", "max_val": max_v, "align": "right",
+                       "color_key": "Status", "color_map": {"Beroperasi": "#22c55e", "Idle": "#f59e0b", "Perawatan": "#ef4444"}},
+            "Status": {"type": "badge", "color_map": {"Beroperasi": "#22c55e", "Idle": "#f59e0b", "Perawatan": "#ef4444"}}
+        })
 
         st.markdown("<br>", unsafe_allow_html=True)
 
@@ -357,14 +355,12 @@ def render_overview_tab(fleet, orders, financial, role, settings, anomaly_df, fl
             {"Status": "Gagal", "Count": orders.get("failed", 0)},
         ])
         max_t = max(orders.get("total_orders", 10), 1)
-        st.dataframe(
-            task_df, hide_index=True,
-            column_config={
-                "Count": st.column_config.ProgressColumn(
-                    "Jumlah", format="%d", min_value=0, max_value=max_t
-                )
-            }
-        )
+        task_df.rename(columns={"Count": "Jumlah"}, inplace=True)
+        render_beautiful_table(task_df, col_config={
+            "Jumlah": {"type": "progress", "max_val": max_t, "align": "right",
+                       "color_key": "Status", "color_map": {"Selesai": "#22c55e", "Sedang berjalan": "#38bdf8", "Gagal": "#ef4444"}},
+            "Status": {"type": "badge", "color_map": {"Selesai": "#22c55e", "Sedang berjalan": "#38bdf8", "Gagal": "#ef4444"}}
+        })
 
         st.markdown("<br>", unsafe_allow_html=True)
 

@@ -174,7 +174,7 @@ def _year_nav(session_key: str):
     year = _get_target_year(session_key)
     c_prev, c_lbl, c_next = st.columns([1, 5, 1])
     with c_prev:
-        if st.button("◀", key=f"{session_key}_prev", width='stretch'):
+        if st.button("◀", key=f"{session_key}_prev"):
             st.session_state[session_key] = st.session_state.get(session_key, 0) - 1
             st.rerun()
     with c_lbl:
@@ -184,7 +184,7 @@ def _year_nav(session_key: str):
             unsafe_allow_html=True,
         )
     with c_next:
-        if st.button("▶", key=f"{session_key}_next", width='stretch'):
+        if st.button("▶", key=f"{session_key}_next"):
             st.session_state[session_key] = st.session_state.get(session_key, 0) + 1
             st.rerun()
     return year

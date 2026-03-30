@@ -197,18 +197,20 @@ def render_clients_page():
         else:
             filtered_df = filtered_df.sort_values('name')
 
-        st.dataframe(
-            filtered_df[['name', 'industry', 'region', 'projects_active', 'ltv', 'churn_risk']],
-            hide_index=True,
-            column_config={
-                "name":            "Nama Klien",
-                "ltv":             st.column_config.ProgressColumn(
-                                       "Nilai Seumur Hidup (IDR)",
-                                       min_value=0, max_value=int(df['ltv'].max()), format="Rp %d"),
-                "churn_risk":      st.column_config.Column("Profil Risiko", width="small"),
-                "projects_active": st.column_config.Column("Proyek Aktif")
-            }
-        )
+        from components.helpers import render_beautiful_table
+        disp_df = filtered_df[['name', 'industry', 'region', 'projects_active', 'ltv', 'churn_risk']].copy()
+        disp_df.rename(columns={
+            "name": "Nama Klien", "industry": "Industri", "region": "Wilayah", 
+            "projects_active": "Proyek Aktif", "ltv": "Nilai Seumur Hidup (IDR)", "churn_risk": "Profil Risiko"
+        }, inplace=True)
+        render_beautiful_table(disp_df, col_config={
+            "Nilai Seumur Hidup (IDR)": {
+                "type": "progress", "max_val": int(df['ltv'].max()) if not df.empty else 100, 
+                "format": "Rp {:,.0f}", "align": "right", 
+                "color_key": "Profil Risiko", "color_map": {"Rendah": "#22c55e", "Menengah": "#f59e0b", "Tinggi": "#f43f5e"}
+            },
+            "Profil Risiko": {"type": "badge", "color_map": {"Rendah": "#22c55e", "Menengah": "#f59e0b", "Tinggi": "#f43f5e"}}
+        })
 
     with tab_reliability:
         _section_header("🏆", "Skor Reliabilitas Klien",
@@ -239,18 +241,14 @@ def render_clients_page():
                                   coloraxis_showscale=False, height=420)
             st.plotly_chart(fig_rel, width='stretch')
 
-            st.dataframe(
-                rel_df[["name", "total_revenue", "avg_payment_delay", "reliability_score"]],
-                hide_index=True,
-                column_config={
-                    "name":             "Klien",
-                    "total_revenue":    st.column_config.NumberColumn(
-                                            "Total Revenue (IDR)", format="Rp %,.0f"),
-                    "avg_payment_delay": st.column_config.NumberColumn(
-                                            "Rata-rata Keterlambatan (hari)", format="%.1f hari"),
-                    "reliability_score": st.column_config.ProgressColumn(
-                                            "Skor", min_value=0,
-                                            max_value=float(rel_df["reliability_score"].max()),
-                                            format="%.2f"),
-                }
-            )
+            from components.helpers import render_beautiful_table
+            disp_rel = rel_df[["name", "total_revenue", "avg_payment_delay", "reliability_score"]].copy()
+            disp_rel.rename(columns={
+                "name": "Klien", "total_revenue": "Total Revenue (IDR)", 
+                "avg_payment_delay": "Rata-rata Keterlambatan (hari)", "reliability_score": "Skor"
+            }, inplace=True)
+            render_beautiful_table(disp_rel, col_config={
+                "Skor": {"type": "progress", "max_val": float(rel_df["reliability_score"].max()), "format": "{:.2f}", "default_color": "#2dd4bf", "align": "right"},
+                "Total Revenue (IDR)": {"type": "text", "format": "Rp {:,.0f}", "align": "right"},
+                "Rata-rata Keterlambatan (hari)": {"type": "text", "format": "{:.1f} hari", "align": "right"}
+            })
