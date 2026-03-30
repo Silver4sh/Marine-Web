@@ -1,6 +1,6 @@
 import streamlit as st
 import pandas as pd
-from components.helpers import load_html, get_status_color
+from core.ui.helpers import load_html, get_status_color
 
 def render_metric_card(label, value, delta=None, color="green", help_text=None, sparkline_data=None):
     """Merender kartu metrik dengan opsi sparkline (line chart mini)."""

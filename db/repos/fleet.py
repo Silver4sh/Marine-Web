@@ -1,10 +1,11 @@
+"""db/repos/fleet.py — moved from db/repositories/fleet_repo.py"""
 import streamlit as st
 import pandas as pd
 from datetime import datetime, timezone, timedelta
 from db.connection import sb_table
 
 _EMPTY = pd.DataFrame()
-_POS_LIMIT = 1_000  # cap position history per fetch
+_POS_LIMIT = 1_000
 
 
 @st.cache_data(ttl=60)
@@ -13,7 +14,6 @@ def get_fleet_status() -> dict:
         .select("id_vessel, seq_activity, status").execute().data
     if not rows:
         return {"total_vessels": 0, "operating": 0, "maintenance": 0, "idle": 0}
-
     df = pd.DataFrame(rows).sort_values("seq_activity")\
          .groupby("id_vessel").last().reset_index()
     s = df["status"].str.lower()
@@ -32,14 +32,12 @@ def get_vessel_position() -> pd.DataFrame:
         .order("created_at", desc=True).limit(_POS_LIMIT).execute().data)
     if positions.empty:
         return _EMPTY
-
     vessels = pd.DataFrame(sb_table("operation", "vessels")
         .select("code_vessel, name, status").execute().data)
-
     positions["created_at"] = pd.to_datetime(positions["created_at"], utc=True)
     latest = positions.drop_duplicates("id_vessel").merge(
         vessels, left_on="id_vessel", right_on="code_vessel", how="left")\
-        .drop(columns=["code_vessel"])  # drop vessels' code_vessel to avoid duplicate after rename
+        .drop(columns=["code_vessel"])
     latest["speed"]   = latest["speed"].fillna(0)
     latest["heading"] = latest["heading"].fillna(0)
     return latest.rename(columns={
@@ -77,14 +75,12 @@ def get_fleet_daily_activity() -> pd.DataFrame:
         .limit(_POS_LIMIT).execute().data
     if not rows:
         return _EMPTY
-
     df = pd.DataFrame(rows)
     df["created_at"] = pd.to_datetime(df["created_at"], utc=True)
     active = df[df["speed"] > 0.5].copy()
     active["day_num"]  = active["created_at"].dt.isocalendar().day
     active["day_name"] = active["created_at"].dt.strftime("%a")
     active["hour"]     = active["created_at"].dt.floor("h")
-
     result = active.groupby(["id_vessel", "day_name", "day_num"])["hour"]\
         .nunique().reset_index()
     result.columns = ["code_vessel", "day_name", "day_num", "active_hours"]
@@ -99,10 +95,8 @@ def get_vessel_utilization_stats() -> pd.DataFrame:
         .gte("start_date", cutoff).execute().data)
     if activities.empty:
         return _EMPTY
-
     vessels = pd.DataFrame(sb_table("operation", "vessels")
         .select("code_vessel, name").execute().data)
-
     now = datetime.now(timezone.utc)
     activities["start_date"] = pd.to_datetime(activities["start_date"], utc=True)
     activities["end_date"]   = pd.to_datetime(activities["end_date"],   utc=True).fillna(now)
@@ -110,7 +104,6 @@ def get_vessel_utilization_stats() -> pd.DataFrame:
     idle_set = {"idle", "maintenance", "docking"}
     activities["prod_h"] = activities.apply(
         lambda r: 0.0 if r["status"].lower() in idle_set else r["dur_h"], axis=1)
-
     df = activities.groupby("id_vessel").agg(
         total_hours=("dur_h", "sum"), productive_hours=("prod_h", "sum")
     ).reset_index().merge(vessels, left_on="id_vessel", right_on="code_vessel", how="left")
@@ -129,13 +122,11 @@ def get_logistics_performance() -> pd.DataFrame:
         .not_.is_("scheduled_delivery_date", "null").execute().data
     if not rows:
         return _EMPTY
-
     df = pd.DataFrame(rows)
     df["actual_delivery_date"]    = pd.to_datetime(df["actual_delivery_date"],    utc=True)
     df["scheduled_delivery_date"] = pd.to_datetime(df["scheduled_delivery_date"], utc=True)
     df["delay_hours"] = (df["actual_delivery_date"] - df["scheduled_delivery_date"]).dt.total_seconds() / 3600
     df["late"] = df["delay_hours"] > 0
-
     return df.groupby("destination").agg(
         total_trips=("destination", "count"),
         avg_delay_hours=("delay_hours", "mean"),
@@ -151,10 +142,8 @@ def get_operational_anomalies() -> pd.DataFrame:
         .gte("created_at", cutoff).order("created_at", desc=True).limit(200).execute().data)
     if positions.empty:
         return _EMPTY
-
     vessels = pd.DataFrame(sb_table("operation", "vessels")
         .select("code_vessel, name, status").execute().data)
-
     df = positions.drop_duplicates("id_vessel").merge(
         vessels, left_on="id_vessel", right_on="code_vessel", how="inner")
     s = df["status"].str.lower()
@@ -169,4 +158,4 @@ def get_operational_anomalies() -> pd.DataFrame:
         else "Pergerakan Tidak Sah", axis=1)
     return df.rename(columns={"name": "vessel_name", "status": "reported_status"})\
              [["id_vessel", "vessel_name", "reported_status", "speed",
-                "latitude", "longitude", "created_at", "anomaly_type"]].head(20)
+               "latitude", "longitude", "created_at", "anomaly_type"]].head(20)

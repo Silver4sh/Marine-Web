@@ -3,15 +3,15 @@ import pandas as pd
 import plotly.express as px
 from concurrent.futures import ThreadPoolExecutor
 
-from components.cards import render_metric_card, render_vessel_list_column, render_vessel_card, render_dredging_kpi
-from components.charts import apply_chart_style, gauge_chart, kpi_progress_bar
-from components.helpers import get_status_color, render_beautiful_table
-from db.repositories.fleet_repo import get_fleet_status, get_operational_anomalies, get_fleet_daily_activity
-from db.repositories.finance_repo import get_order_stats, get_financial_metrics, get_revenue_analysis, get_revenue_cycle_metrics
-from db.repositories.client_repo import get_clients_summary
-from db.repositories.settings_repo import get_system_settings
-from services.ai_service import MarineAIAnalyst
-from config.settings import ROLE_ADMIN, ROLE_FINANCE, ROLE_MARCOM, ROLE_OPERATIONS
+from core.ui.cards import render_metric_card, render_vessel_list_column, render_vessel_card, render_dredging_kpi
+from core.ui.charts import apply_chart_style, gauge_chart, kpi_progress_bar
+from core.ui.helpers import get_status_color, render_beautiful_table
+from db.repos.fleet import get_fleet_status, get_operational_anomalies, get_fleet_daily_activity
+from db.repos.finance import get_order_stats, get_financial_metrics, get_revenue_analysis, get_revenue_cycle_metrics
+from db.repos.client import get_clients_summary
+from db.repos.settings import get_system_settings
+from core.services.ai import MarineAIAnalyst
+from core.config import ROLE_ADMIN, ROLE_FINANCE, ROLE_MARCOM, ROLE_OPERATIONS
 
 import threading
 from streamlit.runtime.scriptrunner import add_script_run_ctx, get_script_run_ctx
@@ -283,7 +283,7 @@ def render_overview_tab(fleet, orders, financial, role, settings, anomaly_df, fl
                     color_continuous_scale=["#1a0a0a", "#ef4444"]
                 )
                 fig.update_layout(showlegend=False, coloraxis_showscale=False)
-                from components.charts import apply_chart_style
+                from core.ui.charts import apply_chart_style
                 apply_chart_style(fig)
                 st.plotly_chart(fig, width='stretch')
 
@@ -291,7 +291,7 @@ def render_overview_tab(fleet, orders, financial, role, settings, anomaly_df, fl
                 if role in [ROLE_ADMIN, ROLE_FINANCE, ROLE_MARCOM]:
                     cur = financial.get("current_revenue", 0)
                     tgt = float(settings.get("revenue_target_monthly", 5_000_000_000) or 5_000_000_000)
-                    from components.charts import kpi_progress_bar
+                    from core.ui.charts import kpi_progress_bar
                     kpi_progress_bar("Progress Target Bulanan", cur, tgt)
             else:
                 st.info("Data pendapatan tidak tersedia.")
@@ -309,12 +309,12 @@ def render_overview_tab(fleet, orders, financial, role, settings, anomaly_df, fl
                     title="Distribusi Pesanan", template="plotly_dark",
                     color_discrete_sequence=["#ef4444", "#f59e0b", "#fb923c", "#22c55e"]
                 )
-                from components.charts import apply_chart_style
+                from core.ui.charts import apply_chart_style
                 apply_chart_style(fig)
                 st.plotly_chart(fig, width='stretch')
 
         # Append scatter plot that wasn't asked to be deleted
-        from components.charts import water_quality_scatter
+        from core.ui.charts import water_quality_scatter
         st.plotly_chart(water_quality_scatter(), width='stretch', config={"displayModeBar": False})
 
     with c_side:

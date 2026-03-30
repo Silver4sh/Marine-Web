@@ -2,12 +2,12 @@ import streamlit as st
 import pandas as pd
 import plotly.express as px
 import plotly.graph_objects as go
-from db.repositories.finance_repo import get_financial_metrics, get_revenue_analysis, get_order_stats, get_revenue_cycle_metrics
-from db.repositories.client_repo import get_client_stats
-from db.repositories.fleet_repo import get_logistics_performance, get_fleet_daily_activity
-from services.analytics_service import calculate_advanced_forecast, calculate_correlation, calculate_moving_average
-from components.charts import apply_chart_style, seabed_crosssection_chart, dredging_gantt_chart, water_quality_scatter
-from services.ai_service import MarineAIAnalyst
+from db.repos.finance import get_financial_metrics, get_revenue_analysis, get_order_stats, get_revenue_cycle_metrics
+from db.repos.client import get_client_stats
+from db.repos.fleet import get_logistics_performance, get_fleet_daily_activity
+from core.services.analytics import calculate_advanced_forecast, calculate_correlation, calculate_moving_average
+from core.ui.charts import apply_chart_style, seabed_crosssection_chart, dredging_gantt_chart, water_quality_scatter
+from core.services.ai import MarineAIAnalyst
 
 # --- FRAGMENTS FOR GRANULAR UPDATES ---
 try:
@@ -286,7 +286,7 @@ def render_analytics_page():
             _section_header("🚚", "Kinerja Logistik")
             log_df = get_logistics_performance()
             if not log_df.empty:
-                from components.helpers import render_beautiful_table
+                from core.ui.helpers import render_beautiful_table
                 log_df_disp = log_df[['destination', 'avg_delay_hours']].copy()
                 log_df_disp.rename(columns={"destination": "Rute / Tujuan", "avg_delay_hours": "Delay (Jam)"}, inplace=True)
                 render_beautiful_table(log_df_disp, col_config={

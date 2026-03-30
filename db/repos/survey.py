@@ -1,3 +1,4 @@
+"""db/repos/survey.py — moved from db/repositories/survey_repo.py"""
 import streamlit as st
 import pandas as pd
 from db.connection import sb_table
@@ -10,14 +11,9 @@ def get_all_surveys() -> pd.DataFrame:
         .order("date_survey", desc=True).execute().data)
     if surveys.empty:
         return pd.DataFrame()
-
-    sites   = pd.DataFrame(sb_table("operation", "sites")
-        .select("code_site").execute().data)
-    vessels = pd.DataFrame(sb_table("operation", "vessels")
-        .select("code_vessel, name").execute().data)
-    users   = pd.DataFrame(sb_table("operation", "users")
-        .select("code_user, name").execute().data)
-
+    sites   = pd.DataFrame(sb_table("operation", "sites").select("code_site").execute().data)
+    vessels = pd.DataFrame(sb_table("operation", "vessels").select("code_vessel, name").execute().data)
+    users   = pd.DataFrame(sb_table("operation", "users").select("code_user, name").execute().data)
     df = surveys\
         .merge(sites,   left_on="id_site",   right_on="code_site",   how="left")\
         .merge(vessels, left_on="id_vessel", right_on="code_vessel", how="left")\

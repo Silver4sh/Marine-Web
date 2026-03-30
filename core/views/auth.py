@@ -1,5 +1,5 @@
 import streamlit as st
-from services.auth_service import check_login_working
+from core.services.auth import check_login_working
 
 
 def render_login_page():

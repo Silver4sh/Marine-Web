@@ -1,11 +1,11 @@
 import streamlit as st
 import pandas as pd
-from db.repositories.user_repo import (
+from db.repos.user import (
     get_all_users, create_new_user, update_user_status, update_user_role, delete_user,
     update_password
 )
-from db.repositories.settings_repo import get_logs
-from config.settings import ROLE_ADMIN, ROLE_OPERATIONS, ROLE_MARCOM, ROLE_FINANCE
+from db.repos.settings import get_logs
+from core.config import ROLE_ADMIN, ROLE_OPERATIONS, ROLE_MARCOM, ROLE_FINANCE
 
 
 def _section_header(icon, title, subtitle=""):
@@ -162,7 +162,7 @@ def render_user_management_tab():
         _render_delete_user_panel(st.session_state.admin_delete_user)
 
     if not users_df.empty:
-        from components.helpers import render_beautiful_table
+        from core.ui.helpers import render_beautiful_table
         
         users_disp = users_df[['username', 'role', 'user_status', 'last_login']].copy()
         users_disp['last_login'] = pd.to_datetime(users_disp['last_login']).dt.strftime('%d %b, %H:%M')
@@ -245,7 +245,7 @@ def render_audit_tab():
     _section_header("📜", "Log Audit", "Rekam jejak aktivitas sistem terkini")
     df = get_logs()
     if not df.empty:
-        from components.helpers import render_beautiful_table
+        from core.ui.helpers import render_beautiful_table
         df_disp = df.copy()
         if 'changed_at' in df_disp.columns:
             df_disp['changed_at'] = pd.to_datetime(df_disp['changed_at']).dt.strftime('%d %b %Y, %H:%M')

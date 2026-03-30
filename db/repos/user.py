@@ -1,19 +1,18 @@
+"""db/repos/user.py — moved from db/repositories/user_repo.py"""
 from __future__ import annotations
 import hashlib
 import pandas as pd
 from datetime import datetime, timezone
 from db.connection import sb_table
 
-_MAX_LEN = 64  # max input length for username / password
+_MAX_LEN = 64
 
 
 def _hash(password: str) -> str:
-    """SHA-256 hash for password comparison (stored as hex digest)."""
     return hashlib.sha256(password.strip().encode()).hexdigest()
 
 
 def _clean(value: str) -> str:
-    """Strip whitespace and cap length."""
     return str(value).strip()[:_MAX_LEN]
 
 
@@ -24,7 +23,6 @@ def get_all_users() -> pd.DataFrame:
         .select("id_user, status, last_login").execute().data)
     if users.empty:
         return pd.DataFrame()
-
     return users.merge(mgmt, left_on="code_user", right_on="id_user", how="left")\
         .rename(columns={"status_x": "user_status", "status_y": "account_status", "id_user": "username"})\
         [["code_user", "username", "role", "user_status", "account_status", "last_login"]]

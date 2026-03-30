@@ -1,9 +1,9 @@
 import streamlit as st
 import pandas as pd
 from datetime import datetime
-from db.repositories.survey_repo import get_all_surveys, create_survey_report
+from db.repos.survey import get_all_surveys, create_survey_report
 from db.connection import get_supabase
-from components.cards import render_metric_card
+from core.ui.cards import render_metric_card
 
 
 def _section_header(icon, title, subtitle=""):
@@ -57,7 +57,7 @@ def render_survey_list():
         )
         df = df[mask]
 
-    from components.helpers import render_beautiful_table
+    from core.ui.helpers import render_beautiful_table
     df_disp = df[['date_survey', 'project_name', 'code_report', 'site_name', 'vessel_name', 'surveyor_name', 'comment']].copy()
     try:
         df_disp['date_survey'] = pd.to_datetime(df_disp['date_survey']).dt.strftime('%d %b %Y')
@@ -195,7 +195,7 @@ def render_buoy_data_form():
                     df = df.set_index('TIMESTAMP')
 
                 st.subheader("Informasi Gelombang & Level Air (Mapped Data)")
-                from components.helpers import render_beautiful_table
+                from core.ui.helpers import render_beautiful_table
                 df_disp = df.copy()
                 if df_disp.index.name == 'TIMESTAMP':
                     df_disp.reset_index(inplace=True)

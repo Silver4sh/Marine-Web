@@ -1,15 +1,15 @@
 import streamlit as st
 import pandas as pd
 import altair as alt
-from db.repositories.environ_repo import (
+from db.repos.environ import (
     get_data_water, get_buoy_fleet, get_buoy_history,
     get_environmental_compliance_dashboard
 )
-from components.visualizations import calendar_heatmap
-from components.helpers import load_html
-from components.charts import gauge_chart
-from components.cards import render_metric_card
-from services.ai_service import MarineAIAnalyst
+from core.ui.maps import calendar_heatmap
+from core.ui.helpers import load_html
+from core.ui.charts import gauge_chart
+from core.ui.cards import render_metric_card
+from core.services.ai import MarineAIAnalyst
 
 
 # ─────────────────────────────────────────────────────────────────────────────
