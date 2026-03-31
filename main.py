@@ -74,9 +74,8 @@ def main_app():
         elif page == "📊 KPI":          render_kpi_dashboard()
         elif page == "🌐 Portal Klien": render_client_portal()
     except Exception as e:
-        import traceback
-        st.error(f"Error loading page: {e}")
-        st.code(traceback.format_exc(), language="python")
+        logger.error(f"Halaman gagal dimuat", exc_info=e)
+        st.error("⚠️ Maaf, halaman tidak dapat dimuat saat ini. Sila coba lagi nanti atau hubungi dukungan teknis.", icon="🚨")
     finally:
         close_loader(loader_placeholder, should_show_loader)
 
@@ -92,5 +91,5 @@ if __name__ == "__main__":
     try:
         main()
     except Exception as e:
-        st.error(f"⚠️ Sistem mengalami kesalahan kritis: {e}")
-        st.info("Silakan muat ulang halaman atau hubungi dukungan.")
+        logger.error(f"Sistem mengalami kesalahan kritis", exc_info=e)
+        st.error("⚠️ Sistem mengalami kesalahan kritis. Silakan muat ulang halaman atau hubungi dukungan teknis.", icon="🚨")

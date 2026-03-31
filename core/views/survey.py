@@ -211,7 +211,9 @@ def render_buoy_data_form():
                 )
 
             except Exception as e:
-                st.error(f"❌ Terjadi kesalahan saat membaca atau memproses file: {str(e)}")
+                import logging
+                logging.getLogger(__name__).error("Gagal memproses file buoy", exc_info=e)
+                st.error("❌ Terjadi kesalahan saat membaca atau memproses file yang diunggah. Pastikan format file sesuai.", icon="🚨")
 
 def render_nps_form():
     _section_header("🌟", "Kuesioner NPS (Net Promoter Score)", "Survei pasca-voyage untuk klien")

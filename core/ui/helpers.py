@@ -7,7 +7,8 @@ def load_html(filename):
     """Memuat template HTML dari folder assets, dikompresi ke satu baris."""
     try:
         current_dir = os.path.dirname(os.path.abspath(__file__))
-        project_dir = os.path.dirname(current_dir)
+        parent_dir = os.path.dirname(current_dir)
+        project_dir = os.path.dirname(parent_dir)
         file_path   = os.path.join(project_dir, "assets", "html", filename)
         with open(file_path, "r", encoding="utf-8") as f:
             content = f.read()
